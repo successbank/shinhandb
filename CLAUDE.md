@@ -336,3 +336,238 @@ Support 1차/2차 category hierarchy with drag-and-drop reordering.
 - **Tasks:** `.taskmaster/tasks/tasks.json`
 - **Environment Template:** `.env.example`
 - **Docker Configuration:** `docker-compose.yml`
+
+---
+
+## 작업 이력 (Development History)
+
+### 2025-12-11: 다중 카테고리 지원 및 스마트 삭제 기능 구현
+
+#### 완료된 작업
+
+**1. 다중 카테고리 시스템 구현**
+
+**데이터베이스 스키마 변경:**
+- `content_categories` 중간 테이블 생성 (다대다 관계 지원)
+  ```sql
+  CREATE TABLE content_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    content_id UUID NOT NULL REFERENCES contents(id) ON DELETE CASCADE,
+    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(content_id, category_id)
+  );
+  ```
+- 인덱스 생성: `idx_content_categories_content_id`, `idx_content_categories_category_id`
+- 기존 데이터 자동 마이그레이션 완료
+
+**백엔드 API 수정:**
+
+1. **POST /api/contents (업로드)**
+   - `categoryIds` 배열 파라미터 지원 (최대 3개)
+   - 하위 호환성: `categoryId` 단일 값도 지원
+   - 검증: 최소 1개, 최대 3개 카테고리 필수
+   - `content_categories` 테이블에 다중 매핑 저장
+   - `contents.category_id`에는 첫 번째 카테고리 저장 (하위 호환성)
+
+2. **GET /api/contents (목록 조회)**
+   - 카테고리 필터링 시 `content_categories` 테이블 JOIN
+   - 응답에 `categoryNames`, `categoryIds` 배열 포함
+   - 하위 호환성: `categoryName` 단일 값도 제공
+
+3. **GET /api/categories (카테고리 목록)**
+   - `content_categories` 테이블 기반으로 콘텐츠 수 카운트
+   - flat 배열로 반환 (프론트엔드에서 계층 구조 생성)
+   - `meta.totalContentCount`: 전체 콘텐츠 수 (중복 제거)
+
+4. **DELETE /api/contents/:id (스마트 삭제)**
+   - `categoryId` 쿼리 파라미터 추가
+   - **categoryId 있음**: 해당 카테고리에서만 제거
+     - 남은 카테고리 수 확인
+     - 0개 → 파일 + DB 완전 삭제
+     - 1개 이상 → 연결만 제거, 콘텐츠 유지
+   - **categoryId 없음**: 완전 삭제 (기존 동작)
+
+5. **타입 정의 수정** (`backend/src/types/index.ts`)
+   - `ApiResponse` 인터페이스에 `meta?: any` 필드 추가
+
+**프론트엔드 구현:**
+
+1. **CategoryTreeSidebar 컴포넌트 신규 추가** (`frontend/src/components/Category/CategoryTreeSidebar.tsx`)
+   - **다중 선택 모드**: 체크박스 UI
+     - `selectedCategoryIds`, `onCategorySelect` props
+     - `maxSelection` prop으로 최대 선택 개수 제한
+   - **단일 선택 모드**: 기존 동작 (하위 호환성)
+     - `selectedCategoryId`, `onCategorySingleSelect` props
+   - 카테고리 트리 구조 자동 생성 (`buildCategoryTree`)
+   - 카테고리별 콘텐츠 수 표시
+
+2. **업로드 페이지** (`frontend/src/app/upload/page.tsx`)
+   - 카테고리 다중 선택 (최대 3개, 필수)
+   - 선택된 카테고리 배지 표시 (개별 제거 가능)
+   - 선택 개수 표시 (예: 2/3)
+   - 업로드 전 카테고리 필수 검증
+   - `categoryIds` 배열로 API 전송
+
+3. **콘텐츠 페이지** (`frontend/src/app/contents/page.tsx`)
+   - 삭제 시 현재 선택된 `categoryId` 전달
+   - 다중 카테고리 콘텐츠 삭제 확인 메시지
+     - "이 콘텐츠는 N개 카테고리에 속해있습니다. 현재 카테고리에서만 제거하시겠습니까?"
+   - 삭제 후 카테고리 카운트 자동 업데이트
+
+4. **API 클라이언트** (`frontend/src/lib/api.ts`)
+   - `uploadFiles()`: `categoryIds` 배열 지원
+   - `deleteContent()`: `categoryId` 파라미터 추가
+
+**2. 버그 수정**
+
+1. **TypeScript 컴파일 오류 수정**
+   - `ApiResponse` 타입에 `meta` 필드 누락 → 추가
+
+2. **카테고리별 콘텐츠 수 카운트 오류**
+   - 원인: 백엔드가 계층 구조로 데이터 전송, 프론트엔드는 flat 배열 기대
+   - 해결: 백엔드를 flat 배열로 변경
+
+3. **카테고리 필터링 오류**
+   - 원인: `contents.category_id`만 확인하여 다중 카테고리 미지원
+   - 해결: `content_categories` 테이블 JOIN으로 정확한 필터링
+
+**3. 관리자 페이지 추가**
+
+- `frontend/src/app/admin/users/page.tsx`: 사용자 관리
+- `frontend/src/app/admin/categories/page.tsx`: 카테고리 관리
+
+#### 기술적 의사결정
+
+**1. 다중 카테고리 데이터 모델**
+- 선택: 중간 테이블 (`content_categories`) 사용
+- 이유:
+  - 정규화된 관계형 모델
+  - 카테고리별 필터링 성능 (인덱스 활용)
+  - 유연한 확장성 (카테고리 수 제한 변경 용이)
+- 하위 호환성: `contents.category_id` 유지 (첫 번째 카테고리)
+
+**2. 삭제 로직**
+- 선택: 컨텍스트 기반 스마트 삭제
+- 동작:
+  - 카테고리 페이지에서 삭제 → 해당 카테고리에서만 제거
+  - 마지막 카테고리 제거 → 자동 완전 삭제
+  - 마이페이지/전체보기에서 삭제 → 완전 삭제
+- 장점:
+  - 사용자 의도에 맞는 직관적인 동작
+  - 데이터 무결성 유지 (고아 콘텐츠 방지)
+
+**3. 카테고리 트리 렌더링**
+- 선택: 프론트엔드에서 계층 구조 생성
+- 이유:
+  - 서버 부하 감소
+  - 클라이언트 사이드 유연성 (정렬, 필터링)
+  - 재사용 가능한 컴포넌트 설계
+
+#### 현재 시스템 상태
+
+**서비스 URL:**
+- Frontend: http://211.248.112.67:5647
+- Backend API: http://211.248.112.67:5647/api
+- Adminer (DB UI): http://211.248.112.67:5650
+
+**Docker 컨테이너:**
+- `shinhandb_frontend`: Next.js 14.2.5
+- `shinhandb_backend`: Express.js (Node.js 18)
+- `shinhandb_db`: PostgreSQL 15
+- `shinhandb_redis`: Redis 7
+- `shinhandb_adminer`: Adminer
+
+**데이터베이스 상태:**
+- `contents` 테이블: 하위 호환성 유지 (`category_id` 컬럼)
+- `content_categories` 테이블: 다중 카테고리 매핑
+- `categories` 테이블: 8개 카테고리 (지주 4개, 은행 4개)
+
+**GitHub 저장소:**
+- Repository: https://github.com/successbank/shinhandb.git
+- Branch: master
+- 최근 커밋:
+  - `1cc3799`: feat - 다중 카테고리 지원 및 스마트 삭제
+  - `0db4d55`: chore - .mcp.json 보안 처리
+
+#### 알려진 이슈 및 TODO
+
+**완료 예정:**
+- [ ] Elasticsearch 통합 (PRD 요구사항)
+- [ ] 클라이언트 콘텐츠 수정 30분 제한 UI 구현
+- [ ] 활동 로그 모니터링 페이지
+- [ ] 공유 링크 기능 완성
+- [ ] 관리자 페이지 기능 구현 완료
+
+**기술 부채:**
+- 없음 (현재까지 클린 상태 유지)
+
+#### 개발 환경 설정
+
+**필수 환경변수 (.env):**
+```bash
+# 프로젝트 설정
+PROJECT_NAME=shinhandb
+WEB_PORT=5647
+DB_PORT=5648
+REDIS_PORT=5649
+ADMINER_PORT=5650
+
+# 데이터베이스
+DB_NAME=shinhandb_db
+DB_USER=shinhandb_user
+DB_PASSWORD=your_db_password
+DATABASE_URL=postgresql://shinhandb_user:your_db_password@database:5432/shinhandb_db
+
+# Redis
+REDIS_PASSWORD=your_redis_password
+
+# Node 환경
+NODE_ENV=development
+```
+
+**주의사항:**
+- `.mcp.json` 파일은 git에서 제외됨 (API 키 보안)
+- 모든 서비스는 Docker Compose로 관리
+- 소스 코드 변경 시 자동 hot reload
+
+#### 다음 작업 권장사항
+
+1. **Elasticsearch 통합**
+   - 콘텐츠 색인화
+   - 전문 검색 API 구현
+   - 성능 최적화 (2초 이내 응답)
+
+2. **관리자 기능 완성**
+   - 사용자 관리 CRUD
+   - 카테고리 관리 (드래그 앤 드롭)
+   - 활동 로그 모니터링 및 Excel 내보내기
+
+3. **클라이언트 권한 제어**
+   - 30분 수정 제한 UI
+   - 수정 시간 연장 요청 기능
+   - 관리자 승인 플로우
+
+4. **테스트 및 QA**
+   - 단위 테스트 작성
+   - 통합 테스트
+   - 성능 테스트 (동시 접속 100명)
+
+#### 참고 명령어
+
+```bash
+# 서비스 재시작
+docker restart shinhandb_backend shinhandb_frontend
+
+# 로그 확인
+docker logs shinhandb_backend --tail 50
+docker logs shinhandb_frontend --tail 50
+
+# DB 접속
+docker exec -it shinhandb_db psql -U shinhandb_user -d shinhandb_db
+
+# Git 작업
+git add -A
+git commit -m "메시지"
+git push origin master
+```
