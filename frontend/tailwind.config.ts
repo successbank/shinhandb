@@ -24,11 +24,11 @@ const config: Config = {
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
       maxWidth: {
-        'content': '1200px',
+        'content': '1920px',
       },
       screens: {
         'tablet': '768px',
-        'desktop': '1280px',
+        'desktop': '1920px',
       },
     },
   },
