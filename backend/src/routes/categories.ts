@@ -19,17 +19,17 @@ router.get(
       const memberType = req.query.memberType as string | undefined;
 
       let query = `
-        SELECT id, name, member_type, parent_id, sort_order, created_at, updated_at
+        SELECT id, name, user_role, parent_id, "order", created_at, updated_at
         FROM categories
       `;
       const params: any[] = [];
 
       if (memberType) {
-        query += ' WHERE member_type = $1';
+        query += ' WHERE user_role = $1';
         params.push(memberType);
       }
 
-      query += ' ORDER BY sort_order ASC, name ASC';
+      query += ' ORDER BY "order" ASC, name ASC';
 
       const result = await pool.query(query, params);
 
@@ -83,9 +83,9 @@ router.post(
       }
 
       const result = await pool.query(
-        `INSERT INTO categories (name, member_type, parent_id, sort_order)
+        `INSERT INTO categories (name, user_role, parent_id, "order")
          VALUES ($1, $2, $3, $4)
-         RETURNING id, name, member_type, parent_id, sort_order, created_at`,
+         RETURNING id, name, user_role, parent_id, "order", created_at`,
         [name, memberType, parentId || null, sortOrder || 0]
       );
 
@@ -125,7 +125,7 @@ router.patch(
       }
 
       if (sortOrder !== undefined) {
-        updates.push(`sort_order = $${paramIndex}`);
+        updates.push(`"order" = $${paramIndex}`);
         params.push(sortOrder);
         paramIndex++;
       }
@@ -136,7 +136,7 @@ router.patch(
       const result = await pool.query(
         `UPDATE categories SET ${updates.join(', ')}
          WHERE id = $${paramIndex}
-         RETURNING id, name, member_type, parent_id, sort_order, created_at, updated_at`,
+         RETURNING id, name, user_role, parent_id, "order", created_at, updated_at`,
         params
       );
 
@@ -220,7 +220,7 @@ router.post(
 
       for (let i = 0; i < holdingCategories.length; i++) {
         await pool.query(
-          `INSERT INTO categories (name, member_type, sort_order)
+          `INSERT INTO categories (name, user_role, "order")
            VALUES ($1, 'HOLDING', $2)
            ON CONFLICT DO NOTHING`,
           [holdingCategories[i], i]
@@ -230,7 +230,7 @@ router.post(
 
       for (let i = 0; i < bankCategories.length; i++) {
         await pool.query(
-          `INSERT INTO categories (name, member_type, sort_order)
+          `INSERT INTO categories (name, user_role, "order")
            VALUES ($1, 'BANK', $2)
            ON CONFLICT DO NOTHING`,
           [bankCategories[i], i]
