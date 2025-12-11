@@ -219,3 +219,157 @@ export const logout = async (): Promise<void> => {
     localStorage.removeItem('token');
   }
 };
+
+/**
+ * 현재 사용자 정보 가져오기
+ */
+export const getCurrentUser = async (): Promise<any> => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('로그인이 필요합니다');
+
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('사용자 정보 조회 실패');
+  }
+
+  return response.json();
+};
+
+/**
+ * API 요청 헬퍼 함수
+ */
+const apiRequest = async (
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<any> => {
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'API 요청 실패');
+  }
+
+  return response.json();
+};
+
+// Categories API
+export const categoriesApi = {
+  getCategories: (memberType?: string) =>
+    apiRequest(`/categories${memberType ? `?memberType=${memberType}` : ''}`),
+  createCategory: (data: any) =>
+    apiRequest('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id: string, data: any) =>
+    apiRequest(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteCategory: (id: string) =>
+    apiRequest(`/categories/${id}`, { method: 'DELETE' }),
+};
+
+// Tags API
+export const tagsApi = {
+  getTags: (params?: { search?: string; limit?: number }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return apiRequest(`/tags${query ? `?${query}` : ''}`);
+  },
+  getPopularTags: (limit?: number) =>
+    apiRequest(`/tags/popular${limit ? `?limit=${limit}` : ''}`),
+};
+
+// MyPage API
+export const mypageApi = {
+  getBookmarks: (params?: { page?: number; pageSize?: number }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return apiRequest(`/mypage/bookmarks${query ? `?${query}` : ''}`);
+  },
+  addBookmark: (contentId: string, memo?: string) =>
+    apiRequest('/mypage/bookmarks', {
+      method: 'POST',
+      body: JSON.stringify({ contentId, memo }),
+    }),
+  deleteBookmark: (id: string) =>
+    apiRequest(`/mypage/bookmarks/${id}`, { method: 'DELETE' }),
+  updateBookmarkMemo: (id: string, memo: string) =>
+    apiRequest(`/mypage/bookmarks/${id}/memo`, {
+      method: 'PATCH',
+      body: JSON.stringify({ memo }),
+    }),
+  getUploads: (params?: { page?: number; pageSize?: number }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return apiRequest(`/mypage/uploads${query ? `?${query}` : ''}`);
+  },
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiRequest('/mypage/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+};
+
+// Users API (Admin only)
+export const usersApi = {
+  getUsers: (params?: {
+    page?: number;
+    pageSize?: number;
+    role?: string;
+    search?: string;
+  }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return apiRequest(`/users${query ? `?${query}` : ''}`);
+  },
+  getUser: (id: string) => apiRequest(`/users/${id}`),
+  createUser: (data: any) =>
+    apiRequest('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id: string, data: any) =>
+    apiRequest(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteUser: (id: string) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
+};
+
+// Logs API (Admin only)
+export const logsApi = {
+  getLogs: (params?: {
+    page?: number;
+    pageSize?: number;
+    userId?: string;
+    actionType?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return apiRequest(`/logs${query ? `?${query}` : ''}`);
+  },
+};
+
+// Content management API
+export const contentApi = {
+  updateContent: (id: string, data: any) =>
+    apiRequest(`/contents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteContent: (id: string) =>
+    apiRequest(`/contents/${id}`, { method: 'DELETE' }),
+  shareContent: (id: string, expiresIn?: number) =>
+    apiRequest(`/contents/${id}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ expiresIn }),
+    }),
+  extendEdit: (id: string, hours: number) =>
+    apiRequest(`/contents/${id}/extend-edit`, {
+      method: 'POST',
+      body: JSON.stringify({ hours }),
+    }),
+};

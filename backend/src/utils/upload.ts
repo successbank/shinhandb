@@ -76,9 +76,10 @@ const fileFilter = (
  */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // 파일 저장 경로 (환경 변수에서 가져오거나 기본값 사용)
+    // 파일 저장 경로 - uploads/originals 디렉토리에 저장
     const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
-    cb(null, uploadDir);
+    const originalsDir = path.join(uploadDir, 'originals');
+    cb(null, originalsDir);
   },
   filename: (req, file, cb) => {
     // 고유한 파일명 생성 (UUID + 원본 확장자)

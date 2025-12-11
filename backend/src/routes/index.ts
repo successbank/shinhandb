@@ -3,6 +3,10 @@ import { ApiResponse } from '../types';
 import authRoutes from './auth';
 import usersRoutes from './users';
 import contentsRoutes from './contents';
+import tagsRoutes from './tags';
+import categoriesRoutes from './categories';
+import mypageRoutes from './mypage';
+import logsRoutes from './logs';
 
 const router = Router();
 
@@ -14,6 +18,18 @@ router.use('/users', usersRoutes);
 
 // Contents routes (File upload & management)
 router.use('/contents', contentsRoutes);
+
+// Tags routes (Tag management)
+router.use('/tags', tagsRoutes);
+
+// Categories routes (Category management)
+router.use('/categories', categoriesRoutes);
+
+// My page routes (User specific features)
+router.use('/mypage', mypageRoutes);
+
+// Activity logs routes (Admin only)
+router.use('/logs', logsRoutes);
 
 router.get('/health', (req: Request, res: Response<ApiResponse>) => {
   res.json({
