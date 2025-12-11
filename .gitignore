@@ -48,8 +48,9 @@ redis_data/
 # Backup files
 src_backup/
 
-# Uploads (uncomment when implementing file upload)
-# uploads/
+# Uploads
+backend/uploads/
+uploads/
 
 # Test coverage
 coverage/
