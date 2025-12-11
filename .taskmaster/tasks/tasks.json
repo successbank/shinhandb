@@ -1,0 +1,211 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "프로젝트 환경 세팅 및 기반 구축",
+        "description": "Next.js 14 기반 프론트엔드와 Node.js/Express 백엔드 프로젝트 초기화, Docker 환경 구성",
+        "status": "in-progress",
+        "priority": "high",
+        "dependencies": [],
+        "details": "- Next.js 14.2.5 프로젝트 생성 (App Router 사용)\n- Express.js 백엔드 API 서버 구성\n- Docker Compose 파일 작성 (app, database, redis, adminer)\n- 환경 변수 설정 (.env 파일)\n- ESLint, Prettier 코드 규칙 적용\n- Git 저장소 초기화 및 .gitignore 설정",
+        "testStrategy": "- 개발 서버 정상 실행 확인\n- Docker 컨테이너 모두 정상 시작 확인\n- 기본 라우트 접근 테스트\n- 환경 변수 로드 확인",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Next.js 14 프론트엔드 프로젝트 초기화 및 구성",
+            "description": "Next.js 14.2.5를 사용하여 App Router 기반 프론트엔드 프로젝트 생성 및 기본 디렉토리 구조 설정",
+            "dependencies": [],
+            "details": "npx create-next-app@latest 명령으로 프로젝트 생성, App Router 선택, TypeScript 활성화, public 폴더 및 app 폴더 구조 정리, 초기 page.tsx 파일 생성 및 확인\n<info added on 2025-12-11T00:43:26.594Z>\n<think>\n이것은 특별한 요청입니다. 사용자는 태스크 관리 시스템에서 서브태스크를 업데이트하려고 합니다. \n\n현재 상황:\n- 부모 태스크: \"프로젝트 환경 세팅 및 기반 구축\"\n- 현재 서브태스크 1.1: \"Next.js 14 프론트엔드 프로젝트 초기화 및 구성\"\n- 현재 세부 사항: \"npx create-next-app@latest 명령으로 프로젝트 생성, App Router 선택, TypeScript 활성화, public 폴더 및 app 폴더 구조 정리, 초기 page.tsx 파일 생성 및 확인\"\n\n사용자 요청: \"Next.js 14.2.5 프로젝트 생성 완료. TypeScript, Tailwind CSS, ESLint 설정. 신한금융 디자인 시스템 적용 (색상, 반응형 브레이크포인트). 기본 타입 정의, 환경 변수 구조, 디렉토리 구조 (components, lib, utils, types, hooks, styles) 완료.\"\n\n내 역할:\n- 사용자 요청을 기반으로 **새로운 콘텐츠**를 생성하여 서브태스크 세부 사항에 추가할 텍스트만 반환\n- 기존 세부 사항을 포함하지 않음 (사용자가 직접 수정하라고 명시하지 않는 한)\n\n\n- 순수 문자열 형식으로 반환하되, 마크다운이나 특수 포맷팅은 제외\n- 한국어로 작성\n\n사용자가 제시한 새로운 항목들을 정리하면, 14.2.5 버전 명시, Tailwind CSS와 ESLint 설정, 신한금융 디자인 시스템 적용 내용, 그리고 타입 정의, 환경 변수, 디렉토리 구조 완성이 추가되어야 한다. Tailwind CSS와 ESLint 설정을 완료하고, 신한금융 디자인 시스템의 핵심 색상(Shinhan Blue #0046FF 포함)을 적용했습니다. 반응형 브레이크포인트는 Desktop(≥1280px), Tablet(768px~1279px), Mobile(<768px)로 구성했고, 기본 타입 정의와 환경 변수 구조를 설정했으며, components, lib, utils, types, hooks, styles 폴더로 디렉토리 구조를 구성했습니다.\n</think>\n\nTailwind CSS 설정 완료, ESLint 설정 완료, 신한금융 디자인 시스템 적용 (Primary: #0046FF, Secondary: #333333, Background: #F5F5F5, Border: #E0E0E0, Error: #E53935, Success: #43A047), 반응형 브레이크포인트 설정 (Desktop: ≥1280px, Tablet: 768px~1279px, Mobile: <768px), 기본 타입 정의 및 환경 변수 구조 설정, 디렉토리 구조 완성 (components, lib, utils, types, hooks, styles 폴더)\n</info added on 2025-12-11T00:43:26.594Z>",
+            "status": "done",
+            "testStrategy": "npm run dev로 개발 서버 실행, http://localhost:3000 접속하여 초기 화면 렌더링 확인, 프로젝트 폴더 구조 검증"
+          },
+          {
+            "id": 2,
+            "title": "Express.js 백엔드 API 서버 설정",
+            "description": "Node.js/Express 기반 백엔드 API 서버 구성 및 기본 라우트 핸들러 설정",
+            "dependencies": [],
+            "details": "Express 프로젝트 초기화, route.ts 파일을 통한 라우트 핸들러 구성, GET/POST/PATCH/DELETE 메서드 기본 구현, 미들웨어 설정, CORS 설정, 포트 3001 또는 지정된 포트 설정",
+            "status": "done",
+            "testStrategy": "Express 서버 실행 확인, Thunder Client 또는 Postman으로 기본 API 엔드포인트 테스트, 각 HTTP 메서드별 응답 검증"
+          },
+          {
+            "id": 3,
+            "title": "Docker Compose 환경 구성",
+            "description": "Docker Compose 파일 작성 및 전체 애플리케이션 컨테이너 환경 구성",
+            "dependencies": [],
+            "details": "docker-compose.yml 작성, Next.js 애플리케이션 컨테이너, Express 백엔드 API 컨테이너, PostgreSQL 데이터베이스 컨테이너, Redis 캐시 컨테이너, Adminer 관리 도구 컨테이너 설정, 네트워크 및 볼륨 설정",
+            "status": "done",
+            "testStrategy": "docker-compose up 명령으로 모든 컨테이너 실행, 각 서비스 상태 확인, 컨테이너 간 통신 테스트, Adminer 접속으로 데이터베이스 연결 확인"
+          },
+          {
+            "id": 4,
+            "title": "환경 변수 설정 및 구성 파일 작성",
+            "description": "프론트엔드 및 백엔드의 환경 변수 설정 및 .env 파일 생성",
+            "dependencies": [],
+            "details": ".env 파일 생성, 데이터베이스 연결 정보(PostgreSQL, Redis), API 포트 설정, JWT 시크릿 키, 환경 변수 로드 확인, 보안 정보 .gitignore 처리",
+            "status": "done",
+            "testStrategy": "환경 변수 로드 확인, 프론트엔드에서 API 서버 접속 가능 확인, 데이터베이스 및 Redis 연결 테스트"
+          },
+          {
+            "id": 5,
+            "title": "코드 스타일 규칙 적용 및 Git 저장소 초기화",
+            "description": "ESLint, Prettier 코드 규칙 설정 및 Git 저장소 초기화",
+            "dependencies": [],
+            "details": "ESLint 설정 파일 작성, Prettier 설정 파일 작성, 코드 포맷팅 규칙 정의, Git 저장소 초기화(git init), .gitignore 파일 작성(node_modules, .env, .next, dist 등), 초기 커밋 수행",
+            "status": "in-progress",
+            "testStrategy": "ESLint 린트 검사 실행, Prettier 포맷팅 적용 확인, Git 저장소 상태 확인, .gitignore 규칙이 제대로 작동하는지 검증"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "데이터베이스 스키마 설계 및 구축",
+        "description": "PostgreSQL 데이터베이스 테이블 생성 및 관계 설정",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "details": "- PostgreSQL 15 Docker 컨테이너 설정\n- 8개 주요 테이블 생성:\n  * users (사용자)\n  * contents (콘텐츠)\n  * categories (카테고리)\n  * tags (태그)\n  * content_tags (콘텐츠-태그 연결)\n  * bookmarks (북마크)\n  * share_links (공유 링크)\n  * activity_logs (활동 로그)\n- UUID 기본 키 설정\n- Foreign Key 관계 설정\n- 인덱스 최적화",
+        "testStrategy": "- 데이터베이스 연결 테스트\n- 테이블 스키마 검증\n- 샘플 데이터 CRUD 테스트\n- Foreign Key 제약조건 테스트"
+      },
+      {
+        "id": 3,
+        "title": "인증 및 권한 관리 시스템 구현",
+        "description": "JWT 기반 인증과 역할 기반 접근 제어(RBAC) 시스템 개발",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "details": "- bcrypt를 이용한 비밀번호 암호화 (10 rounds)\n- JWT 토큰 생성 및 검증 로직\n- 4가지 사용자 역할 구현: ADMIN, HOLDING, BANK, CLIENT\n- 권한 검증 미들웨어 개발\n- Redis를 이용한 세션 관리 (30분 타임아웃)\n- 로그인 실패 5회 시 계정 잠금 (30분)\n- IP 기반 접근 로그 기록",
+        "testStrategy": "- 로그인/로그아웃 기능 테스트\n- 토큰 만료 테스트\n- 역할별 권한 검증 테스트\n- 계정 잠금 기능 테스트\n- 세션 타임아웃 테스트"
+      },
+      {
+        "id": 4,
+        "title": "회원 관리 기능 구현",
+        "description": "최고관리자 전용 회원 생성, 수정, 조회, 비활성화 기능 개발",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "3"
+        ],
+        "details": "- 사용자 CRUD API 엔드포인트 구현\n  * POST /api/users - 회원 생성\n  * GET /api/users - 회원 목록 조회\n  * GET /api/users/:id - 회원 상세 조회\n  * PATCH /api/users/:id - 회원 정보 수정\n  * DELETE /api/users/:id - 회원 삭제\n- 회원 유형별 입력 폼 (지주/은행/클라이언트)\n- 초기 비밀번호 자동 생성\n- Nodemailer를 이용한 이메일 발송\n- 비밀번호 초기화 기능\n- 계정 활성화/비활성화",
+        "testStrategy": "- 다양한 사용자 유형 생성 테스트\n- 이메일 발송 확인\n- 비밀번호 초기화 플로우 테스트\n- 권한 없는 사용자의 API 접근 차단 테스트"
+      },
+      {
+        "id": 5,
+        "title": "파일 업로드 시스템 구현",
+        "description": "다중 파일 업로드 및 파일 저장 시스템 개발",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "details": "- Multer를 이용한 파일 업로드 처리\n- 최대 200MB 파일 크기 제한\n- 지원 파일 형식: JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP\n- 다중 파일 동시 업로드\n- 드래그 앤 드롭 UI 구현\n- Sharp 라이브러리를 이용한 썸네일 생성 (300x300px)\n- 프로젝트 내 파일 저장소 (/uploads)\n- 업로드 진행률 표시",
+        "testStrategy": "- 지원 파일 형식 업로드 테스트\n- 200MB 초과 파일 차단 테스트\n- 다중 파일 업로드 테스트\n- 썸네일 생성 확인\n- 드래그 앤 드롭 기능 테스트"
+      },
+      {
+        "id": 6,
+        "title": "OCR 기반 태그 자동 생성 시스템",
+        "description": "Google Cloud Vision API 연동을 통한 이미지 텍스트 인식 및 자동 태그 생성",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "5"
+        ],
+        "details": "- Google Cloud Vision API 설정 및 연동\n- 이미지 업로드 시 OCR 자동 실행\n- TEXT_DETECTION 기능 사용\n- 한글/영문 텍스트 추출\n- 추출된 텍스트 전처리 (특수문자 제거, 정규화)\n- 자동 태그 생성 로직\n- 빈도 기반 인기 태그 추천\n- 태그 수동 추가/수정/삭제 기능",
+        "testStrategy": "- 다양한 이미지로 OCR 정확도 테스트\n- 한글/영문 혼합 텍스트 인식 테스트\n- 태그 자동 생성 로직 검증\n- 인기 태그 추천 기능 테스트\n- API 오류 핸들링 테스트"
+      },
+      {
+        "id": 7,
+        "title": "통합 검색 엔진 구현",
+        "description": "Elasticsearch 기반 실시간 검색 기능 개발",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "6"
+        ],
+        "details": "- Elasticsearch 설정 및 인덱스 매핑\n- 콘텐츠 메타데이터 인덱싱\n- OCR 텍스트 인덱싱\n- 복합 검색 쿼리 구현:\n  * 키워드 검색 (제목, 태그, 설명)\n  * 카테고리 필터\n  * 날짜 범위 필터\n  * 파일 유형 필터\n  * 업로더 필터\n- 태그 클릭 검색\n- 검색 결과 페이징 (10개/페이지)\n- 2초 이내 응답 시간 최적화",
+        "testStrategy": "- 키워드 검색 정확도 테스트\n- 복합 조건 검색 테스트\n- 응답 시간 측정 (2초 이내)\n- 필터 조합 테스트\n- 대량 데이터 검색 성능 테스트"
+      },
+      {
+        "id": 8,
+        "title": "카테고리 관리 시스템 구현",
+        "description": "회원 유형별 카테고리 생성 및 관리 기능 개발",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "details": "- 1차/2차 카테고리 계층 구조 구현\n- 회원 유형별 기본 카테고리 세팅:\n  * 신한금융지주: CSR, 브랜드, 스포츠, 기타\n  * 신한은행: 브랜드 PR, 상품&서비스, 땡겨요, 기타\n- 카테고리 CRUD API:\n  * POST /api/categories - 카테고리 생성\n  * GET /api/categories - 카테고리 목록\n  * PATCH /api/categories/:id - 카테고리 수정\n  * DELETE /api/categories/:id - 카테고리 삭제\n- 카테고리 순서 변경 기능\n- 드래그 앤 드롭 UI",
+        "testStrategy": "- 다단계 카테고리 생성 테스트\n- 사용자 유형별 카테고리 필터링 테스트\n- 순서 변경 기능 검증\n- 카테고리 삭제 시 연관 콘텐츠 처리 테스트"
+      },
+      {
+        "id": 9,
+        "title": "콘텐츠 관리 및 공유 기능 구현",
+        "description": "콘텐츠 수정 권한 관리 및 공유 링크 생성 시스템 개발",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "3",
+          "5"
+        ],
+        "details": "- 콘텐츠 업로드 후 30분 수정 제한 로직\n- editable_until 필드 관리\n- 최고관리자의 수정 시간 연장 기능\n- 공유 링크 생성 (JWT 토큰 기반)\n- 공유 링크 유효기간 설정 (1일, 7일, 30일, 무제한)\n- 목록/상세페이지에서 공유 기능\n- 다중 콘텐츠 공유 링크\n- 이메일로 공유 링크 발송\n- 공유 링크 복사 기능",
+        "testStrategy": "- 30분 경과 후 수정 차단 테스트\n- 관리자 수정 시간 연장 테스트\n- 공유 링크 생성 및 접근 테스트\n- 만료된 링크 차단 테스트\n- 다중 콘텐츠 공유 테스트"
+      },
+      {
+        "id": 10,
+        "title": "마이페이지 기능 구현",
+        "description": "사용자별 콘텐츠 보관함, 메모, 업로드 이력 관리",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "5",
+          "7"
+        ],
+        "details": "- 마이페이지 API 엔드포인트:\n  * GET /api/mypage/bookmarks - 보관함 목록\n  * POST /api/mypage/bookmarks - 북마크 추가\n  * DELETE /api/mypage/bookmarks/:id - 북마크 삭제\n  * PATCH /api/mypage/bookmarks/:id/memo - 메모 수정\n  * GET /api/mypage/uploads - 내 업로드 목록\n  * GET /api/mypage/recent - 최근 본 콘텐츠\n- 콘텐츠별 개인 메모 기능\n- 계정 정보 수정 (비밀번호 변경)\n- 마이페이지 UI 구현",
+        "testStrategy": "- 북마크 추가/삭제 테스트\n- 메모 작성/수정 테스트\n- 업로드 이력 조회 테스트\n- 최근 본 콘텐츠 추적 테스트\n- 비밀번호 변경 기능 테스트"
+      },
+      {
+        "id": 11,
+        "title": "활동 로그 및 모니터링 시스템",
+        "description": "모든 사용자 활동 기록 및 관리자 모니터링 대시보드 개발",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "3",
+          "4",
+          "5"
+        ],
+        "details": "- 모든 활동 자동 로깅:\n  * 업로드, 수정, 삭제\n  * 로그인, 로그아웃\n- 로그 기록 항목:\n  * 시간 (created_at)\n  * 계정 (user_id)\n  * IP 주소 (ip_address)\n  * 활동 내용 (action_type, details)\n- 로그 조회 API:\n  * GET /api/logs - 활동 로그 조회\n  * GET /api/logs/export - Excel 내보내기\n- 필터링 기능 (기간별, 사용자별, 활동 유형별)\n- Excel 내보내기 (SheetJS)",
+        "testStrategy": "- 모든 주요 활동 로그 기록 검증\n- IP 주소 정확도 테스트\n- 필터링 기능 테스트\n- Excel 내보내기 포맷 검증\n- 대량 로그 성능 테스트"
+      },
+      {
+        "id": 12,
+        "title": "UI/UX 디자인 시스템 구현",
+        "description": "신한금융 디자인 가이드에 따른 반응형 UI 컴포넌트 개발",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "1"
+        ],
+        "details": "- Tailwind CSS 설정 (Shinhan Blue #0046FF)\n- 컬러 시스템 설정:\n  * Primary: #0046FF\n  * Secondary: #333333\n  * Background: #F5F5F5\n  * Border: #E0E0E0\n  * Error: #E53935\n  * Success: #43A047\n- 반응형 브레이크포인트:\n  * Desktop: ≥1280px (1200px 콘텐츠)\n  * Tablet: 768px~1279px\n  * Mobile: <768px\n- 갤러리 뷰 (썸네일 그리드, 2/3/4열)\n- 게시물 뷰 (리스트 형식)\n- 네비게이션 헤더\n- 푸터\n- 공통 컴포넌트 라이브러리",
+        "testStrategy": "- 크로스 브라우저 테스트 (Chrome, Safari, Edge, Firefox)\n- 반응형 레이아웃 테스트\n- 접근성 테스트 (키보드 네비게이션)\n- 터치 이벤트 테스트 (모바일)\n- 1280x720 최소 해상도 테스트"
+      }
+    ],
+    "metadata": {
+      "projectName": "신한금융 광고관리 플랫폼",
+      "totalTasks": 12,
+      "sourceFile": ".taskmaster/docs/prd.md",
+      "generatedAt": "2025-12-11",
+      "created": "2025-12-11T00:39:24.625Z",
+      "description": "Tasks for master context",
+      "updated": "2025-12-11T00:47:08.840Z"
+    }
+  }
+}

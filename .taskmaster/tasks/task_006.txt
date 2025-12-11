@@ -1,0 +1,22 @@
+# Task ID: 6
+# Title: OCR 기반 태그 자동 생성 시스템
+# Status: pending
+# Dependencies: 5
+# Priority: high
+# Description: Google Cloud Vision API 연동을 통한 이미지 텍스트 인식 및 자동 태그 생성
+# Details:
+- Google Cloud Vision API 설정 및 연동
+- 이미지 업로드 시 OCR 자동 실행
+- TEXT_DETECTION 기능 사용
+- 한글/영문 텍스트 추출
+- 추출된 텍스트 전처리 (특수문자 제거, 정규화)
+- 자동 태그 생성 로직
+- 빈도 기반 인기 태그 추천
+- 태그 수동 추가/수정/삭제 기능
+
+# Test Strategy:
+- 다양한 이미지로 OCR 정확도 테스트
+- 한글/영문 혼합 텍스트 인식 테스트
+- 태그 자동 생성 로직 검증
+- 인기 태그 추천 기능 테스트
+- API 오류 핸들링 테스트

@@ -1,0 +1,24 @@
+# Task ID: 10
+# Title: 마이페이지 기능 구현
+# Status: pending
+# Dependencies: 5, 7
+# Priority: medium
+# Description: 사용자별 콘텐츠 보관함, 메모, 업로드 이력 관리
+# Details:
+- 마이페이지 API 엔드포인트:
+  * GET /api/mypage/bookmarks - 보관함 목록
+  * POST /api/mypage/bookmarks - 북마크 추가
+  * DELETE /api/mypage/bookmarks/:id - 북마크 삭제
+  * PATCH /api/mypage/bookmarks/:id/memo - 메모 수정
+  * GET /api/mypage/uploads - 내 업로드 목록
+  * GET /api/mypage/recent - 최근 본 콘텐츠
+- 콘텐츠별 개인 메모 기능
+- 계정 정보 수정 (비밀번호 변경)
+- 마이페이지 UI 구현
+
+# Test Strategy:
+- 북마크 추가/삭제 테스트
+- 메모 작성/수정 테스트
+- 업로드 이력 조회 테스트
+- 최근 본 콘텐츠 추적 테스트
+- 비밀번호 변경 기능 테스트

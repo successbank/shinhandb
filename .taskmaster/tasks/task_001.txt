@@ -1,0 +1,19 @@
+# Task ID: 1
+# Title: 프로젝트 환경 세팅 및 기반 구축
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Next.js 14 기반 프론트엔드와 Node.js/Express 백엔드 프로젝트 초기화, Docker 환경 구성
+# Details:
+- Next.js 14.2.5 프로젝트 생성 (App Router 사용)
+- Express.js 백엔드 API 서버 구성
+- Docker Compose 파일 작성 (app, database, redis, adminer)
+- 환경 변수 설정 (.env 파일)
+- ESLint, Prettier 코드 규칙 적용
+- Git 저장소 초기화 및 .gitignore 설정
+
+# Test Strategy:
+- 개발 서버 정상 실행 확인
+- Docker 컨테이너 모두 정상 시작 확인
+- 기본 라우트 접근 테스트
+- 환경 변수 로드 확인

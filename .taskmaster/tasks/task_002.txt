@@ -1,0 +1,26 @@
+# Task ID: 2
+# Title: 데이터베이스 스키마 설계 및 구축
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: PostgreSQL 데이터베이스 테이블 생성 및 관계 설정
+# Details:
+- PostgreSQL 15 Docker 컨테이너 설정
+- 8개 주요 테이블 생성:
+  * users (사용자)
+  * contents (콘텐츠)
+  * categories (카테고리)
+  * tags (태그)
+  * content_tags (콘텐츠-태그 연결)
+  * bookmarks (북마크)
+  * share_links (공유 링크)
+  * activity_logs (활동 로그)
+- UUID 기본 키 설정
+- Foreign Key 관계 설정
+- 인덱스 최적화
+
+# Test Strategy:
+- 데이터베이스 연결 테스트
+- 테이블 스키마 검증
+- 샘플 데이터 CRUD 테스트
+- Foreign Key 제약조건 테스트

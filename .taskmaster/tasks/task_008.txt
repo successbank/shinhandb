@@ -1,0 +1,24 @@
+# Task ID: 8
+# Title: 카테고리 관리 시스템 구현
+# Status: pending
+# Dependencies: 2, 3
+# Priority: medium
+# Description: 회원 유형별 카테고리 생성 및 관리 기능 개발
+# Details:
+- 1차/2차 카테고리 계층 구조 구현
+- 회원 유형별 기본 카테고리 세팅:
+  * 신한금융지주: CSR, 브랜드, 스포츠, 기타
+  * 신한은행: 브랜드 PR, 상품&서비스, 땡겨요, 기타
+- 카테고리 CRUD API:
+  * POST /api/categories - 카테고리 생성
+  * GET /api/categories - 카테고리 목록
+  * PATCH /api/categories/:id - 카테고리 수정
+  * DELETE /api/categories/:id - 카테고리 삭제
+- 카테고리 순서 변경 기능
+- 드래그 앤 드롭 UI
+
+# Test Strategy:
+- 다단계 카테고리 생성 테스트
+- 사용자 유형별 카테고리 필터링 테스트
+- 순서 변경 기능 검증
+- 카테고리 삭제 시 연관 콘텐츠 처리 테스트

@@ -1,0 +1,22 @@
+# Task ID: 5
+# Title: 파일 업로드 시스템 구현
+# Status: pending
+# Dependencies: 2, 3
+# Priority: high
+# Description: 다중 파일 업로드 및 파일 저장 시스템 개발
+# Details:
+- Multer를 이용한 파일 업로드 처리
+- 최대 200MB 파일 크기 제한
+- 지원 파일 형식: JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP
+- 다중 파일 동시 업로드
+- 드래그 앤 드롭 UI 구현
+- Sharp 라이브러리를 이용한 썸네일 생성 (300x300px)
+- 프로젝트 내 파일 저장소 (/uploads)
+- 업로드 진행률 표시
+
+# Test Strategy:
+- 지원 파일 형식 업로드 테스트
+- 200MB 초과 파일 차단 테스트
+- 다중 파일 업로드 테스트
+- 썸네일 생성 확인
+- 드래그 앤 드롭 기능 테스트

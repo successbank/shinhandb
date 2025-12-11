@@ -1,0 +1,31 @@
+# Task ID: 12
+# Title: UI/UX 디자인 시스템 구현
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: 신한금융 디자인 가이드에 따른 반응형 UI 컴포넌트 개발
+# Details:
+- Tailwind CSS 설정 (Shinhan Blue #0046FF)
+- 컬러 시스템 설정:
+  * Primary: #0046FF
+  * Secondary: #333333
+  * Background: #F5F5F5
+  * Border: #E0E0E0
+  * Error: #E53935
+  * Success: #43A047
+- 반응형 브레이크포인트:
+  * Desktop: ≥1280px (1200px 콘텐츠)
+  * Tablet: 768px~1279px
+  * Mobile: <768px
+- 갤러리 뷰 (썸네일 그리드, 2/3/4열)
+- 게시물 뷰 (리스트 형식)
+- 네비게이션 헤더
+- 푸터
+- 공통 컴포넌트 라이브러리
+
+# Test Strategy:
+- 크로스 브라우저 테스트 (Chrome, Safari, Edge, Firefox)
+- 반응형 레이아웃 테스트
+- 접근성 테스트 (키보드 네비게이션)
+- 터치 이벤트 테스트 (모바일)
+- 1280x720 최소 해상도 테스트

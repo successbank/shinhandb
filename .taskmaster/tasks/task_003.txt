@@ -1,0 +1,21 @@
+# Task ID: 3
+# Title: 인증 및 권한 관리 시스템 구현
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: JWT 기반 인증과 역할 기반 접근 제어(RBAC) 시스템 개발
+# Details:
+- bcrypt를 이용한 비밀번호 암호화 (10 rounds)
+- JWT 토큰 생성 및 검증 로직
+- 4가지 사용자 역할 구현: ADMIN, HOLDING, BANK, CLIENT
+- 권한 검증 미들웨어 개발
+- Redis를 이용한 세션 관리 (30분 타임아웃)
+- 로그인 실패 5회 시 계정 잠금 (30분)
+- IP 기반 접근 로그 기록
+
+# Test Strategy:
+- 로그인/로그아웃 기능 테스트
+- 토큰 만료 테스트
+- 역할별 권한 검증 테스트
+- 계정 잠금 기능 테스트
+- 세션 타임아웃 테스트

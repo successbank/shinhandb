@@ -1,0 +1,27 @@
+# Task ID: 11
+# Title: 활동 로그 및 모니터링 시스템
+# Status: pending
+# Dependencies: 3, 4, 5
+# Priority: medium
+# Description: 모든 사용자 활동 기록 및 관리자 모니터링 대시보드 개발
+# Details:
+- 모든 활동 자동 로깅:
+  * 업로드, 수정, 삭제
+  * 로그인, 로그아웃
+- 로그 기록 항목:
+  * 시간 (created_at)
+  * 계정 (user_id)
+  * IP 주소 (ip_address)
+  * 활동 내용 (action_type, details)
+- 로그 조회 API:
+  * GET /api/logs - 활동 로그 조회
+  * GET /api/logs/export - Excel 내보내기
+- 필터링 기능 (기간별, 사용자별, 활동 유형별)
+- Excel 내보내기 (SheetJS)
+
+# Test Strategy:
+- 모든 주요 활동 로그 기록 검증
+- IP 주소 정확도 테스트
+- 필터링 기능 테스트
+- Excel 내보내기 포맷 검증
+- 대량 로그 성능 테스트
