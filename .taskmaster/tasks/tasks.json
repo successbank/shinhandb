@@ -130,13 +130,60 @@
         "id": 3,
         "title": "인증 및 권한 관리 시스템 구현",
         "description": "JWT 기반 인증과 역할 기반 접근 제어(RBAC) 시스템 개발",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "2"
         ],
         "details": "- bcrypt를 이용한 비밀번호 암호화 (10 rounds)\n- JWT 토큰 생성 및 검증 로직\n- 4가지 사용자 역할 구현: ADMIN, HOLDING, BANK, CLIENT\n- 권한 검증 미들웨어 개발\n- Redis를 이용한 세션 관리 (30분 타임아웃)\n- 로그인 실패 5회 시 계정 잠금 (30분)\n- IP 기반 접근 로그 기록",
-        "testStrategy": "- 로그인/로그아웃 기능 테스트\n- 토큰 만료 테스트\n- 역할별 권한 검증 테스트\n- 계정 잠금 기능 테스트\n- 세션 타임아웃 테스트"
+        "testStrategy": "- 로그인/로그아웃 기능 테스트\n- 토큰 만료 테스트\n- 역할별 권한 검증 테스트\n- 계정 잠금 기능 테스트\n- 세션 타임아웃 테스트",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "bcrypt 기반 비밀번호 암호화 및 검증 시스템 구현",
+            "description": "사용자 회원가입 시 bcrypt를 이용한 10 rounds 비밀번호 해싱 및 로그인 시 비밀번호 검증 로직 개발",
+            "dependencies": [],
+            "details": "- bcrypt 라이브러리 설치 및 설정\n- 비밀번호 해싱 함수 구현 (10 rounds)\n- 비밀번호 검증 함수 구현\n- User 모델에 hashedPassword 필드 추가\n- 회원가입 API에 비밀번호 해싱 로직 적용\n- 보안 최적화: 타이밍 공격 방어",
+            "status": "done",
+            "testStrategy": "- bcrypt 해시 생성 및 검증 단위 테스트\n- 동일 비밀번호 다른 해시 확인\n- 잘못된 비밀번호 검증 실패 테스트\n- bcrypt rounds 성능 테스트"
+          },
+          {
+            "id": 2,
+            "title": "JWT 토큰 생성 및 검증 로직 구현",
+            "description": "Access Token과 Refresh Token을 생성하고, 요청마다 토큰을 검증하는 JWT 인증 로직 개발",
+            "dependencies": [],
+            "details": "- JWT 라이브러리 설치 및 설정\n- Access Token 생성 (권장 15분 유효기간)\n- Refresh Token 생성 (권장 7일 유효기간)\n- 토큰 서명 비밀 키 관리\n- JWT 형식 검증 (헤더, 페이로드, 서명)\n- 토큰 만료 시간 검증\n- 토큰 갱신 API 구현\n- 로그아웃 시 토큰 블랙리스트 관리",
+            "status": "done",
+            "testStrategy": "- JWT 토큰 생성 및 페이로드 검증\n- 만료된 토큰 검증 실패 테스트\n- 잘못된 서명 토큰 검증 실패 테스트\n- 토큰 갱신 API 기능 테스트\n- 토큰 타이밍 정확도 테스트"
+          },
+          {
+            "id": 3,
+            "title": "역할 기반 접근 제어(RBAC) 및 권한 검증 미들웨어 구현",
+            "description": "ADMIN, HOLDING, BANK, CLIENT 4가지 사용자 역할을 정의하고, 역할별 API 접근 권한을 검증하는 미들웨어 개발",
+            "dependencies": [],
+            "details": "- User 모델에 role 필드 추가 (ENUM: ADMIN, HOLDING, BANK, CLIENT)\n- 권한 검증 미들웨어 개발\n- 역할별 권한 매트릭스 정의\n- 보호된 라우트에 권한 검증 적용\n- 권한 부족 시 403 Forbidden 응답\n- 역할별 권한 상속 구조 설계\n- 동적 권한 검증 로직",
+            "status": "done",
+            "testStrategy": "- 각 역할별 접근 권한 테스트\n- 권한 없는 사용자 접근 거부 테스트\n- 역할 변경 시 권한 즉시 적용 테스트\n- 권한 검증 미들웨어 성능 테스트\n- 역할별 데이터 접근 범위 테스트"
+          },
+          {
+            "id": 4,
+            "title": "Redis 기반 세션 관리 및 로그인 실패 계정 잠금 기능",
+            "description": "Redis를 이용하여 세션을 관리하고, 로그인 실패 5회 시 계정을 30분간 잠금하는 보안 기능 구현",
+            "dependencies": [],
+            "details": "- Redis 연결 설정\n- 세션 저장 및 조회 로직 구현\n- 세션 타임아웃 30분 설정\n- 로그인 실패 카운트 로직 구현\n- 5회 실패 시 계정 임시 잠금 기능\n- 잠금 해제 타이머 구현 (30분)\n- 로그인 시 실패 카운트 초기화\n- Redis 키 구조 설계 (user_id:failed_attempts, user_id:locked_until)",
+            "status": "done",
+            "testStrategy": "- 세션 생성 및 저장 테스트\n- 세션 타임아웃 30분 검증\n- 로그인 실패 카운팅 테스트\n- 5회 실패 후 계정 잠금 확인\n- 잠금 상태에서 로그인 시도 거부 테스트\n- 30분 후 자동 잠금 해제 테스트\n- 성공 로그인 시 실패 카운트 초기화 테스트"
+          },
+          {
+            "id": 5,
+            "title": "IP 기반 접근 로그 기록 및 모니터링 시스템",
+            "description": "모든 인증 시도와 권한 검증 결과를 IP 주소와 함께 기록하고, 비정상 접근 패턴을 감지하는 로그 시스템 구현",
+            "dependencies": [],
+            "details": "- 요청 IP 주소 추출 로직 (X-Forwarded-For, X-Real-IP 헤더 고려)\n- authentication_logs 테이블 생성\n- 로그 기록 항목: timestamp, user_id, ip_address, action (login/logout/failed_attempt), result (success/failure), details\n- 접근 로그 기록 미들웨어\n- IP별 접근 통계 조회 API\n- 비정상 IP 접근 감지 로직\n- 로그 조회 및 필터링 API\n- 오래된 로그 자동 삭제 정책 (90일)",
+            "status": "done",
+            "testStrategy": "- IP 주소 정확하게 추출 테스트\n- 모든 로그인/로그아웃 이벤트 기록 확인\n- 실패한 로그인 시도 기록 테스트\n- IP별 접근 통계 정확도 테스트\n- 동일 IP에서의 대량 실패 시도 감지 테스트\n- 로그 조회 및 필터링 성능 테스트\n- 90일 이상 오래된 로그 자동 삭제 확인"
+          }
+        ]
       },
       {
         "id": 4,
@@ -261,7 +308,7 @@
       "generatedAt": "2025-12-11",
       "created": "2025-12-11T00:39:24.625Z",
       "description": "Tasks for master context",
-      "updated": "2025-12-11T00:52:44.856Z"
+      "updated": "2025-12-11T00:55:12.402Z"
     }
   }
 }

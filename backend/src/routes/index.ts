@@ -1,7 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { ApiResponse } from '../types';
+import authRoutes from './auth';
 
 const router = Router();
+
+// Auth routes
+router.use('/auth', authRoutes);
 
 router.get('/health', (req: Request, res: Response<ApiResponse>) => {
   res.json({
