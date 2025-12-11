@@ -2,7 +2,7 @@
  * API 클라이언트 함수
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5648/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.45:5648/api';
 
 /**
  * 파일 업로드 진행률 콜백 타입
