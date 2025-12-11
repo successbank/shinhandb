@@ -59,3 +59,4 @@ coverage/
 *.swp
 *.swo
 *~
+.mcp.json
