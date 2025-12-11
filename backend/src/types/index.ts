@@ -22,6 +22,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  meta?: any; // 메타데이터 (예: 전체 콘텐츠 수, 페이지네이션 정보 등)
 }
 
 export interface PaginatedResponse<T> {

@@ -42,7 +42,7 @@ router.post(
   logActivity('UPLOAD_CONTENT'),
   async (req: AuthRequest, res: Response<ApiResponse>, next) => {
     try {
-      const { title, description, categoryId, tags } = req.body;
+      const { title, description, categoryId, categoryIds, tags } = req.body;
       const files = req.files as Express.Multer.File[];
 
       // 파일 검증
@@ -55,14 +55,34 @@ router.post(
         throw new AppError(400, '콘텐츠 제목을 입력해주세요');
       }
 
-      // 카테고리 검증 (옵션)
-      if (categoryId) {
-        const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [
-          categoryId,
-        ]);
-        if (categoryCheck.rows.length === 0) {
-          throw new AppError(404, '존재하지 않는 카테고리입니다');
+      // 카테고리 처리 (다중 또는 단일)
+      let categoryIdsArray: string[] = [];
+
+      if (categoryIds) {
+        // 다중 카테고리 (배열)
+        categoryIdsArray = Array.isArray(categoryIds) ? categoryIds : JSON.parse(categoryIds);
+
+        // 최대 3개 제한
+        if (categoryIdsArray.length > 3) {
+          throw new AppError(400, '카테고리는 최대 3개까지 선택 가능합니다');
         }
+      } else if (categoryId) {
+        // 하위 호환성: 단일 카테고리
+        categoryIdsArray = [categoryId];
+      }
+
+      // 카테고리 필수 검증
+      if (categoryIdsArray.length === 0) {
+        throw new AppError(400, '최소 1개의 카테고리를 선택해주세요');
+      }
+
+      // 카테고리 존재 여부 검증
+      const categoryCheck = await pool.query(
+        'SELECT id FROM categories WHERE id = ANY($1)',
+        [categoryIdsArray]
+      );
+      if (categoryCheck.rows.length !== categoryIdsArray.length) {
+        throw new AppError(404, '존재하지 않는 카테고리가 포함되어 있습니다');
       }
 
       const uploadedContents = [];
@@ -122,6 +142,7 @@ router.post(
         }
 
         // 콘텐츠 DB 저장 (OCR 텍스트 포함)
+        // category_id는 하위 호환성을 위해 첫 번째 카테고리를 저장
         const result = await pool.query(
           `INSERT INTO contents
            (title, description, file_url, file_type, file_size, thumbnail_url,
@@ -135,7 +156,7 @@ router.post(
             fileType,
             fileSize,
             thumbnailUrl,
-            categoryId || null,
+            categoryIdsArray.length > 0 ? categoryIdsArray[0] : null,
             req.user!.id,
             editableUntil,
             ocrText,
@@ -143,6 +164,16 @@ router.post(
         );
 
         const newContent = result.rows[0];
+
+        // 다중 카테고리 저장 (content_categories 테이블)
+        for (const catId of categoryIdsArray) {
+          await pool.query(
+            `INSERT INTO content_categories (content_id, category_id)
+             VALUES ($1, $2)
+             ON CONFLICT (content_id, category_id) DO NOTHING`,
+            [newContent.id, catId]
+          );
+        }
 
         // 태그 추가 (수동 태그 + 자동 태그)
         const allTags: string[] = [];
@@ -221,10 +252,14 @@ router.get(
       let whereConditions: string[] = [];
       let params: any[] = [];
       let paramIndex = 1;
+      let categoryJoin = '';
 
-      // 카테고리 필터
+      // 카테고리 필터 (다중 카테고리 지원)
       if (categoryId) {
-        whereConditions.push(`c.category_id = $${paramIndex}`);
+        categoryJoin = `
+          INNER JOIN content_categories cc_filter ON c.id = cc_filter.content_id
+        `;
+        whereConditions.push(`cc_filter.category_id = $${paramIndex}`);
         params.push(categoryId);
         paramIndex++;
       }
@@ -285,12 +320,12 @@ router.get(
 
       // 전체 개수 조회
       const countResult = await pool.query(
-        `SELECT COUNT(DISTINCT c.id) FROM contents c ${tagJoin} ${whereClause}`,
+        `SELECT COUNT(DISTINCT c.id) FROM contents c ${categoryJoin} ${tagJoin} ${whereClause}`,
         params
       );
       const total = parseInt(countResult.rows[0].count);
 
-      // 콘텐츠 목록 조회 (태그 정보 포함)
+      // 콘텐츠 목록 조회 (태그 및 다중 카테고리 정보 포함)
       const result = await pool.query(
         `SELECT DISTINCT c.id, c.title, c.description, c.file_url, c.file_type, c.file_size,
                 c.thumbnail_url, c.created_at, c.updated_at,
@@ -299,10 +334,19 @@ router.get(
                 (SELECT array_agg(t2.name)
                  FROM content_tags ct2
                  INNER JOIN tags t2 ON ct2.tag_id = t2.id
-                 WHERE ct2.content_id = c.id) as tags
+                 WHERE ct2.content_id = c.id) as tags,
+                (SELECT array_agg(cat2.name)
+                 FROM content_categories cc2
+                 INNER JOIN categories cat2 ON cc2.category_id = cat2.id
+                 WHERE cc2.content_id = c.id) as category_names,
+                (SELECT array_agg(cat3.id)
+                 FROM content_categories cc3
+                 INNER JOIN categories cat3 ON cc3.category_id = cat3.id
+                 WHERE cc3.content_id = c.id) as category_ids
          FROM contents c
          LEFT JOIN users u ON c.uploader_id = u.id
          LEFT JOIN categories cat ON c.category_id = cat.id
+         ${categoryJoin}
          ${tagJoin}
          ${whereClause}
          ORDER BY c.created_at DESC
@@ -318,7 +362,9 @@ router.get(
         fileType: row.file_type,
         fileSize: formatFileSize(row.file_size),
         thumbnailUrl: row.thumbnail_url,
-        categoryName: row.category_name,
+        categoryName: row.category_name, // 하위 호환성 (첫 번째 카테고리)
+        categoryNames: row.category_names || [], // 다중 카테고리 이름
+        categoryIds: row.category_ids || [], // 다중 카테고리 ID
         uploaderName: row.uploader_name,
         uploaderRole: row.uploader_role,
         tags: row.tags || [],
@@ -384,6 +430,14 @@ router.get(
         [id]
       );
 
+      // 다중 카테고리 조회
+      const categoriesResult = await pool.query(
+        `SELECT cat.id, cat.name FROM categories cat
+         INNER JOIN content_categories cc ON cat.id = cc.category_id
+         WHERE cc.content_id = $1`,
+        [id]
+      );
+
       res.json({
         success: true,
         data: {
@@ -395,8 +449,10 @@ router.get(
           fileSize: formatFileSize(content.file_size),
           thumbnailUrl: content.thumbnail_url,
           ocrText: content.ocr_text,
-          categoryId: content.category_id,
-          categoryName: content.category_name,
+          categoryId: content.category_id, // 하위 호환성
+          categoryName: content.category_name, // 하위 호환성
+          categories: categoriesResult.rows, // 다중 카테고리
+          categoryIds: categoriesResult.rows.map((cat: any) => cat.id), // 다중 카테고리 ID
           uploaderId: content.uploader_id,
           uploaderName: content.uploader_name,
           uploaderEmail: content.uploader_email,
@@ -546,7 +602,7 @@ router.get(
   }
 );
 
-// DELETE /api/contents/:id - 콘텐츠 삭제
+// DELETE /api/contents/:id - 콘텐츠 삭제 또는 카테고리에서 제거
 router.delete(
   '/:id',
   authorize('ADMIN', 'CLIENT'),
@@ -554,6 +610,7 @@ router.delete(
   async (req: AuthRequest, res: Response<ApiResponse>, next) => {
     try {
       const { id } = req.params;
+      const categoryId = req.query.categoryId as string | undefined;
 
       // 콘텐츠 조회
       const result = await pool.query(
@@ -572,37 +629,95 @@ router.delete(
         throw new AppError(403, '본인이 업로드한 콘텐츠만 삭제할 수 있습니다');
       }
 
-      // 파일 삭제
-      const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
-      const originalPath = path.join(uploadDir, 'originals', path.basename(content.file_url));
-
-      try {
-        await fs.unlink(originalPath);
-      } catch (error) {
-        console.warn('[File Delete] Original file not found:', originalPath);
-      }
-
-      // 썸네일 삭제
-      if (content.thumbnail_url) {
-        const thumbnailPath = path.join(
-          uploadDir,
-          'thumbnails',
-          path.basename(content.thumbnail_url)
+      // categoryId가 제공된 경우: 해당 카테고리에서만 제거
+      if (categoryId) {
+        // 1. 해당 카테고리에서 콘텐츠 제거
+        await pool.query(
+          'DELETE FROM content_categories WHERE content_id = $1 AND category_id = $2',
+          [id, categoryId]
         );
-        try {
-          await fs.unlink(thumbnailPath);
-        } catch (error) {
-          console.warn('[File Delete] Thumbnail not found:', thumbnailPath);
+
+        // 2. 남은 카테고리 수 확인
+        const remainingCategoriesResult = await pool.query(
+          'SELECT COUNT(*) as count FROM content_categories WHERE content_id = $1',
+          [id]
+        );
+        const remainingCount = parseInt(remainingCategoriesResult.rows[0].count);
+
+        // 3. 남은 카테고리가 없으면 콘텐츠 완전 삭제
+        if (remainingCount === 0) {
+          // 파일 삭제
+          const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
+          const originalPath = path.join(uploadDir, 'originals', path.basename(content.file_url));
+
+          try {
+            await fs.unlink(originalPath);
+          } catch (error) {
+            console.warn('[File Delete] Original file not found:', originalPath);
+          }
+
+          // 썸네일 삭제
+          if (content.thumbnail_url) {
+            const thumbnailPath = path.join(
+              uploadDir,
+              'thumbnails',
+              path.basename(content.thumbnail_url)
+            );
+            try {
+              await fs.unlink(thumbnailPath);
+            } catch (error) {
+              console.warn('[File Delete] Thumbnail not found:', thumbnailPath);
+            }
+          }
+
+          // DB에서 완전 삭제
+          await pool.query('DELETE FROM contents WHERE id = $1', [id]);
+
+          res.json({
+            success: true,
+            message: '콘텐츠가 완전히 삭제되었습니다',
+          });
+        } else {
+          // 카테고리에서만 제거됨
+          res.json({
+            success: true,
+            message: `카테고리에서 제거되었습니다 (${remainingCount}개 카테고리에 남아있음)`,
+          });
         }
+      } else {
+        // categoryId가 없는 경우: 완전 삭제 (기존 동작)
+        // 파일 삭제
+        const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
+        const originalPath = path.join(uploadDir, 'originals', path.basename(content.file_url));
+
+        try {
+          await fs.unlink(originalPath);
+        } catch (error) {
+          console.warn('[File Delete] Original file not found:', originalPath);
+        }
+
+        // 썸네일 삭제
+        if (content.thumbnail_url) {
+          const thumbnailPath = path.join(
+            uploadDir,
+            'thumbnails',
+            path.basename(content.thumbnail_url)
+          );
+          try {
+            await fs.unlink(thumbnailPath);
+          } catch (error) {
+            console.warn('[File Delete] Thumbnail not found:', thumbnailPath);
+          }
+        }
+
+        // DB에서 삭제 (CASCADE로 content_tags, content_categories도 삭제됨)
+        await pool.query('DELETE FROM contents WHERE id = $1', [id]);
+
+        res.json({
+          success: true,
+          message: '콘텐츠가 삭제되었습니다',
+        });
       }
-
-      // DB에서 삭제 (CASCADE로 content_tags도 삭제됨)
-      await pool.query('DELETE FROM contents WHERE id = $1', [id]);
-
-      res.json({
-        success: true,
-        message: '콘텐츠가 삭제되었습니다',
-      });
     } catch (error) {
       next(error);
     }

@@ -2,7 +2,7 @@
  * API 클라이언트 함수
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.45:5648/api';
+const API_BASE_URL = '/api';
 
 /**
  * 파일 업로드 진행률 콜백 타입
@@ -27,7 +27,8 @@ export const uploadFiles = (
   metadata: {
     title: string;
     description?: string;
-    categoryId?: string;
+    categoryId?: string; // 하위 호환성
+    categoryIds?: string[]; // 다중 카테고리
     tags?: string[];
   },
   options?: UploadOptions
@@ -44,7 +45,10 @@ export const uploadFiles = (
     if (metadata.description) {
       formData.append('description', metadata.description);
     }
-    if (metadata.categoryId) {
+    if (metadata.categoryIds && metadata.categoryIds.length > 0) {
+      formData.append('categoryIds', JSON.stringify(metadata.categoryIds));
+    } else if (metadata.categoryId) {
+      // 하위 호환성
       formData.append('categoryId', metadata.categoryId);
     }
     if (metadata.tags && metadata.tags.length > 0) {
@@ -339,6 +343,14 @@ export const usersApi = {
   updateUser: (id: string, data: any) =>
     apiRequest(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteUser: (id: string) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
+  resetPassword: (id: string, sendEmail: boolean = true) =>
+    apiRequest(`/users/${id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ sendEmail }),
+    }),
+  activateUser: (id: string) =>
+    apiRequest(`/users/${id}/activate`, { method: 'POST' }),
+  getUserActivities: (id: string) => apiRequest(`/users/${id}/activities`),
 };
 
 // Logs API (Admin only)
@@ -360,8 +372,12 @@ export const logsApi = {
 export const contentApi = {
   updateContent: (id: string, data: any) =>
     apiRequest(`/contents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-  deleteContent: (id: string) =>
-    apiRequest(`/contents/${id}`, { method: 'DELETE' }),
+  deleteContent: (id: string, categoryId?: string) => {
+    const url = categoryId
+      ? `/contents/${id}?categoryId=${encodeURIComponent(categoryId)}`
+      : `/contents/${id}`;
+    return apiRequest(url, { method: 'DELETE' });
+  },
   shareContent: (id: string, expiresIn?: number) =>
     apiRequest(`/contents/${id}/share`, {
       method: 'POST',

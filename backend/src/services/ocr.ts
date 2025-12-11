@@ -32,8 +32,8 @@ const getVisionClient = (): ImageAnnotatorClient => {
         keyFilename: credentials,
       });
     } else {
-      // 기본 인증 (Application Default Credentials)
-      visionClient = new ImageAnnotatorClient();
+      // Credentials가 없으면 에러 발생
+      throw new Error('Google Cloud Vision API credentials가 설정되지 않았습니다. GOOGLE_CLOUD_VISION_API_KEY 또는 GOOGLE_APPLICATION_CREDENTIALS 환경 변수를 설정해주세요.');
     }
   }
   return visionClient;

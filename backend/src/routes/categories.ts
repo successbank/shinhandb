@@ -19,33 +19,48 @@ router.get(
       const memberType = req.query.memberType as string | undefined;
 
       let query = `
-        SELECT id, name, user_role, parent_id, "order", created_at, updated_at
-        FROM categories
+        SELECT
+          c.id,
+          c.name,
+          c.user_role,
+          c.parent_id,
+          c."order",
+          c.created_at,
+          c.updated_at,
+          COUNT(DISTINCT cc.content_id) as content_count
+        FROM categories c
+        LEFT JOIN content_categories cc ON c.id = cc.category_id
       `;
       const params: any[] = [];
 
       if (memberType) {
-        query += ' WHERE user_role = $1';
+        query += ' WHERE c.user_role = $1';
         params.push(memberType);
       }
 
-      query += ' ORDER BY "order" ASC, name ASC';
+      query += ' GROUP BY c.id, c.name, c.user_role, c.parent_id, c."order", c.created_at, c.updated_at';
+      query += ' ORDER BY c."order" ASC, c.name ASC';
 
       const result = await pool.query(query, params);
 
-      // 1차/2차 카테고리 계층 구조 생성
-      const categories = result.rows;
-      const rootCategories = categories.filter((cat) => !cat.parent_id);
-      const childCategories = categories.filter((cat) => cat.parent_id);
-
-      const hierarchicalCategories = rootCategories.map((root) => ({
-        ...root,
-        children: childCategories.filter((child) => child.parent_id === root.id),
+      // 카테고리 데이터 정리 (flat 배열로 반환 - 프론트엔드에서 계층 구조 생성)
+      const categories = result.rows.map(row => ({
+        ...row,
+        content_count: parseInt(row.content_count) || 0
       }));
+
+      // 전체 콘텐츠 수 계산 (중복 제거)
+      const totalCountResult = await pool.query(
+        'SELECT COUNT(DISTINCT id) as total FROM contents'
+      );
+      const totalContentCount = parseInt(totalCountResult.rows[0].total) || 0;
 
       res.json({
         success: true,
-        data: hierarchicalCategories,
+        data: categories, // flat 배열로 반환
+        meta: {
+          totalContentCount,
+        },
       });
     } catch (error) {
       next(error);

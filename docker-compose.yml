@@ -15,7 +15,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=${NODE_ENV}
-      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}/api
       - WATCHPACK_POLLING=true
       - NEXT_TELEMETRY_DISABLED=1
     volumes:
@@ -23,7 +22,7 @@ services:
       - /app/node_modules
       - /app/.next
     ports:
-      - "${FRONTEND_PORT}:3000"
+      - "0.0.0.0:${FRONTEND_PORT}:3000"
     networks:
       - app-network
     depends_on:
@@ -48,7 +47,7 @@ services:
       - /app/node_modules
       - /app/dist
     ports:
-      - "${BACKEND_PORT}:3001"
+      - "0.0.0.0:${BACKEND_PORT}:3001"
     networks:
       - app-network
     depends_on:
@@ -69,7 +68,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${DB_PORT}:5432"
+      - "0.0.0.0:${DB_PORT}:5432"
     networks:
       - app-network
     logging: *default-logging
@@ -87,7 +86,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "${REDIS_PORT}:6379"
+      - "0.0.0.0:${REDIS_PORT}:6379"
     networks:
       - app-network
     logging: *default-logging
@@ -97,7 +96,7 @@ services:
     container_name: ${PROJECT_NAME}_adminer
     restart: unless-stopped
     ports:
-      - "${ADMINER_PORT}:8080"
+      - "0.0.0.0:${ADMINER_PORT}:8080"
     networks:
       - app-network
     environment:

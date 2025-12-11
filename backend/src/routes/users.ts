@@ -462,4 +462,181 @@ router.post(
   }
 );
 
+// GET /api/users/:id/activities - 사용자 활동 내역 조회
+router.get(
+  '/:id/activities',
+  logActivity('VIEW_USER_ACTIVITIES'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { id } = req.params;
+
+      // 사용자 존재 확인
+      const userCheck = await pool.query(
+        'SELECT id, email, name, role FROM users WHERE id = $1',
+        [id]
+      );
+      if (userCheck.rows.length === 0) {
+        throw new AppError(404, '사용자를 찾을 수 없습니다');
+      }
+
+      const user = userCheck.rows[0];
+
+      // 1. 접속 기록 (최근 100개)
+      const loginLogs = await pool.query(
+        `SELECT id, action_type, ip_address, created_at, details
+         FROM activity_logs
+         WHERE user_id = $1 AND action_type = 'LOGIN'
+         ORDER BY created_at DESC
+         LIMIT 100`,
+        [id]
+      );
+
+      // 2. 콘텐츠 확인 기록 (최근 100개)
+      const viewLogs = await pool.query(
+        `SELECT al.id, al.created_at, al.details, c.id as content_id, c.title, c.thumbnail_url, c.file_type
+         FROM activity_logs al
+         LEFT JOIN contents c ON (al.details->>'contentId')::uuid = c.id
+         WHERE al.user_id = $1 AND al.action_type = 'VIEW_CONTENT'
+         ORDER BY al.created_at DESC
+         LIMIT 100`,
+        [id]
+      );
+
+      // 3. 공유한 콘텐츠
+      const sharedContent = await pool.query(
+        `SELECT sl.id, sl.content_id, sl.token, sl.expires_at, sl.created_at,
+                c.title, c.thumbnail_url, c.file_type
+         FROM share_links sl
+         JOIN contents c ON sl.content_id = c.id
+         WHERE sl.created_by = $1
+         ORDER BY sl.created_at DESC`,
+        [id]
+      );
+
+      // 4. 업로드한 콘텐츠 (클라이언트만)
+      let uploadedContent: any = { rows: [] };
+      if (user.role === 'CLIENT') {
+        uploadedContent = await pool.query(
+          `SELECT id, title, description, file_type, file_size, thumbnail_url,
+                  category_id, tags, ocr_text, editable_until, created_at, updated_at
+           FROM contents
+           WHERE uploader_id = $1
+           ORDER BY created_at DESC`,
+          [id]
+        );
+      }
+
+      // User-Agent 파싱 함수
+      const parseUserAgent = (ua: string) => {
+        if (!ua) return { device: 'Unknown', os: 'Unknown', browser: 'Unknown' };
+
+        // OS 감지
+        let os = 'Unknown';
+        if (ua.includes('Windows NT 10.0')) os = 'Windows 10';
+        else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
+        else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
+        else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
+        else if (ua.includes('Mac OS X')) os = 'macOS';
+        else if (ua.includes('Android')) os = 'Android';
+        else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+        else if (ua.includes('Linux')) os = 'Linux';
+
+        // 기기 감지
+        let device = 'Desktop';
+        if (ua.includes('Mobile') || ua.includes('Android')) device = 'Mobile';
+        else if (ua.includes('Tablet') || ua.includes('iPad')) device = 'Tablet';
+
+        // 브라우저 감지
+        let browser = 'Unknown';
+        if (ua.includes('Edg/')) browser = 'Edge';
+        else if (ua.includes('Chrome/')) browser = 'Chrome';
+        else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
+        else if (ua.includes('Firefox/')) browser = 'Firefox';
+        else if (ua.includes('MSIE') || ua.includes('Trident/')) browser = 'Internet Explorer';
+
+        return { device, os, browser };
+      };
+
+      // 접속 기록 포맷팅
+      const formattedLoginLogs = loginLogs.rows.map((log) => {
+        const userAgent = log.details?.userAgent || '';
+        const parsed = parseUserAgent(userAgent);
+        return {
+          id: log.id,
+          timestamp: log.created_at,
+          ipAddress: log.ip_address,
+          device: parsed.device,
+          os: parsed.os,
+          browser: parsed.browser,
+          location: '대한민국', // IP 기반 지역 조회는 별도 서비스 필요
+        };
+      });
+
+      // 콘텐츠 확인 기록 포맷팅
+      const formattedViewLogs = viewLogs.rows.map((log) => ({
+        id: log.id,
+        timestamp: log.created_at,
+        contentId: log.content_id,
+        contentTitle: log.title,
+        contentThumbnail: log.thumbnail_url,
+        contentType: log.file_type,
+      }));
+
+      // 공유 콘텐츠 포맷팅
+      const formattedShares = sharedContent.rows.map((share) => ({
+        id: share.id,
+        contentId: share.content_id,
+        contentTitle: share.title,
+        contentThumbnail: share.thumbnail_url,
+        contentType: share.file_type,
+        shareToken: share.token,
+        expiresAt: share.expires_at,
+        createdAt: share.created_at,
+        shareUrl: `${process.env.FRONTEND_URL || 'http://192.168.1.45:5647'}/share/${share.token}`,
+      }));
+
+      // 업로드 콘텐츠 포맷팅
+      const formattedUploads = uploadedContent.rows.map((content: any) => ({
+        id: content.id,
+        title: content.title,
+        description: content.description,
+        fileType: content.file_type,
+        fileSize: content.file_size,
+        thumbnailUrl: content.thumbnail_url,
+        categoryId: content.category_id,
+        tags: content.tags,
+        ocrText: content.ocr_text,
+        editableUntil: content.editable_until,
+        createdAt: content.created_at,
+        updatedAt: content.updated_at,
+        contentUrl: `${process.env.FRONTEND_URL || 'http://192.168.1.45:5647'}/contents/${content.id}`,
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          },
+          loginHistory: formattedLoginLogs,
+          viewHistory: formattedViewLogs,
+          sharedContent: formattedShares,
+          uploadedContent: formattedUploads,
+          summary: {
+            totalLogins: loginLogs.rows.length,
+            totalViews: viewLogs.rows.length,
+            totalShares: sharedContent.rows.length,
+            totalUploads: uploadedContent.rows.length,
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;
