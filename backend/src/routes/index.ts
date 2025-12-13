@@ -7,6 +7,7 @@ import tagsRoutes from './tags';
 import categoriesRoutes from './categories';
 import mypageRoutes from './mypage';
 import logsRoutes from './logs';
+import adminRoutes from './admin';
 
 const router = Router();
 
@@ -30,6 +31,9 @@ router.use('/mypage', mypageRoutes);
 
 // Activity logs routes (Admin only)
 router.use('/logs', logsRoutes);
+
+// Admin dashboard routes (Admin only)
+router.use('/admin', adminRoutes);
 
 router.get('/health', (req: Request, res: Response<ApiResponse>) => {
   res.json({
@@ -57,6 +61,7 @@ router.get('/', (req: Request, res: Response<ApiResponse>) => {
         tags: '/api/tags',
         mypage: '/api/mypage',
         logs: '/api/logs',
+        admin: '/api/admin',
       },
     },
   });

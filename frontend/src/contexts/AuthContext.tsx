@@ -5,7 +5,7 @@ import { login as apiLogin, logout as apiLogout, getCurrentUser } from '@/lib/ap
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: 'ADMIN' | 'HOLDING' | 'BANK' | 'CLIENT';
   department?: string;
@@ -15,7 +15,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -46,8 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await apiLogin(email, password);
+  const login = async (username: string, password: string) => {
+    const response = await apiLogin(username, password);
     setUser(response.data.user);
   };
 

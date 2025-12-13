@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'HOLDING', 'BANK', 'CLIENT')),
@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create index on email for faster lookups
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+-- Create index on username for faster lookups
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- Categories table

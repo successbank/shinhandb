@@ -16,7 +16,7 @@ export const loginRateLimit = (
   res: Response,
   next: NextFunction
 ) => {
-  const identifier = req.body.email || req.ip;
+  const identifier = req.body.username || req.ip;
 
   if (!identifier) {
     return next();

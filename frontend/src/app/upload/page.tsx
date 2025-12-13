@@ -386,9 +386,86 @@ export default function UploadPage() {
                     <h4 className="text-sm font-medium text-shinhan-success mb-2">
                       업로드 성공!
                     </h4>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 mb-3">
                       {uploadState.result.message || '파일이 성공적으로 업로드되었습니다'}
                     </p>
+
+                    {/* 생성된 태그 정보 표시 */}
+                    {uploadState.result.data && Array.isArray(uploadState.result.data) && (
+                      <div className="mt-4 space-y-4">
+                        {uploadState.result.data.map((content: any, index: number) => (
+                          <div key={content.id} className="bg-white p-3 rounded border border-green-300">
+                            <div className="flex items-start gap-3">
+                              {/* 썸네일 */}
+                              {content.thumbnailUrl && (
+                                <img
+                                  src={content.thumbnailUrl}
+                                  alt={content.title}
+                                  className="w-16 h-16 object-cover rounded"
+                                />
+                              )}
+
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900 mb-1">
+                                  {content.title}
+                                </p>
+
+                                {/* AI 생성 태그 */}
+                                {content.generatedTags && content.generatedTags.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-xs text-gray-600 mb-1">
+                                      🤖 AI가 생성한 태그:
+                                    </p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {content.generatedTags.map((tag: string, tagIndex: number) => (
+                                        <span
+                                          key={tagIndex}
+                                          className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 전체 태그 */}
+                                {content.allTags && content.allTags.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-600 mb-1">
+                                      전체 태그 ({content.allTags.length}개):
+                                    </p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {content.allTags.map((tag: string, tagIndex: number) => (
+                                        <span
+                                          key={tagIndex}
+                                          className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* OCR 텍스트 미리보기 */}
+                                {content.ocrText && (
+                                  <details className="mt-2">
+                                    <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                                      추출된 텍스트 보기
+                                    </summary>
+                                    <p className="text-xs text-gray-600 mt-1 p-2 bg-gray-50 rounded">
+                                      {content.ocrText.substring(0, 200)}
+                                      {content.ocrText.length > 200 && '...'}
+                                    </p>
+                                  </details>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

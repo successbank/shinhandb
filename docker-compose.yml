@@ -40,6 +40,7 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=http://localhost:${FRONTEND_PORT}
     volumes:
@@ -55,6 +56,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      elasticsearch:
+        condition: service_healthy
     logging: *default-logging
 
   database:
@@ -103,6 +106,28 @@ services:
       - ADMINER_DEFAULT_SERVER=database
     logging: *default-logging
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: ${PROJECT_NAME}_elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "0.0.0.0:${ELASTICSEARCH_PORT}:9200"
+    networks:
+      - app-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 networks:
   app-network:
     driver: bridge
@@ -110,3 +135,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  elasticsearch_data:

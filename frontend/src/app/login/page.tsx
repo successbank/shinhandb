@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       router.push('/contents');
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다');
@@ -46,17 +46,17 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-shinhan-darkGray mb-2">
-                이메일
+              <label htmlFor="username" className="block text-sm font-medium text-shinhan-darkGray mb-2">
+                아이디
               </label>
               <input
-                id="email"
-                type="email"
+                id="username"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-2 border border-shinhan-border rounded-md focus:outline-none focus:ring-2 focus:ring-shinhan-blue focus:border-transparent"
-                placeholder="이메일을 입력하세요"
+                placeholder="아이디를 입력하세요"
                 disabled={loading}
               />
             </div>

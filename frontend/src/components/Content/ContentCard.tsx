@@ -13,6 +13,7 @@ interface ContentCardProps {
   tags?: string[];
   createdAt: string;
   onClick?: () => void;
+  priority?: boolean;
 }
 
 export default function ContentCard({
@@ -25,6 +26,7 @@ export default function ContentCard({
   tags = [],
   createdAt,
   onClick,
+  priority = false,
 }: ContentCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -47,6 +49,8 @@ export default function ContentCard({
             src={thumbnailUrl}
             alt={title}
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            priority={priority}
             className="object-cover group-hover:scale-105 transition-transform"
           />
         ) : (

@@ -1,15 +1,20 @@
 import { ImageAnnotatorClient } from '@google-cloud/vision';
+import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 
 /**
  * Google Cloud Vision API를 이용한 OCR 서비스
  * - 이미지에서 텍스트 추출 (TEXT_DETECTION)
+ * - OpenAI를 활용한 지능적인 태그 생성
  * - 한글/영문 지원
  */
 
 // Google Cloud Vision API 클라이언트 초기화
 let visionClient: ImageAnnotatorClient | null = null;
+
+// OpenAI API 클라이언트 초기화
+let openaiClient: OpenAI | null = null;
 
 /**
  * Vision API 클라이언트 초기화
@@ -37,6 +42,24 @@ const getVisionClient = (): ImageAnnotatorClient => {
     }
   }
   return visionClient;
+};
+
+/**
+ * OpenAI API 클라이언트 초기화
+ */
+const getOpenAIClient = (): OpenAI => {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('OpenAI API 키가 설정되지 않았습니다. OPENAI_API_KEY 환경 변수를 설정해주세요.');
+    }
+
+    openaiClient = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiClient;
 };
 
 /**
@@ -218,4 +241,127 @@ export const isOcrSupportedFile = (filename: string): boolean => {
   const ext = path.extname(filename).toLowerCase();
   const supportedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff'];
   return supportedExtensions.includes(ext);
+};
+
+/**
+ * OpenAI를 사용한 지능적인 태그 생성
+ * - OCR로 추출한 텍스트를 분석하여 광고 콘텐츠에 적합한 태그 생성
+ * - 한국어와 영어를 모두 지원
+ * - 신한금융 광고 특화 태그 생성
+ * @param ocrText OCR로 추출한 텍스트
+ * @param maxTags 최대 태그 개수 (기본값: 10)
+ * @returns 생성된 태그 배열
+ */
+export const generateTagsWithAI = async (
+  ocrText: string,
+  maxTags: number = 10
+): Promise<string[]> => {
+  try {
+    if (!ocrText || ocrText.trim().length === 0) {
+      console.log('[AI Tag Generation] No text provided');
+      return [];
+    }
+
+    const client = getOpenAIClient();
+
+    // OpenAI API 호출
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `당신은 신한금융 광고 콘텐츠 관리 전문가입니다.
+광고 이미지에서 추출한 텍스트를 분석하여 검색과 분류에 유용한 태그를 생성합니다.
+
+태그 생성 가이드라인:
+1. 광고의 핵심 주제와 메시지를 파악
+2. 브랜드명, 상품명, 서비스명 추출
+3. 캠페인 성격 (브랜드 PR, 상품, 이벤트, CSR 등) 파악
+4. 타겟 고객층 (개인, 기업, 청년, 시니어 등) 식별
+5. 시즌/이벤트 (설날, 추석, 크리스마스 등) 관련 정보
+6. 감성/톤앤매너 (따뜻함, 신뢰, 혁신, 편리함 등)
+7. 매체/형식 (웹배너, 포스터, 영상썸네일, SNS 등)
+
+출력 형식:
+- 한국어 태그 사용 (필요시 영어 혼용)
+- 간결하고 구체적인 단어/구문
+- 최대 ${maxTags}개
+- 쉼표로 구분된 텍스트만 출력 (다른 설명 없이)
+
+예시: 신한은행, 적금, 청년, 금융상품, 브랜드 캠페인, 2024, 봄, 따뜻함, 웹배너`,
+        },
+        {
+          role: 'user',
+          content: `다음 광고 이미지에서 추출한 텍스트를 분석하여 태그를 생성해주세요:\n\n${ocrText}`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    const responseText = completion.choices[0]?.message?.content?.trim();
+
+    if (!responseText) {
+      console.warn('[AI Tag Generation] No response from OpenAI');
+      return [];
+    }
+
+    // 응답에서 태그 추출 (쉼표로 구분)
+    const tags = responseText
+      .split(',')
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => tag.length > 0 && tag.length <= 50) // 너무 긴 태그 제외
+      .slice(0, maxTags);
+
+    console.log('[AI Tag Generation] Generated tags:', tags);
+    return tags;
+  } catch (error: any) {
+    console.error('[AI Tag Generation] Error:', error.message);
+
+    // OpenAI API 에러가 발생해도 업로드는 계속 진행
+    // 기본 태그 추출 로직으로 폴백
+    return extractTagsFromText(ocrText, maxTags);
+  }
+};
+
+/**
+ * 통합 태그 생성 (OCR + AI)
+ * - OCR로 텍스트 추출
+ * - OpenAI로 지능적인 태그 생성
+ * - 실패 시 기본 태그 추출 로직으로 폴백
+ * @param imagePath 이미지 파일 경로
+ * @param maxTags 최대 태그 개수
+ * @returns { ocrText: 추출된 텍스트, tags: 생성된 태그 배열 }
+ */
+export const extractTextAndGenerateTags = async (
+  imagePath: string,
+  maxTags: number = 10
+): Promise<{ ocrText: string; tags: string[] }> => {
+  try {
+    // 1. OCR로 텍스트 추출
+    const extractedText = await extractTextFromImage(imagePath);
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      console.log('[OCR + AI] No text detected');
+      return { ocrText: '', tags: [] };
+    }
+
+    // 2. 텍스트 전처리
+    const ocrText = preprocessText(extractedText);
+
+    // 3. OpenAI로 태그 생성 (실패 시 기본 로직으로 폴백)
+    let tags: string[] = [];
+
+    try {
+      tags = await generateTagsWithAI(ocrText, maxTags);
+    } catch (aiError: any) {
+      console.warn('[OCR + AI] AI tag generation failed, using fallback:', aiError.message);
+      tags = extractTagsFromText(ocrText, maxTags);
+    }
+
+    return { ocrText, tags };
+  } catch (error: any) {
+    console.error('[OCR + AI] Error:', error.message);
+    return { ocrText: '', tags: [] };
+  }
 };

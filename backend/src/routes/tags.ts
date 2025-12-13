@@ -4,6 +4,7 @@ import { pool } from '../db';
 import { AppError } from '../middlewares/errorHandler';
 import { logActivity } from '../middlewares/activityLog';
 import { authenticate, authorize } from '../middlewares/auth';
+import { getCache, setCache, deleteCache, deleteCachePattern, CacheKeys, CacheTTL } from '../services/cache.service';
 
 const router = Router();
 
@@ -45,13 +46,23 @@ router.get(
   }
 );
 
-// GET /api/tags/popular - 인기 태그 조회
+// GET /api/tags/popular - 인기 태그 조회 (캐싱 적용)
 router.get(
   '/popular',
   logActivity('VIEW_POPULAR_TAGS'),
   async (req: AuthRequest, res: Response<ApiResponse>, next) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
+      const cacheKey = CacheKeys.popularTags(limit);
+
+      // 캐시 확인
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('[Tags] Cache hit:', cacheKey);
+        return res.json(cached);
+      }
+
+      console.log('[Tags] Cache miss, querying DB:', cacheKey);
 
       const result = await pool.query(
         `SELECT id, name, usage_count, created_at
@@ -62,10 +73,15 @@ router.get(
         [limit]
       );
 
-      res.json({
+      const response = {
         success: true,
         data: result.rows,
-      });
+      };
+
+      // 캐시 저장 (10분)
+      await setCache(cacheKey, response, CacheTTL.popularTags);
+
+      res.json(response);
     } catch (error) {
       next(error);
     }
@@ -219,6 +235,9 @@ router.post(
         [contentId, tagId]
       );
 
+      // 인기 태그 캐시 무효화
+      await deleteCachePattern('popular_tags:*');
+
       res.json({
         success: true,
         message: '태그가 추가되었습니다',
@@ -251,6 +270,9 @@ router.delete(
         'UPDATE tags SET usage_count = GREATEST(usage_count - 1, 0) WHERE id = $1',
         [tagId]
       );
+
+      // 인기 태그 캐시 무효화
+      await deleteCachePattern('popular_tags:*');
 
       res.json({
         success: true,

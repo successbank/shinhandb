@@ -7,11 +7,10 @@ import { authenticate, authorize } from '../middlewares/auth';
 import { uploadMultiple, getFileType, formatFileSize } from '../utils/upload';
 import { generateThumbnail, isImageFile } from '../utils/thumbnail';
 import {
-  extractTextFromImage,
-  preprocessText,
-  extractTagsFromText,
+  extractTextAndGenerateTags,
   isOcrSupportedFile,
 } from '../services/ocr';
+import { indexContent, deleteContentIndex, searchContents } from '../services/elasticsearch.service';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -109,29 +108,25 @@ router.post(
           }
         }
 
-        // OCR 텍스트 추출 (이미지 파일만)
+        // OCR + AI 태그 생성 (이미지 파일만)
         let ocrText: string | null = null;
         let autoTags: string[] = [];
 
         if (isOcrSupportedFile(file.filename)) {
           try {
-            console.log('[OCR] Processing file:', file.filename);
+            console.log('[OCR + AI] Processing file:', file.filename);
             const originalPath = file.path;
 
-            // 텍스트 추출
-            const extractedText = await extractTextFromImage(originalPath);
+            // OCR 텍스트 추출 + OpenAI 태그 생성
+            const result = await extractTextAndGenerateTags(originalPath, 10);
 
-            if (extractedText && extractedText.trim().length > 0) {
-              // 텍스트 전처리
-              ocrText = preprocessText(extractedText);
+            ocrText = result.ocrText || null;
+            autoTags = result.tags || [];
 
-              // 자동 태그 추출
-              autoTags = extractTagsFromText(ocrText, 10);
-              console.log('[OCR] Auto tags generated:', autoTags);
-            }
+            console.log('[OCR + AI] Auto tags generated:', autoTags);
           } catch (error: any) {
-            console.warn('[OCR] Warning - OCR failed for file:', file.filename, error.message);
-            // OCR 실패는 업로드를 막지 않음 (경고만 표시)
+            console.warn('[OCR + AI] Warning - Processing failed for file:', file.filename, error.message);
+            // OCR/AI 실패는 업로드를 막지 않음 (경고만 표시)
           }
         }
 
@@ -217,14 +212,138 @@ router.post(
           thumbnailUrl: newContent.thumbnail_url,
           fileSize: formatFileSize(fileSize),
           fileType,
+          ocrText: ocrText || undefined,
+          generatedTags: autoTags.length > 0 ? autoTags : undefined,
+          allTags: uniqueTags.length > 0 ? uniqueTags : undefined,
           createdAt: newContent.created_at,
         });
+
+        // Elasticsearch 색인 추가
+        try {
+          // 카테고리 이름 조회
+          const categoryNamesResult = await pool.query(
+            `SELECT name FROM categories WHERE id = ANY($1)`,
+            [categoryIdsArray]
+          );
+          const categoryNames = categoryNamesResult.rows.map((row: any) => row.name);
+
+          // Elasticsearch에 콘텐츠 색인
+          await indexContent({
+            id: newContent.id,
+            title,
+            description: description || null,
+            ocr_text: ocrText,
+            file_name: file.filename,
+            file_type: fileType,
+            file_size: fileSize,
+            category_ids: categoryIdsArray,
+            category_names: categoryNames,
+            tags: uniqueTags,
+            uploader_id: req.user!.id,
+            uploader_name: req.user!.name,
+            member_type: req.user!.role,
+            created_at: newContent.created_at,
+            updated_at: newContent.created_at,
+          });
+          console.log(`[Upload] Content indexed to Elasticsearch: ${newContent.id}`);
+        } catch (esError: any) {
+          console.error('[Upload] Failed to index content to Elasticsearch:', esError.message);
+          // Elasticsearch 실패는 업로드를 막지 않음
+        }
       }
 
       res.status(201).json({
         success: true,
         message: `${uploadedContents.length}개의 파일이 업로드되었습니다`,
         data: uploadedContents,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /api/contents/search - Elasticsearch 전문 검색 (우선 배치)
+router.get(
+  '/search',
+  logActivity('SEARCH_CONTENTS'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 20;
+      const query = req.query.q as string | undefined; // 검색어
+      const categoryIds = req.query.categoryIds as string | undefined; // 쉼표로 구분된 카테고리 ID
+      const memberType = req.query.memberType as string | undefined;
+      const tags = req.query.tags as string | undefined; // 쉼표로 구분된 태그
+      const fromDate = req.query.fromDate as string | undefined;
+      const toDate = req.query.toDate as string | undefined;
+      const sortBy = (req.query.sortBy as 'relevance' | 'date_desc' | 'date_asc') || 'relevance';
+
+      // 카테고리 ID 배열 변환
+      const categoryIdsArray = categoryIds
+        ? categoryIds.split(',').map((id) => id.trim()).filter(Boolean)
+        : undefined;
+
+      // 태그 배열 변환
+      const tagsArray = tags
+        ? tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+        : undefined;
+
+      // 날짜 변환
+      const fromDateObj = fromDate ? new Date(fromDate) : undefined;
+      const toDateObj = toDate ? new Date(toDate) : undefined;
+
+      // Elasticsearch 검색 실행
+      const result = await searchContents({
+        query,
+        categoryIds: categoryIdsArray,
+        memberType,
+        tags: tagsArray,
+        fromDate: fromDateObj,
+        toDate: toDateObj,
+        page,
+        limit: pageSize,
+        sortBy,
+      });
+
+      // 응답 포맷팅
+      const contents = result.hits.map((hit: any) => ({
+        id: hit.id,
+        title: hit.title,
+        description: hit.description,
+        fileUrl: hit.file_url,
+        fileType: hit.file_type,
+        fileSize: formatFileSize(hit.file_size),
+        thumbnailUrl: hit.thumbnail_url,
+        categoryIds: hit.category_ids,
+        categoryNames: hit.category_names,
+        uploaderName: hit.uploader_name,
+        uploaderRole: hit.member_type,
+        tags: hit.tags,
+        createdAt: hit.created_at,
+        updatedAt: hit.updated_at,
+        score: hit._score, // 관련성 점수
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          items: contents,
+          total: result.total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(result.total / pageSize),
+          took: result.took, // 검색 소요 시간 (ms)
+          filters: {
+            query,
+            categoryIds: categoryIdsArray,
+            memberType,
+            tags: tagsArray,
+            fromDate,
+            toDate,
+            sortBy,
+          },
+        },
       });
     } catch (error) {
       next(error);
@@ -469,6 +588,155 @@ router.get(
   }
 );
 
+// PATCH /api/contents/:id - 콘텐츠 업데이트 (태그 수정 등)
+router.patch(
+  '/:id',
+  authorize('ADMIN', 'CLIENT'),
+  logActivity('UPDATE_CONTENT'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { id } = req.params;
+      const { title, description, tags } = req.body;
+
+      // 콘텐츠 조회
+      const contentResult = await pool.query(
+        'SELECT id, uploader_id, editable_until FROM contents WHERE id = $1',
+        [id]
+      );
+
+      if (contentResult.rows.length === 0) {
+        throw new AppError(404, '콘텐츠를 찾을 수 없습니다');
+      }
+
+      const content = contentResult.rows[0];
+
+      // 권한 확인
+      if (req.user!.role !== 'ADMIN' && content.uploader_id !== req.user!.id) {
+        throw new AppError(403, '본인이 업로드한 콘텐츠만 수정할 수 있습니다');
+      }
+
+      // CLIENT의 경우 editable_until 확인
+      if (req.user!.role === 'CLIENT' && content.editable_until) {
+        const now = new Date();
+        const editableUntil = new Date(content.editable_until);
+        if (now > editableUntil) {
+          throw new AppError(403, '수정 가능 시간이 만료되었습니다');
+        }
+      }
+
+      // 콘텐츠 기본 정보 업데이트
+      const updateFields: string[] = [];
+      const updateValues: any[] = [];
+      let paramIndex = 1;
+
+      if (title) {
+        updateFields.push(`title = $${paramIndex}`);
+        updateValues.push(title);
+        paramIndex++;
+      }
+
+      if (description !== undefined) {
+        updateFields.push(`description = $${paramIndex}`);
+        updateValues.push(description);
+        paramIndex++;
+      }
+
+      if (updateFields.length > 0) {
+        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+        updateValues.push(id);
+        await pool.query(
+          `UPDATE contents SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`,
+          updateValues
+        );
+      }
+
+      // 태그 업데이트
+      if (tags && Array.isArray(tags)) {
+        // 기존 태그 연결 삭제
+        await pool.query('DELETE FROM content_tags WHERE content_id = $1', [id]);
+
+        // 새 태그 추가
+        for (const tagName of tags) {
+          if (!tagName || tagName.trim().length === 0) continue;
+
+          // 태그 존재 확인 또는 생성
+          const tagResult = await pool.query(
+            `INSERT INTO tags (name) VALUES ($1)
+             ON CONFLICT (name) DO UPDATE SET usage_count = tags.usage_count + 1
+             RETURNING id`,
+            [tagName.trim()]
+          );
+          const tagId = tagResult.rows[0].id;
+
+          // 콘텐츠-태그 연결
+          await pool.query(
+            'INSERT INTO content_tags (content_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [id, tagId]
+          );
+        }
+
+        // Elasticsearch 색인 업데이트
+        try {
+          const updatedContent = await pool.query(
+            `SELECT c.*, u.name as uploader_name, u.role as member_type
+             FROM contents c
+             LEFT JOIN users u ON c.uploader_id = u.id
+             WHERE c.id = $1`,
+            [id]
+          );
+
+          if (updatedContent.rows.length > 0) {
+            const contentData = updatedContent.rows[0];
+
+            // 카테고리 이름 조회
+            const categoryNamesResult = await pool.query(
+              `SELECT cat.name FROM content_categories cc
+               INNER JOIN categories cat ON cc.category_id = cat.id
+               WHERE cc.content_id = $1`,
+              [id]
+            );
+            const categoryNames = categoryNamesResult.rows.map((row: any) => row.name);
+
+            // 카테고리 ID 조회
+            const categoryIdsResult = await pool.query(
+              `SELECT category_id FROM content_categories WHERE content_id = $1`,
+              [id]
+            );
+            const categoryIds = categoryIdsResult.rows.map((row: any) => row.category_id);
+
+            await indexContent({
+              id: contentData.id,
+              title: contentData.title,
+              description: contentData.description,
+              ocr_text: contentData.ocr_text,
+              file_name: contentData.file_url?.split('/').pop() || '',
+              file_type: contentData.file_type,
+              file_size: contentData.file_size,
+              category_ids: categoryIds,
+              category_names: categoryNames,
+              tags: tags,
+              uploader_id: contentData.uploader_id,
+              uploader_name: contentData.uploader_name,
+              member_type: contentData.member_type,
+              created_at: contentData.created_at,
+              updated_at: new Date(),
+            });
+          }
+        } catch (esError: any) {
+          console.error('[Update] Failed to update Elasticsearch index:', esError.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: '콘텐츠가 업데이트되었습니다',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // PATCH /api/contents/:id/extend-edit - 수정 시간 연장 (Admin only)
 router.patch(
   '/:id/extend-edit',
@@ -673,6 +941,14 @@ router.delete(
           // DB에서 완전 삭제
           await pool.query('DELETE FROM contents WHERE id = $1', [id]);
 
+          // Elasticsearch 색인 삭제
+          try {
+            await deleteContentIndex(id);
+            console.log(`[Delete] Content removed from Elasticsearch: ${id}`);
+          } catch (esError: any) {
+            console.error('[Delete] Failed to remove content from Elasticsearch:', esError.message);
+          }
+
           res.json({
             success: true,
             message: '콘텐츠가 완전히 삭제되었습니다',
@@ -712,6 +988,14 @@ router.delete(
 
         // DB에서 삭제 (CASCADE로 content_tags, content_categories도 삭제됨)
         await pool.query('DELETE FROM contents WHERE id = $1', [id]);
+
+        // Elasticsearch 색인 삭제
+        try {
+          await deleteContentIndex(id);
+          console.log(`[Delete] Content removed from Elasticsearch: ${id}`);
+        } catch (esError: any) {
+          console.error('[Delete] Failed to remove content from Elasticsearch:', esError.message);
+        }
 
         res.json({
           success: true,

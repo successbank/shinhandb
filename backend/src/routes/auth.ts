@@ -21,20 +21,20 @@ router.post(
   logActivity('LOGIN_ATTEMPT'),
   async (req: Request, res: Response<ApiResponse>, next) => {
     try {
-      const { email, password } = req.body;
+      const { username, password } = req.body;
 
-      if (!email || !password) {
-        throw new AppError(400, '이메일과 비밀번호를 입력해주세요');
+      if (!username || !password) {
+        throw new AppError(400, '아이디와 비밀번호를 입력해주세요');
       }
 
       const result = await pool.query(
-        'SELECT id, email, name, password, role, is_active FROM users WHERE email = $1',
-        [email]
+        'SELECT id, username, name, password, role, is_active FROM users WHERE username = $1',
+        [username]
       );
 
       if (result.rows.length === 0) {
-        recordLoginFailure(email);
-        throw new AppError(401, '이메일 또는 비밀번호가 올바르지 않습니다');
+        recordLoginFailure(username);
+        throw new AppError(401, '아이디 또는 비밀번호가 올바르지 않습니다');
       }
 
       const user = result.rows[0];
@@ -46,11 +46,11 @@ router.post(
       const isPasswordValid = await comparePassword(password, user.password);
 
       if (!isPasswordValid) {
-        recordLoginFailure(email);
-        throw new AppError(401, '이메일 또는 비밀번호가 올바르지 않습니다');
+        recordLoginFailure(username);
+        throw new AppError(401, '아이디 또는 비밀번호가 올바르지 않습니다');
       }
 
-      clearLoginAttempts(email);
+      clearLoginAttempts(username);
 
       const token = generateToken(user);
 

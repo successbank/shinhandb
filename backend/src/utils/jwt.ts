@@ -6,14 +6,14 @@ const JWT_EXPIRES_IN = '8h';
 
 export interface JWTPayload {
   userId: string;
-  email: string;
+  username: string;
   role: User['role'];
 }
 
-export const generateToken = (user: Pick<User, 'id' | 'email' | 'role'>): string => {
+export const generateToken = (user: Pick<User, 'id' | 'username' | 'role'>): string => {
   const payload: JWTPayload = {
     userId: user.id,
-    email: user.email,
+    username: user.username,
     role: user.role,
   };
 

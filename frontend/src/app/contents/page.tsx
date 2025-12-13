@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getContents, contentApi } from '@/lib/api';
+import { getContents, contentApi, getContentById } from '@/lib/api';
 import { tagsApi, categoriesApi } from '@/lib/api';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 import ContentCard from '@/components/Content/ContentCard';
 import ContentList from '@/components/Content/ContentList';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
+import ContentDetailModal from '@/components/Content/ContentDetailModal';
 
 type ViewMode = 'gallery' | 'list';
 
@@ -21,18 +22,29 @@ export default function ContentsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [fileType, setFileType] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [popularTags, setPopularTags] = useState<any[]>([]);
   const [totalContentCount, setTotalContentCount] = useState<number>(0);
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
+  const [showRecent, setShowRecent] = useState(false);
+
+  // 무한 스크롤을 위한 ref
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // 관리 기능 상태
   const [selectedContent, setSelectedContent] = useState<any>(null);
   const [showManageMenu, setShowManageMenu] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
+
+  // 모달 상태
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const [currentContentIndex, setCurrentContentIndex] = useState<number>(0);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -41,15 +53,53 @@ export default function ContentsPage() {
   }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    loadCategories();
-    loadPopularTags();
-  }, []);
+    if (isAuthenticated) {
+      loadCategories();
+      loadPopularTags();
+      loadRecentlyViewed();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadContents();
+      // 검색 조건 변경 시 페이지 리셋
+      setPage(1);
+      setContents([]);
+      setHasMore(true);
+      loadContents(true);
     }
-  }, [page, search, categoryId, fileType, isAuthenticated]);
+  }, [search, categoryId, fileType, isAuthenticated]);
+
+  // 무한 스크롤 Intersection Observer
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loading]);
+
+  useEffect(() => {
+    if (page > 1 && isAuthenticated) {
+      loadContents(false);
+    }
+  }, [page]);
 
   const loadCategories = async () => {
     try {
@@ -73,28 +123,66 @@ export default function ContentsPage() {
     }
   };
 
-  const loadContents = async () => {
+  const loadContents = async (reset: boolean = false) => {
     setLoading(true);
     try {
-      const params: any = { page, pageSize: 20 };
+      const params: any = { page: reset ? 1 : page, pageSize: 20 };
       if (search) params.search = search;
       if (categoryId) params.categoryId = categoryId;
       if (fileType) params.fileType = fileType;
 
       const response = await getContents(params);
-      setContents(response.data?.items || []);
+      const newContents = response.data?.items || [];
+
+      if (reset) {
+        setContents(newContents);
+      } else {
+        setContents((prev) => [...prev, ...newContents]);
+      }
+
       setTotalPages(response.data?.totalPages || 1);
+      setHasMore(newContents.length === 20); // 20개 미만이면 더 이상 없음
     } catch (error) {
       console.error('콘텐츠 로드 실패:', error);
+      setHasMore(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecentlyViewed = async () => {
+    try {
+      const recentIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      if (recentIds.length === 0) {
+        setRecentlyViewed([]);
+        return;
+      }
+
+      // 최대 10개만 로드
+      const idsToLoad = recentIds.slice(0, 10);
+      const recentContents = await Promise.all(
+        idsToLoad.map(async (id: string) => {
+          try {
+            const response = await getContentById(id);
+            return response.data;
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+
+      setRecentlyViewed(recentContents.filter((c) => c !== null));
+    } catch (err) {
+      console.error('최근 본 콘텐츠 로드 실패:', err);
     }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    loadContents();
+    setContents([]);
+    setHasMore(true);
+    loadContents(true);
   };
 
   // 관리 기능 함수들
@@ -121,7 +209,10 @@ export default function ContentsPage() {
         : '콘텐츠가 삭제되었습니다';
 
       alert(message);
-      loadContents(); // 목록 새로고침
+      setPage(1);
+      setContents([]);
+      setHasMore(true);
+      loadContents(true); // 목록 새로고침
       loadCategories(); // 카테고리 카운트 업데이트
       setShowManageMenu(null);
     } catch (error: any) {
@@ -159,6 +250,44 @@ export default function ContentsPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('링크가 클립보드에 복사되었습니다');
+  };
+
+  const handleContentClick = (contentId: string, index?: number) => {
+    setSelectedContentId(contentId);
+    setShowDetailModal(true);
+    if (typeof index === 'number') {
+      setCurrentContentIndex(index);
+    }
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedContentId(null);
+  };
+
+  const handleTagClickFromModal = (tag: string) => {
+    setSearch(tag);
+    setPage(1);
+    setContents([]);
+    setHasMore(true);
+    setShowDetailModal(false);
+    // 검색 실행
+    setTimeout(() => {
+      loadContents(true);
+    }, 100);
+  };
+
+  const handleNavigateContent = (direction: 'prev' | 'next') => {
+    let newIndex = currentContentIndex;
+
+    if (direction === 'prev') {
+      newIndex = currentContentIndex > 0 ? currentContentIndex - 1 : contents.length - 1;
+    } else {
+      newIndex = currentContentIndex < contents.length - 1 ? currentContentIndex + 1 : 0;
+    }
+
+    setCurrentContentIndex(newIndex);
+    setSelectedContentId(contents[newIndex].id);
   };
 
   if (authLoading) {
@@ -252,10 +381,60 @@ export default function ContentsPage() {
               )}
             </div>
 
+            {/* 최근 본 콘텐츠 */}
+            {recentlyViewed.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-shinhan-darkGray flex items-center gap-2">
+                    🕐 최근 본 콘텐츠 ({recentlyViewed.length}개)
+                  </h3>
+                  <button
+                    onClick={() => setShowRecent(!showRecent)}
+                    className="text-sm text-shinhan-blue hover:underline"
+                  >
+                    {showRecent ? '숨기기' : '보기'}
+                  </button>
+                </div>
+                {showRecent && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {recentlyViewed.map((content, index) => (
+                      <div
+                        key={content.id}
+                        onClick={() => handleContentClick(content.id, index)}
+                        className="cursor-pointer group"
+                      >
+                        <div className="relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden mb-2">
+                          {content.thumbnailUrl ? (
+                            <img
+                              src={content.thumbnailUrl}
+                              alt={content.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-4xl">🖼️</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-900 font-medium truncate">{content.title}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 뷰 모드 전환 */}
             <div className="flex justify-between items-center mb-4">
               <p className="text-shinhan-darkGray">
-                총 <span className="font-bold text-shinhan-blue">{contents.length}</span>개의 콘텐츠
+                {loading && page === 1 ? (
+                  '로딩 중...'
+                ) : (
+                  <>
+                    총 <span className="font-bold text-shinhan-blue">{contents.length}</span>개의 콘텐츠
+                    {hasMore && ' (더 보기 가능)'}
+                  </>
+                )}
               </p>
               <div className="flex gap-2">
                 <button
@@ -282,8 +461,9 @@ export default function ContentsPage() {
             </div>
 
             {/* 콘텐츠 목록 */}
-            {loading ? (
+            {loading && page === 1 ? (
               <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-shinhan-blue mb-4"></div>
                 <p className="text-shinhan-darkGray">로딩 중...</p>
               </div>
             ) : contents.length === 0 ? (
@@ -292,9 +472,13 @@ export default function ContentsPage() {
               </div>
             ) : viewMode === 'gallery' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {contents.map((content) => (
+                {contents.map((content, index) => (
                   <div key={content.id} className="relative">
-                    <ContentCard {...content} />
+                    <ContentCard
+                      {...content}
+                      priority={index === 0}
+                      onClick={() => handleContentClick(content.id, index)}
+                    />
                     {user?.role === 'ADMIN' && (
                       <div className="absolute top-2 right-2 z-10">
                         <button
@@ -349,7 +533,10 @@ export default function ContentsPage() {
               <div className="space-y-4">
                 {contents.map((content) => (
                   <div key={content.id} className="relative">
-                    <ContentList {...content} />
+                    <ContentList
+                      {...content}
+                      onClick={() => handleContentClick(content.id, contents.findIndex(c => c.id === content.id))}
+                    />
                     {user?.role === 'ADMIN' && (
                       <div className="absolute top-4 right-4 z-10">
                         <button
@@ -402,32 +589,39 @@ export default function ContentsPage() {
               </div>
             )}
 
-            {/* 페이지네이션 */}
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-8">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 border border-shinhan-border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  이전
-                </button>
-                <span className="px-4 py-2 text-shinhan-darkGray">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 border border-shinhan-border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  다음
-                </button>
+            {/* 무한 스크롤 로딩 인디케이터 */}
+            {hasMore && contents.length > 0 && (
+              <div ref={observerTarget} className="flex justify-center py-8">
+                {loading ? (
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-shinhan-blue"></div>
+                ) : (
+                  <div className="text-sm text-gray-500">스크롤하여 더 보기</div>
+                )}
+              </div>
+            )}
+
+            {/* 더 이상 콘텐츠가 없을 때 */}
+            {!hasMore && contents.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500">모든 콘텐츠를 불러왔습니다</p>
               </div>
             )}
           </div>
         </main>
         </div>
       </div>
+
+      {/* 콘텐츠 상세 모달 */}
+      {showDetailModal && selectedContentId && (
+        <ContentDetailModal
+          contentId={selectedContentId}
+          isOpen={showDetailModal}
+          onClose={handleCloseDetailModal}
+          onTagClick={handleTagClickFromModal}
+          onNavigate={handleNavigateContent}
+          userRole={user?.role}
+        />
+      )}
 
       {/* 공유 링크 모달 */}
       {showShareModal && selectedContent && (

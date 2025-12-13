@@ -25,7 +25,7 @@ export const authenticate = async (
 
     // Fetch user from database
     const result = await pool.query(
-      'SELECT id, email, name, role, is_active FROM users WHERE id = $1',
+      'SELECT id, username, name, role, is_active FROM users WHERE id = $1',
       [payload.userId]
     );
 

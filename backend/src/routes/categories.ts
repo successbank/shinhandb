@@ -4,19 +4,32 @@ import { pool } from '../db';
 import { AppError } from '../middlewares/errorHandler';
 import { logActivity } from '../middlewares/activityLog';
 import { authenticate, authorize } from '../middlewares/auth';
+import { getCache, setCache, deleteCache, CacheKeys, CacheTTL } from '../services/cache.service';
 
 const router = Router();
 
 // 모든 카테고리 API는 인증 필요
 router.use(authenticate);
 
-// GET /api/categories - 카테고리 목록 조회
+// GET /api/categories - 카테고리 목록 조회 (캐싱 적용)
 router.get(
   '/',
   logActivity('VIEW_CATEGORIES'),
   async (req: AuthRequest, res: Response<ApiResponse>, next) => {
     try {
       const memberType = req.query.memberType as string | undefined;
+      const cacheKey = memberType
+        ? CacheKeys.categories(memberType)
+        : CacheKeys.categories('all');
+
+      // 캐시 확인
+      const cached = await getCache(cacheKey);
+      if (cached) {
+        console.log('[Categories] Cache hit:', cacheKey);
+        return res.json(cached);
+      }
+
+      console.log('[Categories] Cache miss, querying DB:', cacheKey);
 
       let query = `
         SELECT
@@ -55,13 +68,18 @@ router.get(
       );
       const totalContentCount = parseInt(totalCountResult.rows[0].total) || 0;
 
-      res.json({
+      const response = {
         success: true,
         data: categories, // flat 배열로 반환
         meta: {
           totalContentCount,
         },
-      });
+      };
+
+      // 캐시 저장 (1시간)
+      await setCache(cacheKey, response, CacheTTL.categories);
+
+      res.json(response);
     } catch (error) {
       next(error);
     }
@@ -103,6 +121,10 @@ router.post(
          RETURNING id, name, user_role, parent_id, "order", created_at`,
         [name, memberType, parentId || null, sortOrder || 0]
       );
+
+      // 캐시 무효화
+      await deleteCache(CacheKeys.categories(memberType));
+      await deleteCache(CacheKeys.categories('all'));
 
       res.status(201).json({
         success: true,
@@ -159,6 +181,10 @@ router.patch(
         throw new AppError(404, '카테고리를 찾을 수 없습니다');
       }
 
+      // 캐시 무효화
+      await deleteCache(CacheKeys.categories(result.rows[0].user_role));
+      await deleteCache(CacheKeys.categories('all'));
+
       res.json({
         success: true,
         message: '카테고리가 수정되었습니다',
@@ -202,15 +228,75 @@ router.delete(
         );
       }
 
-      const result = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
+      const result = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING id, user_role', [id]);
 
       if (result.rows.length === 0) {
         throw new AppError(404, '카테고리를 찾을 수 없습니다');
       }
 
+      // 캐시 무효화
+      await deleteCache(CacheKeys.categories(result.rows[0].user_role));
+      await deleteCache(CacheKeys.categories('all'));
+
       res.json({
         success: true,
         message: '카테고리가 삭제되었습니다',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// PUT /api/categories/reorder - 카테고리 순서 일괄 변경 (드래그 앤 드롭)
+router.put(
+  '/reorder',
+  authorize('ADMIN'),
+  logActivity('REORDER_CATEGORIES'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { items } = req.body;
+
+      // 입력 검증
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        throw new AppError(400, '변경할 카테고리 순서 정보를 입력해주세요');
+      }
+
+      // 모든 항목에 id와 order가 있는지 확인
+      for (const item of items) {
+        if (!item.id || item.order === undefined) {
+          throw new AppError(400, '각 항목에 id와 order가 필요합니다');
+        }
+      }
+
+      // 트랜잭션으로 일괄 업데이트
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        for (const item of items) {
+          await client.query(
+            'UPDATE categories SET "order" = $1, updated_at = NOW() WHERE id = $2',
+            [item.order, item.id]
+          );
+        }
+
+        await client.query('COMMIT');
+
+        // 캐시 무효화
+        await deleteCache(CacheKeys.categories('HOLDING'));
+        await deleteCache(CacheKeys.categories('BANK'));
+        await deleteCache(CacheKeys.categories('all'));
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      res.json({
+        success: true,
+        message: `${items.length}개 카테고리의 순서가 변경되었습니다`,
       });
     } catch (error) {
       next(error);

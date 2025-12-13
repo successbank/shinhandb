@@ -60,3 +60,8 @@ coverage/
 *.swo
 *~
 .mcp.json
+
+# Archive files
+*.tar.gz
+*.zip
+*.rar
