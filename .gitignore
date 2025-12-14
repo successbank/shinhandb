@@ -47,6 +47,7 @@ redis_data/
 
 # Backup files
 src_backup/
+backups/
 
 # Uploads
 backend/uploads/

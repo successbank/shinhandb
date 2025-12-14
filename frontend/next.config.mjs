@@ -12,11 +12,11 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://backend:3001/api/:path*',
+        destination: 'http://shinhandb_backend:3001/api/:path*',
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://backend:3001/uploads/:path*',
+        destination: 'http://shinhandb_backend:3001/uploads/:path*',
       },
     ];
   },
@@ -30,7 +30,7 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: 'backend',
+        hostname: 'shinhandb_backend',
         port: '3001',
         pathname: '/uploads/**',
       },

@@ -89,6 +89,8 @@ router.post(
       for (const file of files) {
         // 파일 정보
         const fileUrl = `/uploads/originals/${file.filename}`;
+        // 한글 파일명 인코딩 문제 해결: latin1 -> utf8 변환
+        const fileName = Buffer.from(file.originalname, 'latin1').toString('utf8');
         const fileType = getFileType(file.mimetype);
         const fileSize = file.size;
 
@@ -140,14 +142,15 @@ router.post(
         // category_id는 하위 호환성을 위해 첫 번째 카테고리를 저장
         const result = await pool.query(
           `INSERT INTO contents
-           (title, description, file_url, file_type, file_size, thumbnail_url,
+           (title, description, file_url, file_name, file_type, file_size, thumbnail_url,
             category_id, uploader_id, editable_until, ocr_text)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-           RETURNING id, title, file_url, thumbnail_url, created_at`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           RETURNING id, title, file_url, file_name, thumbnail_url, created_at`,
           [
             title,
             description || null,
             fileUrl,
+            fileName,
             fileType,
             fileSize,
             thumbnailUrl,
@@ -217,6 +220,10 @@ router.post(
           allTags: uniqueTags.length > 0 ? uniqueTags : undefined,
           createdAt: newContent.created_at,
         });
+
+        // 카테고리 캐시 무효화 (콘텐츠 수 업데이트를 위해)
+        const { deleteCachePattern } = await import('../services/cache.service');
+        await deleteCachePattern('categories:*');
 
         // Elasticsearch 색인 추가
         try {
@@ -446,7 +453,7 @@ router.get(
 
       // 콘텐츠 목록 조회 (태그 및 다중 카테고리 정보 포함)
       const result = await pool.query(
-        `SELECT DISTINCT c.id, c.title, c.description, c.file_url, c.file_type, c.file_size,
+        `SELECT DISTINCT c.id, c.title, c.description, c.file_url, c.file_name, c.file_type, c.file_size,
                 c.thumbnail_url, c.created_at, c.updated_at,
                 u.name as uploader_name, u.role as uploader_role,
                 cat.name as category_name,
@@ -478,6 +485,7 @@ router.get(
         title: row.title,
         description: row.description,
         fileUrl: row.file_url,
+        fileName: row.file_name,
         fileType: row.file_type,
         fileSize: formatFileSize(row.file_size),
         thumbnailUrl: row.thumbnail_url,
@@ -526,7 +534,7 @@ router.get(
 
       const result = await pool.query(
         `SELECT c.*,
-                u.name as uploader_name, u.email as uploader_email, u.role as uploader_role,
+                u.name as uploader_name, u.username as uploader_username, u.role as uploader_role,
                 cat.name as category_name
          FROM contents c
          LEFT JOIN users u ON c.uploader_id = u.id
@@ -564,6 +572,7 @@ router.get(
           title: content.title,
           description: content.description,
           fileUrl: content.file_url,
+          fileName: content.file_name,
           fileType: content.file_type,
           fileSize: formatFileSize(content.file_size),
           thumbnailUrl: content.thumbnail_url,
@@ -574,7 +583,7 @@ router.get(
           categoryIds: categoriesResult.rows.map((cat: any) => cat.id), // 다중 카테고리 ID
           uploaderId: content.uploader_id,
           uploaderName: content.uploader_name,
-          uploaderEmail: content.uploader_email,
+          uploaderUsername: content.uploader_username,
           uploaderRole: content.uploader_role,
           editableUntil: content.editable_until,
           tags: tagsResult.rows,
@@ -709,7 +718,7 @@ router.patch(
               title: contentData.title,
               description: contentData.description,
               ocr_text: contentData.ocr_text,
-              file_name: contentData.file_url?.split('/').pop() || '',
+              file_name: contentData.file_name || '',
               file_type: contentData.file_type,
               file_size: contentData.file_size,
               category_ids: categoryIds,
@@ -949,12 +958,20 @@ router.delete(
             console.error('[Delete] Failed to remove content from Elasticsearch:', esError.message);
           }
 
+          // 카테고리 캐시 무효화
+          const { deleteCachePattern } = await import('../services/cache.service');
+          await deleteCachePattern('categories:*');
+
           res.json({
             success: true,
             message: '콘텐츠가 완전히 삭제되었습니다',
           });
         } else {
           // 카테고리에서만 제거됨
+          // 카테고리 캐시 무효화
+          const { deleteCachePattern } = await import('../services/cache.service');
+          await deleteCachePattern('categories:*');
+
           res.json({
             success: true,
             message: `카테고리에서 제거되었습니다 (${remainingCount}개 카테고리에 남아있음)`,
@@ -996,6 +1013,10 @@ router.delete(
         } catch (esError: any) {
           console.error('[Delete] Failed to remove content from Elasticsearch:', esError.message);
         }
+
+        // 카테고리 캐시 무효화
+        const { deleteCachePattern } = await import('../services/cache.service');
+        await deleteCachePattern('categories:*');
 
         res.json({
           success: true,

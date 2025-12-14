@@ -203,16 +203,89 @@ export default function ContentDetailModal({
     }
   };
 
-  const handleDownload = () => {
-    if (content?.fileUrl) {
-      window.open(content.fileUrl, '_blank');
+  const handleDownload = async () => {
+    if (!content?.fileUrl) return;
+
+    try {
+      // 파일 다운로드
+      const response = await fetch(content.fileUrl);
+      const blob = await response.blob();
+
+      // 파일명 생성: 원본파일명_아이디_날짜시간.확장자
+      const originalFileName = content.fileName || 'download';
+      const username = content.uploaderUsername || 'user';
+
+      // 날짜시간 포맷: YYYYMMDD_HHMMSS
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const dateTimeStr = `${year}${month}${day}_${hours}${minutes}${seconds}`;
+
+      // 확장자 분리
+      const lastDotIndex = originalFileName.lastIndexOf('.');
+      const nameWithoutExt = lastDotIndex > 0 ? originalFileName.substring(0, lastDotIndex) : originalFileName;
+      const extension = lastDotIndex > 0 ? originalFileName.substring(lastDotIndex) : '';
+
+      // 최종 파일명 조합
+      const downloadFileName = `${nameWithoutExt}_${username}_${dateTimeStr}${extension}`;
+
+      // 다운로드 실행
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('다운로드 실패:', error);
+      alert('파일 다운로드에 실패했습니다');
     }
   };
 
   const handleCopyLink = () => {
     const url = window.location.origin + content?.fileUrl;
-    navigator.clipboard.writeText(url);
-    alert('링크가 클립보드에 복사되었습니다');
+
+    // Clipboard API 사용 가능 여부 확인
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('링크가 클립보드에 복사되었습니다');
+      }).catch(() => {
+        fallbackCopyToClipboard(url);
+      });
+    } else {
+      // HTTP 환경에서의 fallback 복사 방식
+      fallbackCopyToClipboard(url);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        alert('링크가 클립보드에 복사되었습니다');
+      } else {
+        alert('복사에 실패했습니다. 링크: ' + text);
+      }
+    } catch (err) {
+      alert('복사에 실패했습니다. 링크: ' + text);
+    }
+
+    document.body.removeChild(textarea);
   };
 
   const handleSocialShare = (platform: 'facebook' | 'twitter') => {
