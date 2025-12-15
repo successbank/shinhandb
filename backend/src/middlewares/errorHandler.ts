@@ -18,7 +18,10 @@ export const errorHandler = (
   res: Response<ApiResponse>,
   next: NextFunction
 ) => {
-  console.error('[Error]', err);
+  console.error('[Error Handler] Path:', req.path);
+  console.error('[Error Handler] Method:', req.method);
+  console.error('[Error Handler] Error:', err);
+  console.error('[Error Handler] Stack:', err.stack);
 
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
@@ -29,6 +32,6 @@ export const errorHandler = (
 
   return res.status(500).json({
     success: false,
-    error: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
   });
 };

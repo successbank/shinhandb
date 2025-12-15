@@ -365,21 +365,26 @@ export const extractTextAndGenerateTags = async (
           content: `당신은 신한금융 광고 콘텐츠 관리 전문가입니다.
 광고 이미지를 분석하여:
 1. 이미지에서 보이는 모든 텍스트를 추출
-2. 검색과 분류에 유용한 태그를 생성
+2. **크게 보이거나 강조된 핵심 문구**만을 기반으로 정확히 5개의 태그를 생성
 
-태그 생성 가이드라인:
-- 광고의 핵심 주제와 메시지 파악
-- 브랜드명, 상품명, 서비스명 추출
-- 캠페인 성격 (브랜드 PR, 상품, 이벤트, CSR 등) 파악
-- 타겟 고객층 (개인, 기업, 청년, 시니어 등) 식별
-- 시즌/이벤트 관련 정보
-- 감성/톤앤매너
-- 최대 ${maxTags}개의 태그
+태그 생성 우선순위 (중요도 순):
+1. **대형 헤드라인/메인 카피** - 가장 크고 눈에 띄는 텍스트 우선
+2. **브랜드명** - 신한금융, 신한은행 등
+3. **핵심 상품/서비스명** - 강조된 상품이나 서비스
+4. **주요 혜택/특징** - 크게 표시된 수치나 혜택
+5. **캠페인 키워드** - 강조된 이벤트나 주제
+
+태그 생성 규칙:
+- 정확히 5개만 생성 (많아도 적어도 안됨)
+- 작은 글씨나 부가 설명은 무시
+- 시각적으로 강조된 텍스트만 선택
+- 간결하고 검색에 유용한 키워드로 변환
+- 중요도가 높은 순서대로 정렬
 
 출력 형식 (JSON):
 {
   "text": "추출된 모든 텍스트",
-  "tags": ["태그1", "태그2", "태그3"]
+  "tags": ["태그1", "태그2", "태그3", "태그4", "태그5"]
 }`,
         },
         {
@@ -387,7 +392,7 @@ export const extractTextAndGenerateTags = async (
           content: [
             {
               type: 'text',
-              text: '이 광고 이미지를 분석하여 텍스트를 추출하고 태그를 생성해주세요.',
+              text: '이 광고 이미지를 분석하여 텍스트를 추출하고, 크게 보이거나 강조된 핵심 문구에서 정확히 5개의 태그만 생성해주세요.',
             },
             {
               type: 'image_url',
@@ -400,7 +405,7 @@ export const extractTextAndGenerateTags = async (
       ],
       response_format: { type: 'json_object' },
       max_tokens: 1500,
-      temperature: 0.7,
+      temperature: 0.5,
     });
 
     const responseText = response.choices[0]?.message?.content?.trim();
@@ -415,10 +420,10 @@ export const extractTextAndGenerateTags = async (
     const ocrText = preprocessText(result.text || '');
     const tags = (result.tags || [])
       .filter((tag: string) => tag && tag.length > 0 && tag.length <= 50)
-      .slice(0, maxTags);
+      .slice(0, 5); // 정확히 5개만 사용
 
     console.log('[OCR + AI] Text extracted:', ocrText.substring(0, 100) + '...');
-    console.log('[OCR + AI] Tags generated:', tags);
+    console.log('[OCR + AI] Tags generated (top 5):', tags);
 
     return { ocrText, tags };
   } catch (error: any) {
@@ -428,7 +433,7 @@ export const extractTextAndGenerateTags = async (
     try {
       const extractedText = await extractTextFromImage(imagePath);
       const ocrText = preprocessText(extractedText);
-      const tags = extractTagsFromText(ocrText, maxTags);
+      const tags = extractTagsFromText(ocrText, 5); // 5개로 제한
       return { ocrText, tags };
     } catch (fallbackError: any) {
       console.error('[OCR + AI] Fallback also failed:', fallbackError.message);

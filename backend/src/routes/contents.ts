@@ -119,13 +119,13 @@ router.post(
             console.log('[OCR + AI] Processing file:', file.filename);
             const originalPath = file.path;
 
-            // OCR 텍스트 추출 + OpenAI 태그 생성
-            const result = await extractTextAndGenerateTags(originalPath, 10);
+            // OCR 텍스트 추출 + OpenAI 태그 생성 (크게 보이는 핵심 문구 기반 5개)
+            const result = await extractTextAndGenerateTags(originalPath, 5);
 
             ocrText = result.ocrText || null;
             autoTags = result.tags || [];
 
-            console.log('[OCR + AI] Auto tags generated:', autoTags);
+            console.log('[OCR + AI] Auto tags generated (top 5):', autoTags);
           } catch (error: any) {
             console.warn('[OCR + AI] Warning - Processing failed for file:', file.filename, error.message);
             // OCR/AI 실패는 업로드를 막지 않음 (경고만 표시)
@@ -1037,10 +1037,12 @@ router.delete(
  */
 router.post(
   '/preview-tags',
-  authorize('ADMIN', 'CLIENT'),
+  authenticate,
+  authorize('ADMIN', 'CLIENT', 'HOLDING', 'BANK'),
   (req: Request, res: Response, next: NextFunction) => {
     uploadMultiple(req, res, (err) => {
       if (err) {
+        console.error('[Preview Tags] Multer error:', err);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return next(new AppError(413, '파일 크기가 200MB를 초과합니다'));
         }
@@ -1092,13 +1094,13 @@ router.post(
             console.log('[Preview] OCR + AI processing file:', fileName);
             const originalPath = file.path;
 
-            // OCR 텍스트 추출 + OpenAI 태그 생성
-            const result = await extractTextAndGenerateTags(originalPath, 10);
+            // OCR 텍스트 추출 + OpenAI 태그 생성 (크게 보이는 핵심 문구 기반 5개)
+            const result = await extractTextAndGenerateTags(originalPath, 5);
 
             ocrText = result.ocrText || null;
             tags = result.tags || [];
 
-            console.log('[Preview] Generated tags:', tags);
+            console.log('[Preview] Generated tags (top 5):', tags);
           } catch (error: any) {
             console.warn('[Preview] OCR/AI failed for file:', fileName, error.message);
             // 실패해도 계속 진행 (빈 태그로)
@@ -1122,6 +1124,7 @@ router.post(
         data: previewResults,
       });
     } catch (error) {
+      console.error('[Preview Tags] Error:', error);
       next(error);
     }
   }

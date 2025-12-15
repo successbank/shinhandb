@@ -38,6 +38,9 @@ export default function UploadPage() {
   const [generatedTags, setGeneratedTags] = useState<string[]>([]);
   const [ocrText, setOcrText] = useState<string | null>(null);
 
+  // FileUpload 컴포넌트 리셋용 key
+  const [fileUploadKey, setFileUploadKey] = useState(0);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -189,6 +192,7 @@ export default function UploadPage() {
               setGeneratedTags([]);
               setOcrText(null);
               setGeneratingTags(false);
+              setFileUploadKey(prev => prev + 1); // FileUpload 컴포넌트 리셋
               setUploadState({
                 isUploading: false,
                 progress: 0,
@@ -363,7 +367,7 @@ export default function UploadPage() {
                   <label className="block text-sm font-medium text-[#333333] mb-2">
                     파일 선택 <span className="text-[#E53935]">*</span>
                   </label>
-                  <FileUpload onFilesSelected={handleFilesSelected} />
+                  <FileUpload key={fileUploadKey} onFilesSelected={handleFilesSelected} />
                 </div>
 
                 {/* 제목 입력 */}
@@ -514,6 +518,7 @@ export default function UploadPage() {
                       setGeneratedTags([]);
                       setOcrText(null);
                       setGeneratingTags(false);
+                      setFileUploadKey(prev => prev + 1); // FileUpload 컴포넌트 리셋
                     }}
                     disabled={uploadState.isUploading}
                     className="px-6 py-2 border border-[#E0E0E0] text-[#333333] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
