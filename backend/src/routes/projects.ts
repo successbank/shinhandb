@@ -449,11 +449,13 @@ router.get(
       res.json({
         success: true,
         data: {
-          items: projects,
-          total,
-          page: pageNum,
-          pageSize: pageSizeNum,
-          totalPages: Math.ceil(total / pageSizeNum),
+          projects: projects,
+          pagination: {
+            total,
+            page: pageNum,
+            pageSize: pageSizeNum,
+            totalPages: Math.ceil(total / pageSizeNum),
+          },
         },
       });
     } catch (error) {
