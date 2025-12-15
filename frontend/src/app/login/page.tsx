@@ -263,7 +263,7 @@ export default function LoginPage() {
                     onChange={(e) => handleUsernameChange(e.target.value)}
                     onFocus={() => setFocusedField('username')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-all duration-300 bg-gray-50 hover:bg-white ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 ${
                       koreanWarning
                         ? 'border-red-500 ring-2 ring-red-500/30 bg-red-50'
                         : focusedField === 'username'
@@ -340,7 +340,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-all duration-300 bg-gray-50 hover:bg-white ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 ${
                       focusedField === 'password'
                         ? 'border-shinhan-blue ring-2 ring-shinhan-blue/30 shadow-lg bg-white'
                         : 'border-gray-300 focus:border-shinhan-blue'

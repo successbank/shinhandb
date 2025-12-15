@@ -351,7 +351,7 @@ export default function ProjectUploadPage() {
                       value={projectTitle}
                       onChange={(e) => setProjectTitle(e.target.value)}
                       placeholder="예: 신한카드 2024 브랜드 캠페인"
-                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                     />
                   </div>
 
@@ -369,7 +369,7 @@ export default function ProjectUploadPage() {
                       onChange={(e) => setProjectDescription(e.target.value)}
                       placeholder="프로젝트에 대한 설명을 입력하세요"
                       rows={4}
-                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                     />
                   </div>
 
@@ -539,7 +539,7 @@ export default function ProjectUploadPage() {
                       value={tags}
                       onChange={(e) => setTags(e.target.value)}
                       placeholder="태그를 쉼표로 구분하여 입력"
-                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                       disabled={uploadState.isUploading || generatingTags}
                     />
                   </div>
