@@ -701,20 +701,6 @@ export default function ContentDetailModal({
                       </div>
                     )}
 
-                    {/* OCR 텍스트 */}
-                    {content.ocrText && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                          🤖 추출된 텍스트 (OCR)
-                        </h3>
-                        <div className="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                            {content.ocrText}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
                     {/* 카테고리 */}
                     {content.categories && content.categories.length > 0 && (
                       <div>

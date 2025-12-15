@@ -40,9 +40,9 @@ export default function ContentListItem({
       className="flex items-start space-x-4 p-4 bg-white border border-[#E0E0E0] rounded-lg hover:shadow-md transition-shadow cursor-pointer"
     >
       {/* 썸네일 */}
-      <div className="flex-shrink-0 w-32 h-24 bg-[#F5F5F5] rounded overflow-hidden">
+      <div className="flex-shrink-0 w-32 aspect-[516/360] bg-[#F5F5F5] rounded overflow-hidden">
         {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover" />
+          <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover object-top" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-4xl text-gray-300">

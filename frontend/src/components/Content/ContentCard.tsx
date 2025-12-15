@@ -43,7 +43,7 @@ export default function ContentCard({
       className="group bg-white rounded-lg border border-[#E0E0E0] overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
     >
       {/* 썸네일 */}
-      <div className="relative aspect-[4/3] bg-[#F5F5F5] overflow-hidden">
+      <div className="relative aspect-[516/360] bg-[#F5F5F5] overflow-hidden">
         {thumbnailUrl ? (
           <Image
             src={thumbnailUrl}
@@ -51,7 +51,7 @@ export default function ContentCard({
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             priority={priority}
-            className="object-cover group-hover:scale-105 transition-transform"
+            className="object-cover object-top group-hover:scale-105 transition-transform"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

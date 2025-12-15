@@ -112,8 +112,13 @@ export default function UploadPage() {
           const combinedTags = [...new Set([...existingTags, ...uniqueTags])];
           setTags(combinedTags.join(', '));
 
+          // OCR 텍스트를 설명 필드에 자동으로 채우기
           if (allOcrText.trim()) {
             setOcrText(allOcrText.trim());
+            // 설명 필드가 비어있으면 OCR 텍스트로 채우기
+            if (!description.trim()) {
+              setDescription(allOcrText.trim());
+            }
           }
 
           console.log('[Upload] Generated tags:', uniqueTags);
@@ -367,7 +372,7 @@ export default function UploadPage() {
                   <label className="block text-sm font-medium text-[#333333] mb-2">
                     파일 선택 <span className="text-[#E53935]">*</span>
                   </label>
-                  <FileUpload key={fileUploadKey} onFilesSelected={handleFilesSelected} />
+                  <FileUpload key={fileUploadKey} onFilesSelected={handleFilesSelected} maxFiles={3} />
                 </div>
 
                 {/* 제목 입력 */}
@@ -605,19 +610,6 @@ export default function UploadPage() {
                                       ))}
                                     </div>
                                   </div>
-                                )}
-
-                                {/* OCR 텍스트 미리보기 */}
-                                {content.ocrText && (
-                                  <details className="mt-2">
-                                    <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
-                                      추출된 텍스트 보기
-                                    </summary>
-                                    <p className="text-xs text-gray-600 mt-1 p-2 bg-gray-50 rounded">
-                                      {content.ocrText.substring(0, 200)}
-                                      {content.ocrText.length > 200 && '...'}
-                                    </p>
-                                  </details>
                                 )}
                               </div>
                             </div>

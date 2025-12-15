@@ -160,7 +160,7 @@ export default function FileUpload({
           multiple={multiple}
           onChange={handleFileInputChange}
           className="hidden"
-          accept=".jpg,.jpeg,.png,.gif,.pdf,.mp4,.mov,.psd,.ai,.zip"
+          accept=".jpg,.jpeg,.png,.gif"
         />
 
         <div className="space-y-4">
@@ -189,7 +189,7 @@ export default function FileUpload({
                 : '파일을 드래그하거나 클릭하여 업로드'}
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP (최대 {formatFileSize(MAX_FILE_SIZE)})
+              JPG, PNG, GIF (최대 {formatFileSize(MAX_FILE_SIZE)})
             </p>
             <p className="mt-1 text-sm text-gray-500">
               최대 {maxFiles}개 파일 동시 업로드 가능

@@ -5,15 +5,6 @@
 // 지원하는 파일 형식
 export const ALLOWED_FILE_TYPES = {
   image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
-  document: ['application/pdf'],
-  video: ['video/mp4', 'video/quicktime'],
-  design: [
-    'application/x-photoshop',
-    'image/vnd.adobe.photoshop',
-    'application/illustrator',
-    'application/postscript',
-  ],
-  archive: ['application/zip', 'application/x-zip-compressed'],
 };
 
 // 허용된 파일 확장자
@@ -22,12 +13,6 @@ export const ALLOWED_EXTENSIONS = [
   '.jpeg',
   '.png',
   '.gif',
-  '.pdf',
-  '.mp4',
-  '.mov',
-  '.psd',
-  '.ai',
-  '.zip',
 ];
 
 // 최대 파일 크기 (200MB)
@@ -95,10 +80,6 @@ export const validateFile = (
  */
 export const getFileCategory = (file: File): string => {
   if (ALLOWED_FILE_TYPES.image.includes(file.type)) return 'image';
-  if (ALLOWED_FILE_TYPES.document.includes(file.type)) return 'document';
-  if (ALLOWED_FILE_TYPES.video.includes(file.type)) return 'video';
-  if (ALLOWED_FILE_TYPES.design.includes(file.type)) return 'design';
-  if (ALLOWED_FILE_TYPES.archive.includes(file.type)) return 'archive';
   return 'unknown';
 };
 
@@ -110,14 +91,6 @@ export const getFileIcon = (file: File): string => {
   switch (category) {
     case 'image':
       return '🖼️';
-    case 'document':
-      return '📄';
-    case 'video':
-      return '🎥';
-    case 'design':
-      return '🎨';
-    case 'archive':
-      return '📦';
     default:
       return '📁';
   }
