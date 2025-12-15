@@ -1029,4 +1029,102 @@ router.delete(
   }
 );
 
+/**
+ * POST /api/contents/preview-tags - 파일 선택 시 태그 미리보기 (OCR + AI 태그 생성)
+ * - 파일을 임시로 업로드하여 OCR + AI 태그만 생성
+ * - DB에 저장하지 않음 (미리보기 전용)
+ * - 사용자가 태그를 편집한 후 최종 업로드 가능
+ */
+router.post(
+  '/preview-tags',
+  authorize('ADMIN', 'CLIENT'),
+  (req: Request, res: Response, next: NextFunction) => {
+    uploadMultiple(req, res, (err) => {
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return next(new AppError(413, '파일 크기가 200MB를 초과합니다'));
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return next(new AppError(400, '파일은 최대 10개까지 업로드 가능합니다'));
+        }
+        return next(new AppError(400, err.message));
+      }
+      next();
+    });
+  },
+  logActivity('PREVIEW_TAGS'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+
+      // 파일 검증
+      if (!files || files.length === 0) {
+        throw new AppError(400, '미리보기할 파일을 선택해주세요');
+      }
+
+      const previewResults = [];
+
+      // 각 파일에 대해 OCR + AI 태그 생성
+      for (const file of files) {
+        const fileName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        let ocrText: string | null = null;
+        let tags: string[] = [];
+        let thumbnailUrl: string | null = null;
+
+        // 썸네일 생성 (이미지 파일만)
+        if (isImageFile(file.filename)) {
+          const originalPath = file.path;
+          const thumbnailFilename = `thumb_${file.filename}`;
+          const thumbnailPath = path.join(
+            path.dirname(originalPath).replace('originals', 'thumbnails'),
+            thumbnailFilename
+          );
+
+          const thumbnailGenerated = await generateThumbnail(originalPath, thumbnailPath);
+          if (thumbnailGenerated) {
+            thumbnailUrl = `/uploads/thumbnails/${thumbnailFilename}`;
+          }
+        }
+
+        // OCR + AI 태그 생성 (이미지 파일만)
+        if (isOcrSupportedFile(file.filename)) {
+          try {
+            console.log('[Preview] OCR + AI processing file:', fileName);
+            const originalPath = file.path;
+
+            // OCR 텍스트 추출 + OpenAI 태그 생성
+            const result = await extractTextAndGenerateTags(originalPath, 10);
+
+            ocrText = result.ocrText || null;
+            tags = result.tags || [];
+
+            console.log('[Preview] Generated tags:', tags);
+          } catch (error: any) {
+            console.warn('[Preview] OCR/AI failed for file:', fileName, error.message);
+            // 실패해도 계속 진행 (빈 태그로)
+          }
+        }
+
+        previewResults.push({
+          fileName,
+          fileSize: file.size,
+          fileType: getFileType(file.mimetype),
+          thumbnailUrl,
+          ocrText: ocrText ? ocrText.substring(0, 500) : null, // 미리보기용 500자만
+          tags,
+          tempFilePath: file.filename, // 최종 업로드 시 사용할 임시 파일명
+        });
+      }
+
+      res.json({
+        success: true,
+        message: '태그 미리보기가 생성되었습니다',
+        data: previewResults,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

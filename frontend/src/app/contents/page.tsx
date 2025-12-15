@@ -160,17 +160,22 @@ export default function ContentsPage() {
 
       // 최대 10개만 로드
       const idsToLoad = recentIds.slice(0, 10);
+      const validIds: string[] = [];
       const recentContents = await Promise.all(
         idsToLoad.map(async (id: string) => {
           try {
             const response = await getContentById(id);
+            validIds.push(id); // 성공한 ID만 보관
             return response.data;
           } catch (err) {
+            // 404 에러는 조용히 무시 (존재하지 않는 콘텐츠)
             return null;
           }
         })
       );
 
+      // localStorage를 유효한 ID들로만 업데이트 (404 ID 제거)
+      localStorage.setItem('recentlyViewed', JSON.stringify(validIds));
       setRecentlyViewed(recentContents.filter((c) => c !== null));
     } catch (err) {
       console.error('최근 본 콘텐츠 로드 실패:', err);
@@ -337,24 +342,6 @@ export default function ContentsPage() {
                   >
                     검색
                   </button>
-                </div>
-
-                <div className="flex gap-4">
-                  <select
-                    value={fileType}
-                    onChange={(e) => {
-                      setFileType(e.target.value);
-                      setPage(1);
-                    }}
-                    className="px-4 py-2 border border-shinhan-border rounded-md focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
-                  >
-                    <option value="">전체 파일 형식</option>
-                    <option value="IMAGE">이미지</option>
-                    <option value="VIDEO">동영상</option>
-                    <option value="DOCUMENT">문서</option>
-                    <option value="DESIGN">디자인 파일</option>
-                    <option value="ARCHIVE">압축 파일</option>
-                  </select>
                 </div>
               </form>
 

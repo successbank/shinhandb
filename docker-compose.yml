@@ -43,6 +43,7 @@ services:
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=http://localhost:${FRONTEND_PORT}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./backend:/app:cached
       - /app/node_modules

@@ -121,6 +121,50 @@ export const uploadFiles = (
 };
 
 /**
+ * 파일 선택 시 태그 미리보기 API (OCR + AI 태그 생성)
+ * - 파일을 업로드하여 OCR + AI 태그만 생성
+ * - DB에 저장하지 않음 (미리보기 전용)
+ */
+export const previewTags = async (
+  files: File[]
+): Promise<{
+  success: boolean;
+  data: Array<{
+    fileName: string;
+    fileSize: number;
+    fileType: string;
+    thumbnailUrl: string | null;
+    ocrText: string | null;
+    tags: string[];
+    tempFilePath: string;
+  }>;
+}> => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  const token = localStorage.getItem('token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/contents/preview-tags`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || '태그 미리보기 생성 실패');
+  }
+
+  return response.json();
+};
+
+/**
  * 콘텐츠 목록 조회 API
  */
 export const getContents = async (params?: {

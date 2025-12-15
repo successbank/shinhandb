@@ -8,7 +8,7 @@ import UploadProgress from '@/components/UploadProgress';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
-import { uploadFiles, UploadProgress as UploadProgressType, categoriesApi } from '@/lib/api';
+import { uploadFiles, UploadProgress as UploadProgressType, categoriesApi, previewTags } from '@/lib/api';
 
 interface UploadState {
   isUploading: boolean;
@@ -33,6 +33,11 @@ export default function UploadPage() {
     status: 'idle',
   });
 
+  // 태그 미리보기 상태
+  const [generatingTags, setGeneratingTags] = useState(false);
+  const [generatedTags, setGeneratedTags] = useState<string[]>([]);
+  const [ocrText, setOcrText] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -55,14 +60,67 @@ export default function UploadPage() {
   };
 
   /**
-   * 파일 선택 핸들러
+   * 파일 선택 핸들러 - AI 태그 자동 생성
    */
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesSelected = async (files: File[]) => {
     setSelectedFiles(files);
+
     // 파일이 선택되면 제목을 첫 번째 파일명으로 자동 설정 (확장자 제외)
     if (files.length > 0 && !title) {
       const firstFileName = files[0].name.replace(/\.[^/.]+$/, '');
       setTitle(firstFileName);
+    }
+
+    // 이미지 파일이 있으면 AI 태그 자동 생성
+    const imageFiles = files.filter((file) => {
+      const ext = file.name.toLowerCase();
+      return ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png') || ext.endsWith('.gif') || ext.endsWith('.webp');
+    });
+
+    if (imageFiles.length > 0) {
+      setGeneratingTags(true);
+      setGeneratedTags([]);
+      setOcrText(null);
+
+      try {
+        console.log('[Upload] Generating tags for', imageFiles.length, 'images...');
+        const response = await previewTags(imageFiles);
+
+        if (response.success && response.data.length > 0) {
+          // 모든 파일의 태그를 합침
+          const allTags: string[] = [];
+          let allOcrText = '';
+
+          response.data.forEach((preview) => {
+            if (preview.tags && preview.tags.length > 0) {
+              allTags.push(...preview.tags);
+            }
+            if (preview.ocrText) {
+              allOcrText += preview.ocrText + '\n\n';
+            }
+          });
+
+          // 중복 제거
+          const uniqueTags = [...new Set(allTags)];
+          setGeneratedTags(uniqueTags);
+
+          // 태그 입력창에 자동으로 추가 (기존 태그와 합침)
+          const existingTags = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+          const combinedTags = [...new Set([...existingTags, ...uniqueTags])];
+          setTags(combinedTags.join(', '));
+
+          if (allOcrText.trim()) {
+            setOcrText(allOcrText.trim());
+          }
+
+          console.log('[Upload] Generated tags:', uniqueTags);
+        }
+      } catch (error: any) {
+        console.error('[Upload] Tag generation failed:', error.message);
+        // 실패해도 업로드는 계속 가능
+      } finally {
+        setGeneratingTags(false);
+      }
     }
   };
 
@@ -313,6 +371,61 @@ export default function UploadPage() {
                   />
                 </div>
 
+                {/* AI 태그 생성 상태바 */}
+                {generatingTags && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-[#0046FF] rounded-lg shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <svg
+                        className="animate-spin h-6 w-6 text-[#0046FF]"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-base font-semibold text-[#0046FF]">
+                          🤖 AI가 이미지를 분석하여 태그를 생성하고 있습니다...
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          잠시만 기다려주세요. 이미지 분석 및 텍스트 추출 중입니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 생성된 태그 미리보기 */}
+                {generatedTags.length > 0 && !generatingTags && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm font-medium text-green-800 mb-2">
+                      ✅ AI가 {generatedTags.length}개의 태그를 생성했습니다
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {generatedTags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 bg-[#0046FF] text-white text-sm rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* 태그 입력 */}
                 <div className="mb-6">
                   <label
@@ -320,6 +433,11 @@ export default function UploadPage() {
                     className="block text-sm font-medium text-[#333333] mb-2"
                   >
                     태그 (선택)
+                    {generatedTags.length > 0 && (
+                      <span className="ml-2 text-xs text-green-600">
+                        - AI 태그가 자동으로 추가되었습니다. 수정 가능합니다.
+                      </span>
+                    )}
                   </label>
                   <input
                     id="tags"
@@ -328,10 +446,10 @@ export default function UploadPage() {
                     onChange={(e) => setTags(e.target.value)}
                     placeholder="태그를 쉼표로 구분하여 입력 (예: 브랜드, 캠페인, 2024)"
                     className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
-                    disabled={uploadState.isUploading}
+                    disabled={uploadState.isUploading || generatingTags}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    쉼표(,)로 태그를 구분하세요
+                    쉼표(,)로 태그를 구분하세요. 이미지 파일 선택 시 AI가 자동으로 태그를 생성합니다.
                   </p>
                 </div>
 
