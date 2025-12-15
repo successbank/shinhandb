@@ -11,6 +11,8 @@ import ContentCard from '@/components/Content/ContentCard';
 import ContentList from '@/components/Content/ContentList';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
 import ContentDetailModal from '@/components/Content/ContentDetailModal';
+import EditContentModal from '@/components/Content/EditContentModal';
+import MoveCategoryModal from '@/components/Content/MoveCategoryModal';
 
 type ViewMode = 'gallery' | 'list';
 
@@ -45,6 +47,9 @@ export default function ContentsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
   const [currentContentIndex, setCurrentContentIndex] = useState<number>(0);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showMoveCategoryModal, setShowMoveCategoryModal] = useState(false);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -295,6 +300,27 @@ export default function ContentsPage() {
     setSelectedContentId(contents[newIndex].id);
   };
 
+  const handleEdit = (content: any) => {
+    setEditingContentId(content.id);
+    setShowEditModal(true);
+    setShowManageMenu(null);
+  };
+
+  const handleMoveCategory = (content: any) => {
+    setEditingContentId(content.id);
+    setShowMoveCategoryModal(true);
+    setShowManageMenu(null);
+  };
+
+  const handleModalSuccess = () => {
+    // 목록 새로고침
+    setPage(1);
+    setContents([]);
+    setHasMore(true);
+    loadContents(true);
+    loadCategories(); // 카테고리 카운트 업데이트
+  };
+
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center">로딩 중...</div>;
   }
@@ -482,6 +508,24 @@ export default function ContentsPage() {
                         {showManageMenu === content.id && (
                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
                             <button
+                              onClick={() => handleEdit(content)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleMoveCategory(content)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                              </svg>
+                              카테고리 이동
+                            </button>
+                            <button
                               onClick={() => handleCreateShareLink(content)}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                             >
@@ -539,6 +583,24 @@ export default function ContentsPage() {
                         </button>
                         {showManageMenu === content.id && (
                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
+                            <button
+                              onClick={() => handleEdit(content)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleMoveCategory(content)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                              </svg>
+                              카테고리 이동
+                            </button>
                             <button
                               onClick={() => handleCreateShareLink(content)}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
@@ -649,6 +711,32 @@ export default function ContentsPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 콘텐츠 수정 모달 */}
+      {showEditModal && editingContentId && (
+        <EditContentModal
+          contentId={editingContentId}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingContentId(null);
+          }}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {/* 카테고리 이동 모달 */}
+      {showMoveCategoryModal && editingContentId && (
+        <MoveCategoryModal
+          contentId={editingContentId}
+          isOpen={showMoveCategoryModal}
+          onClose={() => {
+            setShowMoveCategoryModal(false);
+            setEditingContentId(null);
+          }}
+          onSuccess={handleModalSuccess}
+        />
       )}
 
       <Footer />

@@ -1,0 +1,341 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/Layout/Header';
+import Footer from '@/components/Layout/Footer';
+import { projectsApi } from '@/lib/api';
+import { formatFileSize } from '@/lib/fileUtils';
+
+interface FileItem {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  thumbnailUrl?: string;
+  fileType: string;
+  fileSize: number;
+  tags?: string[];
+  createdAt: string;
+}
+
+interface ProjectDetail {
+  id: string;
+  title: string;
+  description?: string;
+  uploaderName: string;
+  createdAt: string;
+  files: {
+    proposalDrafts: FileItem[];
+    finalManuscripts: FileItem[];
+  };
+  categories: Array<{ id: string; name: string }>;
+  tags: string[];
+  fileCount: {
+    total: number;
+    proposal: number;
+    final: number;
+  };
+}
+
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && params.id) {
+      loadProject();
+    }
+  }, [isAuthenticated, params.id]);
+
+  const loadProject = async () => {
+    try {
+      setLoading(true);
+      const response = await projectsApi.getDetail(params.id as string);
+
+      if (response.success && response.data) {
+        setProject(response.data);
+      }
+    } catch (error: any) {
+      setError(error.message || '프로젝트를 불러오는 데 실패했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!project) return;
+
+    const confirmed = confirm(
+      `프로젝트 "${project.title}"를 삭제하시겠습니까?\n연결된 모든 파일도 함께 삭제됩니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await projectsApi.delete(project.id);
+      alert('프로젝트가 삭제되었습니다');
+      router.push('/projects');
+    } catch (error: any) {
+      alert(error.message || '프로젝트 삭제 실패');
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0046FF] mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => router.push('/projects')}
+            className="px-4 py-2 bg-[#0046FF] text-white rounded-lg hover:bg-blue-600"
+          >
+            프로젝트 목록으로
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
+      <Header />
+
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-[1400px] mx-auto px-6 py-12">
+          {/* 프로젝트 헤더 */}
+          <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-shinhan-darkGray mb-2">
+                  {project.title}
+                </h1>
+                {project.description && (
+                  <p className="text-gray-600 mb-4">{project.description}</p>
+                )}
+
+                {/* 메타 정보 */}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>업로더: {project.uploaderName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{new Date(project.createdAt).toLocaleDateString('ko-KR')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>전체 {project.fileCount.total}개 파일</span>
+                  </div>
+                </div>
+
+                {/* 카테고리 */}
+                {project.categories.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {project.categories.map((cat) => (
+                      <span
+                        key={cat.id}
+                        className="px-3 py-1 bg-blue-100 text-[#0046FF] text-sm rounded-full"
+                      >
+                        {cat.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 액션 버튼 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push('/projects')}
+                  className="px-4 py-2 border border-[#E0E0E0] text-[#333333] rounded-lg hover:bg-gray-50"
+                >
+                  목록
+                </button>
+                {user?.role === 'ADMIN' && (
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    삭제
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 태그 클라우드 */}
+            {project.tags.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">태그</h3>
+                <div className="flex flex-wrap gap-2">
+                  {project.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 제안 시안 섹션 */}
+          {project.fileCount.proposal > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-shinhan-darkGray">
+                  제안 시안 ({project.fileCount.proposal}개)
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {project.files.proposalDrafts.map((file) => (
+                  <div
+                    key={file.id}
+                    className="border border-[#E0E0E0] rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    {/* 썸네일 */}
+                    {file.thumbnailUrl ? (
+                      <img
+                        src={file.thumbnailUrl}
+                        alt={file.fileName}
+                        className="w-full h-48 object-cover rounded mb-3"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
+                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* 파일명 */}
+                    <p className="text-sm font-medium text-[#333333] truncate mb-1">
+                      {file.fileName}
+                    </p>
+
+                    {/* 파일 크기 */}
+                    <p className="text-xs text-gray-500 mb-2">
+                      {formatFileSize(file.fileSize)}
+                    </p>
+
+                    {/* 다운로드 버튼 */}
+                    <a
+                      href={file.fileUrl}
+                      download
+                      className="block w-full py-2 text-center bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                    >
+                      다운로드
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 최종 원고 섹션 */}
+          {project.fileCount.final > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-shinhan-darkGray">
+                  최종 원고 ({project.fileCount.final}개)
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {project.files.finalManuscripts.map((file) => (
+                  <div
+                    key={file.id}
+                    className="border border-[#E0E0E0] rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    {/* 썸네일 */}
+                    {file.thumbnailUrl ? (
+                      <img
+                        src={file.thumbnailUrl}
+                        alt={file.fileName}
+                        className="w-full h-48 object-cover rounded mb-3"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
+                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* 파일명 */}
+                    <p className="text-sm font-medium text-[#333333] truncate mb-1">
+                      {file.fileName}
+                    </p>
+
+                    {/* 파일 크기 */}
+                    <p className="text-xs text-gray-500 mb-2">
+                      {formatFileSize(file.fileSize)}
+                    </p>
+
+                    {/* 다운로드 버튼 */}
+                    <a
+                      href={file.fileUrl}
+                      download
+                      className="block w-full py-2 text-center bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                    >
+                      다운로드
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 파일이 없는 경우 */}
+          {project.fileCount.total === 0 && (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <p className="text-gray-500">아직 업로드된 파일이 없습니다.</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

@@ -782,6 +782,131 @@ router.patch(
   }
 );
 
+// PATCH /api/contents/:id/categories - 카테고리 이동 (Admin only)
+router.patch(
+  '/:id/categories',
+  authorize('ADMIN'),
+  logActivity('MOVE_CONTENT_CATEGORIES'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { id } = req.params;
+      const { categoryIds } = req.body;
+
+      // categoryIds 검증
+      if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+        throw new AppError(400, '최소 1개의 카테고리를 선택해주세요');
+      }
+
+      if (categoryIds.length > 3) {
+        throw new AppError(400, '카테고리는 최대 3개까지 선택 가능합니다');
+      }
+
+      // 콘텐츠 존재 확인
+      const contentResult = await pool.query('SELECT id FROM contents WHERE id = $1', [id]);
+
+      if (contentResult.rows.length === 0) {
+        throw new AppError(404, '콘텐츠를 찾을 수 없습니다');
+      }
+
+      // 카테고리 존재 여부 검증
+      const categoryCheck = await pool.query(
+        'SELECT id FROM categories WHERE id = ANY($1)',
+        [categoryIds]
+      );
+
+      if (categoryCheck.rows.length !== categoryIds.length) {
+        throw new AppError(404, '존재하지 않는 카테고리가 포함되어 있습니다');
+      }
+
+      // 기존 카테고리 매핑 삭제
+      await pool.query('DELETE FROM content_categories WHERE content_id = $1', [id]);
+
+      // 새로운 카테고리 매핑 추가
+      for (const categoryId of categoryIds) {
+        await pool.query(
+          'INSERT INTO content_categories (content_id, category_id) VALUES ($1, $2)',
+          [id, categoryId]
+        );
+      }
+
+      // contents 테이블의 category_id도 업데이트 (하위 호환성)
+      await pool.query(
+        'UPDATE contents SET category_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [categoryIds[0], id]
+      );
+
+      // 카테고리 이름 조회
+      const categoryNamesResult = await pool.query(
+        'SELECT name FROM categories WHERE id = ANY($1)',
+        [categoryIds]
+      );
+      const categoryNames = categoryNamesResult.rows.map((row: any) => row.name);
+
+      // Elasticsearch 색인 업데이트
+      try {
+        const contentData = await pool.query(
+          `SELECT c.*, u.name as uploader_name, u.role as member_type
+           FROM contents c
+           LEFT JOIN users u ON c.uploader_id = u.id
+           WHERE c.id = $1`,
+          [id]
+        );
+
+        if (contentData.rows.length > 0) {
+          const content = contentData.rows[0];
+
+          // 태그 조회
+          const tagsResult = await pool.query(
+            `SELECT t.name FROM tags t
+             INNER JOIN content_tags ct ON t.id = ct.tag_id
+             WHERE ct.content_id = $1`,
+            [id]
+          );
+          const tags = tagsResult.rows.map((row: any) => row.name);
+
+          await indexContent({
+            id: content.id,
+            title: content.title,
+            description: content.description,
+            ocr_text: content.ocr_text,
+            file_name: content.file_name || '',
+            file_type: content.file_type,
+            file_size: content.file_size,
+            category_ids: categoryIds,
+            category_names: categoryNames,
+            tags,
+            uploader_id: content.uploader_id,
+            uploader_name: content.uploader_name,
+            member_type: content.member_type,
+            created_at: content.created_at,
+            updated_at: new Date(),
+          });
+
+          console.log(`[Move Categories] Elasticsearch index updated for content: ${id}`);
+        }
+      } catch (esError: any) {
+        console.error('[Move Categories] Failed to update Elasticsearch:', esError.message);
+      }
+
+      // 카테고리 캐시 무효화
+      const { deleteCachePattern } = await import('../services/cache.service');
+      await deleteCachePattern('categories:*');
+
+      res.json({
+        success: true,
+        message: '카테고리가 변경되었습니다',
+        data: {
+          contentId: id,
+          categoryIds,
+          categoryNames,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // POST /api/contents/:id/share - 공유 링크 생성
 router.post(
   '/:id/share',

@@ -3,6 +3,7 @@ import { ApiResponse } from '../types';
 import authRoutes from './auth';
 import usersRoutes from './users';
 import contentsRoutes from './contents';
+import projectsRoutes from './projects';
 import tagsRoutes from './tags';
 import categoriesRoutes from './categories';
 import mypageRoutes from './mypage';
@@ -19,6 +20,9 @@ router.use('/users', usersRoutes);
 
 // Contents routes (File upload & management)
 router.use('/contents', contentsRoutes);
+
+// Projects routes (Project-based upload)
+router.use('/projects', projectsRoutes);
 
 // Tags routes (Tag management)
 router.use('/tags', tagsRoutes);
@@ -57,6 +61,7 @@ router.get('/', (req: Request, res: Response<ApiResponse>) => {
         auth: '/api/auth',
         users: '/api/users',
         contents: '/api/contents',
+        projects: '/api/projects',
         categories: '/api/categories',
         tags: '/api/tags',
         mypage: '/api/mypage',

@@ -99,6 +99,15 @@ export async function initializeContentIndex(): Promise<void> {
               member_type: { type: 'keyword' },
               created_at: { type: 'date' },
               updated_at: { type: 'date' },
+              project_id: { type: 'keyword' },
+              project_title: {
+                type: 'text',
+                analyzer: 'korean_analyzer',
+                fields: {
+                  keyword: { type: 'keyword' },
+                },
+              },
+              file_type_flag: { type: 'keyword' },
             },
           },
         },
@@ -119,19 +128,22 @@ export async function initializeContentIndex(): Promise<void> {
 export async function indexContent(content: {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   ocr_text: string | null;
   file_name: string;
   file_type: string;
   file_size: number;
-  category_ids: string[];
-  category_names: string[];
+  category_ids?: string[];
+  category_names?: string[];
   tags: string[];
   uploader_id: string;
   uploader_name: string;
   member_type: string;
   created_at: Date;
   updated_at: Date;
+  project_id?: string | null;
+  project_title?: string | null;
+  file_type_flag?: string | null;
 }): Promise<void> {
   try {
     await client.index({

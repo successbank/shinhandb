@@ -40,6 +40,12 @@ export default function Header() {
               콘텐츠 목록
             </Link>
             <Link
+              href="/projects"
+              className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+            >
+              프로젝트
+            </Link>
+            <Link
               href="/upload"
               className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
             >
