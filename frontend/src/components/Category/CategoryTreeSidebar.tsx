@@ -9,6 +9,7 @@ interface Category {
   user_role: string;
   order: number;
   content_count?: number;
+  project_count?: number;
   children?: Category[];
 }
 
@@ -22,6 +23,8 @@ interface CategoryTreeSidebarProps {
   userRole?: string;
   maxSelection?: number; // 최대 선택 개수 (기본값: 무제한, 업로드 페이지에서는 3)
   totalContentCount?: number; // 전체 콘텐츠 수 (중복 제거된 값)
+  totalProjectCount?: number; // 전체 프로젝트 수 (중복 제거된 값)
+  showProjectCount?: boolean; // 프로젝트 수 표시 여부 (기본값: false, 프로젝트 페이지에서는 true)
 }
 
 export default function CategoryTreeSidebar({
@@ -33,6 +36,8 @@ export default function CategoryTreeSidebar({
   userRole,
   maxSelection,
   totalContentCount,
+  totalProjectCount,
+  showProjectCount = false,
 }: CategoryTreeSidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -195,15 +200,29 @@ export default function CategoryTreeSidebar({
             {category.name}
           </span>
 
-          {/* 콘텐츠 수 */}
-          {category.content_count !== undefined && category.content_count > 0 && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
-              isSelected
-                ? 'bg-white/20 text-white'
-                : 'bg-gray-200 text-gray-600'
-            }`}>
-              {category.content_count}
-            </span>
+          {/* 콘텐츠 수 또는 프로젝트 수 */}
+          {showProjectCount ? (
+            // 프로젝트 페이지: 프로젝트 수 표시
+            category.project_count !== undefined && category.project_count > 0 && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
+                isSelected
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {category.project_count}
+              </span>
+            )
+          ) : (
+            // 콘텐츠 페이지: 콘텐츠 수 표시
+            category.content_count !== undefined && category.content_count > 0 && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
+                isSelected
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {category.content_count}
+              </span>
+            )
           )}
         </div>
 
@@ -221,11 +240,15 @@ export default function CategoryTreeSidebar({
 
   const categoryTree = buildCategoryTree(categories);
 
-  // 전체 콘텐츠 수 - prop으로 받은 값 사용 (중복 제거된 값)
+  // 전체 콘텐츠 수 또는 프로젝트 수 - prop으로 받은 값 사용 (중복 제거된 값)
   // prop이 없으면 fallback으로 카테고리별 합산 사용
-  const displayTotalCount = totalContentCount !== undefined
-    ? totalContentCount
-    : categories.reduce((sum, cat) => sum + (cat.content_count || 0), 0);
+  const displayTotalCount = showProjectCount
+    ? (totalProjectCount !== undefined
+        ? totalProjectCount
+        : categories.reduce((sum, cat) => sum + (cat.project_count || 0), 0))
+    : (totalContentCount !== undefined
+        ? totalContentCount
+        : categories.reduce((sum, cat) => sum + (cat.content_count || 0), 0));
 
   return (
     <div className="w-64 bg-white border-r border-shinhan-border overflow-y-auto flex-shrink-0">

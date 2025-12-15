@@ -40,9 +40,11 @@ router.get(
           c."order",
           c.created_at,
           c.updated_at,
-          COUNT(DISTINCT cc.content_id) as content_count
+          COUNT(DISTINCT cc.content_id) as content_count,
+          COUNT(DISTINCT pc.project_id) as project_count
         FROM categories c
         LEFT JOIN content_categories cc ON c.id = cc.category_id
+        LEFT JOIN project_categories pc ON c.id = pc.category_id
       `;
       const params: any[] = [];
 
@@ -59,20 +61,27 @@ router.get(
       // 카테고리 데이터 정리 (flat 배열로 반환 - 프론트엔드에서 계층 구조 생성)
       const categories = result.rows.map(row => ({
         ...row,
-        content_count: parseInt(row.content_count) || 0
+        content_count: parseInt(row.content_count) || 0,
+        project_count: parseInt(row.project_count) || 0
       }));
 
-      // 전체 콘텐츠 수 계산 (중복 제거)
+      // 전체 콘텐츠 수 및 프로젝트 수 계산 (중복 제거)
       const totalCountResult = await pool.query(
         'SELECT COUNT(DISTINCT id) as total FROM contents'
       );
       const totalContentCount = parseInt(totalCountResult.rows[0].total) || 0;
+
+      const totalProjectCountResult = await pool.query(
+        'SELECT COUNT(DISTINCT id) as total FROM projects'
+      );
+      const totalProjectCount = parseInt(totalProjectCountResult.rows[0].total) || 0;
 
       const response = {
         success: true,
         data: categories, // flat 배열로 반환
         meta: {
           totalContentCount,
+          totalProjectCount,
         },
       };
 

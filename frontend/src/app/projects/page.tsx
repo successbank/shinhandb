@@ -70,6 +70,7 @@ export default function ProjectsPage() {
 
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [totalProjectCount, setTotalProjectCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -107,6 +108,10 @@ export default function ProjectsPage() {
       const response = await categoriesApi.getList();
       if (response.success && response.data) {
         setCategories(response.data);
+        // meta에서 전체 프로젝트 수 추출
+        if (response.meta && response.meta.totalProjectCount !== undefined) {
+          setTotalProjectCount(response.meta.totalProjectCount);
+        }
       }
     } catch (error) {
       console.error('카테고리 로드 실패:', error);
@@ -265,6 +270,8 @@ export default function ProjectsPage() {
                 selectedCategoryId={selectedCategoryId}
                 onCategorySingleSelect={handleCategorySelect}
                 userRole={user?.role === 'HOLDING' ? 'HOLDING' : user?.role === 'BANK' ? 'BANK' : undefined}
+                totalProjectCount={totalProjectCount}
+                showProjectCount={true}
               />
             </div>
 
