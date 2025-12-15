@@ -34,22 +34,16 @@ export default function Header() {
           {/* 네비게이션 */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              href="/contents"
-              className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
-            >
-              콘텐츠 목록
-            </Link>
-            <Link
               href="/projects"
               className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
             >
-              프로젝트
+              프로젝트 목록
             </Link>
             <Link
-              href="/upload"
+              href="/projects/upload"
               className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
             >
-              업로드
+              프로젝트 업로드
             </Link>
             <Link
               href="/mypage"
