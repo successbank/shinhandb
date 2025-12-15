@@ -6,7 +6,7 @@ import { AppError } from '../middlewares/errorHandler';
 
 /**
  * 파일 업로드 설정 (Multer)
- * - 최대 200MB 파일 크기 제한
+ * - 최대 10MB 파일 크기 제한
  * - 지원 파일 형식: JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP
  */
 
@@ -41,8 +41,8 @@ const ALLOWED_EXTENSIONS = [
   '.zip',
 ];
 
-// 최대 파일 크기 (200MB)
-const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB in bytes
+// 최대 파일 크기 (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 /**
  * 파일 필터 함수 - 파일 형식 검증

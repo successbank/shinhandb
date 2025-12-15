@@ -15,8 +15,8 @@ export const ALLOWED_EXTENSIONS = [
   '.gif',
 ];
 
-// 최대 파일 크기 (200MB)
-export const MAX_FILE_SIZE = 200 * 1024 * 1024;
+// 최대 파일 크기 (10MB)
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // 최대 파일 개수
 export const MAX_FILE_COUNT = 10;
