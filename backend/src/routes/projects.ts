@@ -504,6 +504,7 @@ router.get(
       );
 
       // 파일 목록 조회 (타입별 분리)
+      // 정렬: FINAL_MANUSCRIPT가 먼저 오도록 DESC 정렬
       const filesResult = await pool.query(
         `SELECT
           c.id,
@@ -524,7 +525,7 @@ router.get(
            WHERE ct.content_id = c.id) AS tags
          FROM contents c
          WHERE c.project_id = $1
-         ORDER BY c.file_type_flag, c.created_at ASC`,
+         ORDER BY c.file_type_flag DESC, c.created_at ASC`,
         [id]
       );
 

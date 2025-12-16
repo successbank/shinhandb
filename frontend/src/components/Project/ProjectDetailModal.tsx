@@ -600,23 +600,6 @@ export default function ProjectDetailModal({
                     )}
                   </>
                 )}
-
-                {/* 태그 클라우드 */}
-                {!isEditMode && projectDetail.tags.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">태그</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {projectDetail.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* 파일 섹션 렌더링 함수 */}
@@ -632,17 +615,23 @@ export default function ProjectDetailModal({
   function renderViewModeFiles() {
     if (!projectDetail) return null;
 
+    // 모든 파일을 하나의 배열로 합치기 (최종 원고가 먼저)
+    const allFiles = [
+      ...projectDetail.files.finalManuscripts.map(f => ({ ...f, typeLabel: '최종 원고' })),
+      ...projectDetail.files.proposalDrafts.map(f => ({ ...f, typeLabel: '제안 시안' })),
+    ];
+
     return (
       <>
-        {/* 제안 시안 */}
-        {projectDetail.fileCount.proposal > 0 && (
+        {/* 파일 목록 - 갤러리 타입 (섹션 구분 없음) */}
+        {allFiles.length > 0 ? (
           <div className="mb-6">
             <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
-              제안 시안 ({projectDetail.fileCount.proposal}개)
+              파일 목록 ({allFiles.length}개)
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projectDetail.files.proposalDrafts.map((file) => (
-                <FileCard
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {allFiles.map((file) => (
+                <GalleryFileCard
                   key={file.id}
                   file={file}
                   canEdit={canEdit && !uploadState.isUploading}
@@ -652,31 +641,8 @@ export default function ProjectDetailModal({
               ))}
             </div>
           </div>
-        )}
-
-        {/* 최종 원고 */}
-        {projectDetail.fileCount.final > 0 && (
-          <div>
-            <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
-              최종 원고 ({projectDetail.fileCount.final}개)
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projectDetail.files.finalManuscripts.map((file) => (
-                <FileCard
-                  key={file.id}
-                  file={file}
-                  canEdit={canEdit && !uploadState.isUploading}
-                  onDelete={handleDeleteFile}
-                  onTypeChange={handleFileTypeToggle}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 파일이 없는 경우 */}
-        {projectDetail.fileCount.total === 0 && (
-          <div className="text-center py-12">
+        ) : (
+          <div className="text-center py-12 mb-6">
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
@@ -684,8 +650,25 @@ export default function ProjectDetailModal({
           </div>
         )}
 
-        {/* 파일 업로드 영역 (권한 있을 때만 표시) */}
-        {canEdit && renderFileUploadZone()}
+        {/* 태그 영역 (파일 추가 영역 위) */}
+        {projectDetail.tags.length > 0 && (
+          <div className="mb-6 bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">프로젝트 태그</h4>
+            <div className="flex flex-wrap gap-2">
+              {projectDetail.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm rounded-full shadow-sm hover:shadow transition-shadow"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 파일 업로드 영역 (ADMIN, CLIENT만 표시) */}
+        {(userRole === 'ADMIN' || userRole === 'CLIENT') && renderFileUploadZone()}
       </>
     );
   }
@@ -907,7 +890,92 @@ export default function ProjectDetailModal({
   }
 }
 
-// 일반 파일 카드 컴포넌트
+// 갤러리 타입 파일 카드 컴포넌트 (타이틀, 파일용량, 다운로드 버튼 숨김)
+function GalleryFileCard({
+  file,
+  canEdit,
+  onDelete,
+  onTypeChange
+}: {
+  file: FileItem & { typeLabel: string };
+  canEdit?: boolean;
+  onDelete?: (fileId: string, fileName: string) => void;
+  onTypeChange?: (fileId: string, currentType: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT') => void;
+}) {
+  return (
+    <div className="group relative rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200">
+      {/* 썸네일 */}
+      {file.thumbnailUrl ? (
+        <img
+          src={file.thumbnailUrl}
+          alt={file.fileName}
+          className="w-full h-40 object-cover"
+        />
+      ) : (
+        <div className="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+      )}
+
+      {/* 파일 타입 배지 (좌상단) */}
+      <div className="absolute top-2 left-2">
+        <span className={`px-2 py-1 text-xs font-medium rounded shadow-sm ${
+          file.fileTypeFlag === 'FINAL_MANUSCRIPT'
+            ? 'bg-green-600 text-white'
+            : 'bg-blue-600 text-white'
+        }`}>
+          {file.typeLabel}
+        </span>
+      </div>
+
+      {/* 수정 버튼 (우상단, 권한 있을 때만 hover 시 표시) */}
+      {canEdit && onTypeChange && onDelete && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+          {/* 타입 변경 버튼 */}
+          <button
+            onClick={() => onTypeChange(file.id, file.fileTypeFlag)}
+            className="p-1.5 bg-white/90 hover:bg-white rounded shadow-sm transition-colors"
+            title="타입 변경"
+          >
+            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </button>
+
+          {/* 삭제 버튼 */}
+          <button
+            onClick={() => onDelete(file.id, file.fileName)}
+            className="p-1.5 bg-white/90 hover:bg-red-50 rounded shadow-sm transition-colors"
+            title="삭제"
+          >
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* 다운로드 오버레이 (hover 시 표시) */}
+      <a
+        href={file.fileUrl}
+        download
+        className="absolute inset-0 bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-white flex flex-col items-center gap-2">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span className="text-sm font-medium">다운로드</span>
+        </div>
+      </a>
+    </div>
+  );
+}
+
+// 일반 파일 카드 컴포넌트 (수정 모드용)
 function FileCard({
   file,
   canEdit,
