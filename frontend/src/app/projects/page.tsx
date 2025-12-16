@@ -317,13 +317,15 @@ export default function ProjectsPage() {
                     >
                       {/* 썸네일 */}
                       {project.thumbnailUrl ? (
-                        <img
-                          src={project.thumbnailUrl}
-                          alt={project.title}
-                          className="w-full h-48 object-cover"
-                        />
+                        <div className="w-full h-64 bg-gray-50 flex items-center justify-center">
+                          <img
+                            src={project.thumbnailUrl}
+                            alt={project.title}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
                       ) : (
-                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
                           <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                           </svg>
@@ -332,29 +334,29 @@ export default function ProjectsPage() {
 
                       <div className="p-4">
                         {/* 제목 */}
-                        <h3 className="text-lg font-semibold text-shinhan-darkGray mb-2 truncate">
+                        <h3 className="text-lg font-semibold text-shinhan-darkGray truncate">
                           {project.title}
                         </h3>
 
                         {/* 설명 */}
-                        {project.description && (
+                        {/* {project.description && (
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                             {project.description}
                           </p>
-                        )}
+                        )} */}
 
                         {/* 파일 카운트 */}
-                        <div className="flex items-center gap-2 mb-3">
+                        {/* <div className="flex items-center gap-2 mb-3">
                           <span className="px-2 py-1 bg-blue-50 text-[#0046FF] text-xs rounded">
                             시안 {project.fileCount.proposal}
                           </span>
                           <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded">
                             원고 {project.fileCount.final}
                           </span>
-                        </div>
+                        </div> */}
 
                         {/* 카테고리 */}
-                        {project.categories.length > 0 && (
+                        {/* {project.categories.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
                             {project.categories.slice(0, 2).map((cat) => (
                               <span
@@ -370,13 +372,13 @@ export default function ProjectsPage() {
                               </span>
                             )}
                           </div>
-                        )}
+                        )} */}
 
                         {/* 메타 정보 */}
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                        {/* <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>{project.uploaderName}</span>
                           <span>{new Date(project.createdAt).toLocaleDateString('ko-KR')}</span>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}
@@ -410,17 +412,17 @@ export default function ProjectsPage() {
 
                         {/* 프로젝트 정보 */}
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-shinhan-darkGray mb-1">
+                          <h3 className="text-lg font-semibold text-shinhan-darkGray">
                             {project.title}
                           </h3>
 
-                          {project.description && (
+                          {/* {project.description && (
                             <p className="text-sm text-gray-600 mb-2 line-clamp-1">
                               {project.description}
                             </p>
-                          )}
+                          )} */}
 
-                          <div className="flex items-center gap-4">
+                          {/* <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                               <span className="px-2 py-1 bg-blue-50 text-[#0046FF] text-xs rounded">
                                 시안 {project.fileCount.proposal}
@@ -442,14 +444,14 @@ export default function ProjectsPage() {
                                 ))}
                               </div>
                             )}
-                          </div>
+                          </div> */}
                         </div>
 
                         {/* 메타 정보 */}
-                        <div className="text-right text-sm text-gray-500">
+                        {/* <div className="text-right text-sm text-gray-500">
                           <div>{project.uploaderName}</div>
                           <div>{new Date(project.createdAt).toLocaleDateString('ko-KR')}</div>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   ))}

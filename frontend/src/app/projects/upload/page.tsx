@@ -275,7 +275,7 @@ export default function ProjectUploadPage() {
       <Header />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1920px] mx-auto flex">
+        <div className="max-w-[1400px] mx-auto flex">
           {/* Step 1에서만 카테고리 사이드바 표시 */}
           {step === 1 && (
             <CategoryTreeSidebar
@@ -289,7 +289,7 @@ export default function ProjectUploadPage() {
 
           {/* 메인 콘텐츠 영역 */}
           <main className="flex-1 overflow-y-auto">
-            <div className="px-6 py-12">
+            <div className="px-6 py-8">
               {/* 진행 표시기 */}
               <div className="mb-8 flex items-center justify-center">
                 <div className="flex items-center">

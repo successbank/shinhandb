@@ -292,7 +292,7 @@ export default function UsersPage() {
     <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
       <Header />
 
-      <main className="flex-1 max-w-content mx-auto w-full px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-shinhan-darkGray">회원 관리</h1>

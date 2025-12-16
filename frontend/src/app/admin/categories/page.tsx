@@ -172,7 +172,7 @@ export default function CategoriesManagementPage() {
     <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
       <Header />
 
-      <main className="flex-1 max-w-content mx-auto w-full px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         <div className="bg-white rounded-lg shadow-md p-6">
           {/* 헤더 */}
           <div className="flex justify-between items-center mb-6">

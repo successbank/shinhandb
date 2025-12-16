@@ -62,7 +62,7 @@ router.get('/', async (req: AuthRequest, res: Response<ApiResponse>, next) => {
 
     // 로그 목록 조회
     const result = await pool.query(
-      `SELECT al.*, u.name as user_name, u.email as user_email
+      `SELECT al.*, u.name as user_name, u.username as user_email
        FROM activity_logs al
        LEFT JOIN users u ON al.user_id = u.id
        ${whereClause}
@@ -134,7 +134,7 @@ router.get('/export', async (req: AuthRequest, res: Response, next) => {
     // 모든 로그 조회 (최대 10,000개)
     const result = await pool.query(
       `SELECT al.id, al.action_type, al.ip_address, al.created_at, al.details,
-              u.name as user_name, u.email as user_email, u.role as user_role
+              u.name as user_name, u.username as user_email, u.role as user_role
        FROM activity_logs al
        LEFT JOIN users u ON al.user_id = u.id
        ${whereClause}

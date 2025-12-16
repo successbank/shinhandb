@@ -118,7 +118,7 @@ export default function MyPage() {
     <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
       <Header />
 
-      <main className="flex-1 max-w-content mx-auto w-full px-6 py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 사용자 정보 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-2xl font-bold text-shinhan-darkGray mb-4">마이페이지</h1>
