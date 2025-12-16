@@ -9,6 +9,7 @@ export default function Header() {
   const { user, logout: authLogout } = useAuth();
   const router = useRouter();
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -112,17 +113,90 @@ export default function Header() {
           </div>
 
           {/* 모바일 메뉴 버튼 */}
-          <button className="md:hidden p-2 text-gray-600 hover:text-[#0046FF]">
+          <button
+            className="md:hidden p-2 text-gray-600 hover:text-[#0046FF]"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            aria-label="메뉴"
+          >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
+                d={showMobileMenu ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
               />
             </svg>
           </button>
         </div>
+
+        {/* 모바일 메뉴 */}
+        {showMobileMenu && (
+          <div className="md:hidden border-t border-[#E0E0E0] py-4 space-y-4">
+            <Link
+              href="/projects"
+              className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              프로젝트 목록
+            </Link>
+            <Link
+              href="/projects/upload"
+              className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              프로젝트 업로드
+            </Link>
+            <Link
+              href="/mypage"
+              className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              마이페이지
+            </Link>
+            {user?.role === 'ADMIN' && (
+              <>
+                <div className="px-6 pt-2 pb-1 text-xs font-semibold text-gray-500 uppercase">
+                  관리자
+                </div>
+                <Link
+                  href="/admin/users"
+                  className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  회원 관리
+                </Link>
+                <Link
+                  href="/admin/categories"
+                  className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  카테고리 관리
+                </Link>
+                <Link
+                  href="/admin/logs"
+                  className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  활동 로그
+                </Link>
+              </>
+            )}
+            <div className="border-t border-[#E0E0E0] pt-4 px-6">
+              <div className="text-sm text-gray-600 mb-2">
+                {user?.name}님
+              </div>
+              <button
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  handleLogout();
+                }}
+                className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+              >
+                로그아웃
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
