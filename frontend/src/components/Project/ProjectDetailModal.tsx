@@ -626,7 +626,7 @@ export default function ProjectDetailModal({
   function renderViewModeFiles() {
     if (!projectDetail) return null;
 
-    // 모든 파일을 하나의 배열로 합치기 (최종 원고가 먼저)
+    // 모든 파일을 하나의 배열로 합치기 (이미지 슬라이더용)
     const allFiles = [
       ...projectDetail.files.finalManuscripts.map(f => ({ ...f, typeLabel: '최종 원고' })),
       ...projectDetail.files.proposalDrafts.map(f => ({ ...f, typeLabel: '제안 시안' })),
@@ -634,26 +634,142 @@ export default function ProjectDetailModal({
 
     return (
       <>
-        {/* 파일 목록 - 갤러리 타입 (섹션 구분 없음) */}
-        {allFiles.length > 0 ? (
+        {/* 최종 원고 섹션 */}
+        {projectDetail.fileCount.final > 0 && (
           <div className="mb-6">
             <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
-              파일 목록 ({allFiles.length}개)
+              최종 원고 ({projectDetail.fileCount.final}개)
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {allFiles.map((file, index) => (
-                <GalleryFileCard
+            <div className="space-y-6">
+              {projectDetail.files.finalManuscripts.map((file, index) => (
+                <div
                   key={file.id}
-                  file={file}
-                  canEdit={canEdit && !uploadState.isUploading}
-                  onDelete={handleDeleteFile}
-                  onTypeChange={handleFileTypeToggle}
-                  onClick={() => handleImageClick(index)}
-                />
+                  className="border border-[#E0E0E0] rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  {/* 이미지와 플래그 */}
+                  <div className="relative cursor-pointer" onClick={() => handleImageClick(index)}>
+                    {/* 플래그 */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className="px-3 py-1 bg-[#0046FF] text-white text-sm font-medium rounded shadow-md">
+                        최종 원고
+                      </span>
+                    </div>
+
+                    {/* 큰 이미지 (원본 사용) */}
+                    {file.fileUrl ? (
+                      <img
+                        src={file.fileUrl}
+                        alt="최종 원고"
+                        className="w-full h-auto object-contain bg-gray-50"
+                        style={{ maxWidth: '100%', display: 'block' }}
+                      />
+                    ) : (
+                      <div className="w-full h-96 bg-gray-100 flex items-center justify-center">
+                        <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 버튼 영역 */}
+                  <div className="p-4 bg-white flex justify-end gap-2">
+                    <a
+                      href={file.fileUrl}
+                      download
+                      className="inline-flex items-center px-6 py-2 bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      다운로드
+                    </a>
+                    <button
+                      className="inline-flex items-center px-6 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      공유
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* 제안 시안 섹션 */}
+        {projectDetail.fileCount.proposal > 0 && (
+          <div className="mb-6">
+            <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
+              제안 시안 ({projectDetail.fileCount.proposal}개)
+            </h4>
+            <div className="space-y-6">
+              {projectDetail.files.proposalDrafts.map((file, index) => (
+                <div
+                  key={file.id}
+                  className="border border-[#E0E0E0] rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  {/* 이미지와 플래그 */}
+                  <div className="relative cursor-pointer" onClick={() => handleImageClick(projectDetail.fileCount.final + index)}>
+                    {/* 플래그 */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className="px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded shadow-md">
+                        제안 시안
+                      </span>
+                    </div>
+
+                    {/* 큰 이미지 (원본 사용) */}
+                    {file.fileUrl ? (
+                      <img
+                        src={file.fileUrl}
+                        alt="제안 시안"
+                        className="w-full h-auto object-contain bg-gray-50"
+                        style={{ maxWidth: '100%', display: 'block' }}
+                      />
+                    ) : (
+                      <div className="w-full h-96 bg-gray-100 flex items-center justify-center">
+                        <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 버튼 영역 */}
+                  <div className="p-4 bg-white flex justify-end gap-2">
+                    <a
+                      href={file.fileUrl}
+                      download
+                      className="inline-flex items-center px-6 py-2 bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      다운로드
+                    </a>
+                    <button
+                      className="inline-flex items-center px-6 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      공유
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 파일이 없는 경우 */}
+        {allFiles.length === 0 && (
           <div className="text-center py-12 mb-6">
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
