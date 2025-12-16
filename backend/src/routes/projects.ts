@@ -11,6 +11,7 @@ import {
   isOcrSupportedFile,
 } from '../services/ocr';
 import { indexContent, deleteContentIndex } from '../services/elasticsearch.service';
+import { deleteCache, CacheKeys } from '../services/cache.service';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -98,6 +99,11 @@ router.post(
         [project.id]
       );
 
+      // 카테고리 캐시 무효화 (프로젝트 개수가 변경됨)
+      await deleteCache(CacheKeys.categories('all'));
+      await deleteCache(CacheKeys.categories('HOLDING'));
+      await deleteCache(CacheKeys.categories('BANK'));
+
       res.status(201).json({
         success: true,
         message: '프로젝트가 생성되었습니다',
@@ -147,7 +153,8 @@ router.post(
 
       // 프로젝트 존재 및 권한 확인
       const projectResult = await pool.query(
-        `SELECT p.*, u.name as uploader_name
+        `SELECT p.*, u.name as uploader_name,
+         (SELECT category_id FROM project_categories WHERE project_id = p.id LIMIT 1) as first_category_id
          FROM projects p
          INNER JOIN users u ON p.uploader_id = u.id
          WHERE p.id = $1`,
@@ -241,9 +248,7 @@ router.post(
           `INSERT INTO contents
            (title, file_url, file_name, file_type, file_size, thumbnail_url,
             category_id, uploader_id, ocr_text, project_id, file_type_flag)
-           VALUES ($1, $2, $3, $4, $5, $6,
-                   (SELECT category_id FROM project_categories WHERE project_id = $7 LIMIT 1),
-                   $8, $9, $10, $11)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            RETURNING id, title, file_url AS "fileUrl", file_name AS "fileName",
                      file_type AS "fileType", file_size AS "fileSize",
                      thumbnail_url AS "thumbnailUrl", ocr_text AS "ocrText",
@@ -256,7 +261,7 @@ router.post(
             fileType,
             fileSize,
             thumbnailUrl,
-            projectId,
+            project.first_category_id, // 프로젝트의 첫 번째 카테고리 ID
             req.user!.id,
             ocrText,
             projectId,
@@ -655,6 +660,11 @@ router.patch(
             [id, catId]
           );
         }
+
+        // 카테고리 캐시 무효화 (카테고리 변경으로 프로젝트 개수 변경 가능)
+        await deleteCache(CacheKeys.categories('all'));
+        await deleteCache(CacheKeys.categories('HOLDING'));
+        await deleteCache(CacheKeys.categories('BANK'));
       }
 
       res.json({
@@ -727,6 +737,11 @@ router.delete(
 
       // 프로젝트 삭제 (CASCADE로 연결된 데이터도 자동 삭제)
       await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+
+      // 카테고리 캐시 무효화 (프로젝트 개수가 감소함)
+      await deleteCache(CacheKeys.categories('all'));
+      await deleteCache(CacheKeys.categories('HOLDING'));
+      await deleteCache(CacheKeys.categories('BANK'));
 
       res.json({
         success: true,

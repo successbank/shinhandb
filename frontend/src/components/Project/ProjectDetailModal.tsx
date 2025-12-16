@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { projectsApi, categoriesApi } from '@/lib/api';
-import { formatFileSize } from '@/lib/fileUtils';
+import { formatFileSize, isValidFileType, isValidFileSize, getFileIcon } from '@/lib/fileUtils';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
+import FileTypeSelector from '@/components/FileTypeSelector';
 
 interface ProjectDetailModalProps {
   projectId: string;
@@ -11,6 +12,7 @@ interface ProjectDetailModalProps {
   onClose: () => void;
   onUpdate?: () => void;
   userRole?: string;
+  userId?: string;
 }
 
 interface FileItem {
@@ -52,6 +54,7 @@ export default function ProjectDetailModal({
   onClose,
   onUpdate,
   userRole,
+  userId,
 }: ProjectDetailModalProps) {
   const [loading, setLoading] = useState(true);
   const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
@@ -66,8 +69,29 @@ export default function ProjectDetailModal({
   // 파일 타입 변경 상태 (임시 저장)
   const [fileTypeChanges, setFileTypeChanges] = useState<Record<string, 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT'>>({});
 
-  // 삭제 대기 파일 ID 목록
+  // 삭제 대기 파일 ID 목록 (수정 모드용)
   const [filesToDelete, setFilesToDelete] = useState<Set<string>>(new Set());
+
+  // 파일 업로드 관련 (보기 모드용)
+  const [selectedNewFiles, setSelectedNewFiles] = useState<File[]>([]);
+  const [newFileMeta, setNewFileMeta] = useState<Array<{
+    fileTypeFlag: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT';
+  }>>([]);
+
+  // 업로드 상태
+  const [uploadState, setUploadState] = useState<{
+    isUploading: boolean;
+    progress: number;
+    status: 'idle' | 'uploading' | 'success' | 'error';
+    error?: string;
+  }>({
+    isUploading: false,
+    progress: 0,
+    status: 'idle',
+  });
+
+  // 드래그앤드롭
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (isOpen && projectId) {
@@ -209,16 +233,170 @@ export default function ProjectDetailModal({
 
   // 권한 체크
   const canEdit = userRole === 'ADMIN' ||
-    (userRole === 'CLIENT' && projectDetail?.uploaderId === projectDetail?.uploaderId);
+    (userRole === 'CLIENT' && projectDetail?.uploaderId === userId);
 
   const canDelete = userRole === 'ADMIN';
+
+  // 보기 모드: 파일 즉시 삭제
+  const handleDeleteFile = async (fileId: string, fileName: string) => {
+    const confirmed = confirm(
+      `이 파일을 삭제하시겠습니까?\n\n파일명: ${fileName}\n\n⚠️ 삭제된 파일은 복구할 수 없습니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await projectsApi.deleteFile(projectId, fileId);
+      alert('파일이 삭제되었습니다');
+      await loadProjectDetail();
+      if (onUpdate) onUpdate();
+    } catch (error: any) {
+      alert(error.message || '파일 삭제 실패');
+    }
+  };
+
+  // 보기 모드: 파일 타입 즉시 변경
+  const handleFileTypeToggle = async (
+    fileId: string,
+    currentType: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT'
+  ) => {
+    const newType: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT' =
+      currentType === 'PROPOSAL_DRAFT' ? 'FINAL_MANUSCRIPT' : 'PROPOSAL_DRAFT';
+
+    try {
+      await projectsApi.updateFileType(projectId, fileId, newType);
+      await loadProjectDetail();
+    } catch (error: any) {
+      alert(error.message || '파일 타입 변경 실패');
+    }
+  };
+
+  // 파일 선택 핸들러
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    processFiles(Array.from(files));
+  };
+
+  // 드래그앤드롭 핸들러
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFiles(Array.from(files));
+    }
+  };
+
+  // 파일 처리 (검증 + 상태 저장)
+  const processFiles = (files: File[]) => {
+    // 최대 10개 제한
+    if (files.length > 10) {
+      alert('최대 10개의 파일만 업로드 가능합니다');
+      return;
+    }
+
+    // 파일 타입/크기 검증
+    const invalidFiles: string[] = [];
+    files.forEach(file => {
+      if (!isValidFileType(file) || !isValidFileSize(file)) {
+        invalidFiles.push(file.name);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      alert(
+        `지원하지 않는 파일이 포함되어 있습니다:\n\n${invalidFiles.join('\n')}\n\n` +
+        `허용: JPG, PNG, GIF (최대 10MB)`
+      );
+      return;
+    }
+
+    setSelectedNewFiles(files);
+    setNewFileMeta(files.map(() => ({ fileTypeFlag: 'PROPOSAL_DRAFT' })));
+  };
+
+  // 파일 업로드 핸들러
+  const handleUploadFiles = async () => {
+    if (selectedNewFiles.length === 0) {
+      alert('업로드할 파일을 선택해주세요');
+      return;
+    }
+
+    setUploadState({
+      isUploading: true,
+      progress: 0,
+      status: 'uploading',
+    });
+
+    try {
+      await projectsApi.uploadFiles(
+        projectId,
+        selectedNewFiles,
+        newFileMeta,
+        undefined, // tags
+        {
+          onProgress: (progress) => {
+            setUploadState(prev => ({
+              ...prev,
+              progress: progress.percentage,
+            }));
+          },
+          onSuccess: () => {
+            setUploadState({
+              isUploading: false,
+              progress: 100,
+              status: 'success',
+            });
+
+            // 2초 후 자동 정리
+            setTimeout(() => {
+              setSelectedNewFiles([]);
+              setNewFileMeta([]);
+              setUploadState({
+                isUploading: false,
+                progress: 0,
+                status: 'idle',
+              });
+              loadProjectDetail();
+              if (onUpdate) onUpdate();
+            }, 2000);
+          },
+          onError: (error) => {
+            setUploadState({
+              isUploading: false,
+              progress: 0,
+              status: 'error',
+              error: error.message,
+            });
+          },
+        }
+      );
+    } catch (error: any) {
+      setUploadState({
+        isUploading: false,
+        progress: 0,
+        status: 'error',
+        error: error.message || '업로드 중 오류가 발생했습니다',
+      });
+    }
+  };
+
+  // 모달 닫기 (업로드 중일 때는 경고)
+  const handleClose = () => {
+    if (uploadState.isUploading) {
+      alert('파일 업로드가 진행 중입니다. 완료될 때까지 기다려주세요.');
+      return;
+    }
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4"
@@ -234,7 +412,12 @@ export default function ProjectDetailModal({
             {!isEditMode && canEdit && (
               <button
                 onClick={handleEdit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={uploadState.isUploading}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  uploadState.isUploading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
                 수정
               </button>
@@ -243,7 +426,12 @@ export default function ProjectDetailModal({
             {!isEditMode && canDelete && (
               <button
                 onClick={handleDeleteProject}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                disabled={uploadState.isUploading}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  uploadState.isUploading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
               >
                 삭제
               </button>
@@ -267,8 +455,14 @@ export default function ProjectDetailModal({
             )}
 
             <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              onClick={handleClose}
+              disabled={uploadState.isUploading}
+              className={`transition-colors ${
+                uploadState.isUploading
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title={uploadState.isUploading ? '업로드 진행 중...' : '닫기'}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -448,7 +642,13 @@ export default function ProjectDetailModal({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projectDetail.files.proposalDrafts.map((file) => (
-                <FileCard key={file.id} file={file} />
+                <FileCard
+                  key={file.id}
+                  file={file}
+                  canEdit={canEdit && !uploadState.isUploading}
+                  onDelete={handleDeleteFile}
+                  onTypeChange={handleFileTypeToggle}
+                />
               ))}
             </div>
           </div>
@@ -462,7 +662,13 @@ export default function ProjectDetailModal({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projectDetail.files.finalManuscripts.map((file) => (
-                <FileCard key={file.id} file={file} />
+                <FileCard
+                  key={file.id}
+                  file={file}
+                  canEdit={canEdit && !uploadState.isUploading}
+                  onDelete={handleDeleteFile}
+                  onTypeChange={handleFileTypeToggle}
+                />
               ))}
             </div>
           </div>
@@ -477,7 +683,186 @@ export default function ProjectDetailModal({
             <p className="text-gray-500">아직 업로드된 파일이 없습니다.</p>
           </div>
         )}
+
+        {/* 파일 업로드 영역 (권한 있을 때만 표시) */}
+        {canEdit && renderFileUploadZone()}
       </>
+    );
+  }
+
+  // 파일 업로드 영역 (보기 모드)
+  function renderFileUploadZone() {
+    return (
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">파일 추가</h4>
+
+        {/* 드래그앤드롭 영역 */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+          }}
+          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            isDragging
+              ? 'border-[#0046FF] bg-blue-50'
+              : 'border-gray-300 hover:border-[#0046FF] hover:bg-gray-50'
+          } ${uploadState.isUploading ? 'pointer-events-none opacity-50' : ''}`}
+        >
+          <input
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.gif"
+            onChange={handleFilesSelected}
+            className="hidden"
+            id="file-upload-modal"
+            disabled={uploadState.isUploading}
+          />
+          <label
+            htmlFor="file-upload-modal"
+            className="cursor-pointer flex flex-col items-center"
+          >
+            <svg
+              className="w-12 h-12 text-gray-400 mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="text-[#0046FF] font-medium">클릭하여 파일 선택</span> 또는 드래그 앤 드롭
+            </p>
+            <p className="text-xs text-gray-500">
+              JPG, PNG, GIF (최대 10MB, 최대 10개)
+            </p>
+          </label>
+        </div>
+
+        {/* 선택된 파일 목록 */}
+        {selectedNewFiles.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm font-medium text-gray-700">
+              선택된 파일 ({selectedNewFiles.length}개)
+            </p>
+            {selectedNewFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                {/* 파일 아이콘 */}
+                <div className="flex-shrink-0 text-2xl">
+                  {getFileIcon(file)}
+                </div>
+
+                {/* 파일 정보 */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatFileSize(file.size)}
+                  </p>
+                </div>
+
+                {/* 파일 타입 선택 */}
+                <div className="flex-shrink-0">
+                  <FileTypeSelector
+                    value={newFileMeta[index]?.fileTypeFlag || 'PROPOSAL_DRAFT'}
+                    onChange={(value) => {
+                      const newMeta = [...newFileMeta];
+                      newMeta[index] = { fileTypeFlag: value };
+                      setNewFileMeta(newMeta);
+                    }}
+                  />
+                </div>
+
+                {/* 삭제 버튼 */}
+                <button
+                  onClick={() => {
+                    setSelectedNewFiles(prev => prev.filter((_, i) => i !== index));
+                    setNewFileMeta(prev => prev.filter((_, i) => i !== index));
+                  }}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="파일 제거"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 업로드 진행 상태 */}
+        {uploadState.status !== 'idle' && (
+          <div className="mt-4">
+            {uploadState.status === 'uploading' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">업로드 중...</span>
+                  <span className="text-sm text-gray-600">{uploadState.progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-[#0046FF] h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadState.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {uploadState.status === 'success' && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium">파일 업로드 완료!</span>
+              </div>
+            )}
+
+            {uploadState.status === 'error' && (
+              <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                <p className="text-sm font-medium">업로드 실패</p>
+                {uploadState.error && (
+                  <p className="text-xs mt-1">{uploadState.error}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 업로드 버튼 */}
+        {selectedNewFiles.length > 0 && uploadState.status !== 'success' && (
+          <div className="mt-4">
+            <button
+              onClick={handleUploadFiles}
+              disabled={uploadState.isUploading}
+              className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                uploadState.isUploading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#0046FF] text-white hover:bg-blue-700'
+              }`}
+            >
+              {uploadState.isUploading ? '업로드 중...' : `${selectedNewFiles.length}개 파일 업로드`}
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -523,7 +908,17 @@ export default function ProjectDetailModal({
 }
 
 // 일반 파일 카드 컴포넌트
-function FileCard({ file }: { file: FileItem }) {
+function FileCard({
+  file,
+  canEdit,
+  onDelete,
+  onTypeChange
+}: {
+  file: FileItem;
+  canEdit?: boolean;
+  onDelete?: (fileId: string, fileName: string) => void;
+  onTypeChange?: (fileId: string, currentType: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT') => void;
+}) {
   return (
     <div className="border border-[#E0E0E0] rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* 썸네일 */}
@@ -547,9 +942,38 @@ function FileCard({ file }: { file: FileItem }) {
       </p>
 
       {/* 파일 크기 */}
-      <p className="text-xs text-gray-500 mb-2">
+      <p className="text-xs text-gray-500 mb-3">
         {formatFileSize(file.fileSize)}
       </p>
+
+      {/* 수정 버튼 (권한 있을 때만) */}
+      {canEdit && onTypeChange && onDelete && (
+        <div className="flex items-center justify-between mb-3">
+          {/* 타입 토글 버튼 */}
+          <button
+            onClick={() => onTypeChange(file.id, file.fileTypeFlag)}
+            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+              file.fileTypeFlag === 'PROPOSAL_DRAFT'
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'
+            }`}
+            title="클릭하여 타입 변경"
+          >
+            {file.fileTypeFlag === 'PROPOSAL_DRAFT' ? '제안 시안' : '최종 원고'} ⇄
+          </button>
+
+          {/* 삭제 버튼 */}
+          <button
+            onClick={() => onDelete(file.id, file.fileName)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="파일 삭제"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* 다운로드 버튼 */}
       <a

@@ -85,7 +85,7 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
-      router.push('/contents');
+      router.push('/projects');
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다');
     } finally {

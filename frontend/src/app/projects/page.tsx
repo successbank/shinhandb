@@ -530,6 +530,7 @@ export default function ProjectsPage() {
           onClose={handleCloseModal}
           onUpdate={loadProjects}
           userRole={user?.role}
+          userId={user?.id}
         />
       )}
     </div>
