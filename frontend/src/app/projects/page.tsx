@@ -74,7 +74,7 @@ export default function ProjectsPage() {
       loadCategories();
       loadProjects();
     }
-  }, [isAuthenticated, selectedCategoryId, searchQuery, page]);
+  }, [isAuthenticated, selectedCategoryId, page]);
 
   const loadCategories = async () => {
     try {
@@ -91,7 +91,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const loadProjects = async () => {
+  const loadProjects = async (overrideSearch?: string) => {
     try {
       setLoading(true);
       setError('');
@@ -105,8 +105,10 @@ export default function ProjectsPage() {
         params.categoryId = selectedCategoryId;
       }
 
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
+      // overrideSearch가 제공되면 그 값을 사용, 아니면 현재 searchQuery 사용
+      const searchValue = overrideSearch !== undefined ? overrideSearch : searchQuery;
+      if (searchValue.trim()) {
+        params.search = searchValue.trim();
       }
 
       const response = await projectsApi.getList(params);
@@ -143,6 +145,19 @@ export default function ProjectsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProjectId(null);
+  };
+
+  const handleTagClick = (tag: string) => {
+    // 모달 닫기
+    setIsModalOpen(false);
+    setSelectedProjectId(null);
+    // 태그로 검색 (# 제거)
+    const searchTag = tag.startsWith('#') ? tag.slice(1) : tag;
+    setSearchQuery(searchTag);
+    setSelectedCategoryId(''); // 카테고리 필터 해제
+    setPage(1);
+    // 검색 실행 (검색어를 직접 전달)
+    loadProjects(searchTag);
   };
 
   if (authLoading || loading) {
@@ -232,7 +247,7 @@ export default function ProjectsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="프로젝트 검색..."
-                className="flex-1 px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                className="flex-1 px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-black placeholder-gray-400"
               />
               <button
                 type="submit"
@@ -593,6 +608,7 @@ export default function ProjectsPage() {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onUpdate={loadProjects}
+          onTagClick={handleTagClick}
           userRole={user?.role}
           userId={user?.id}
         />

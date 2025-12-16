@@ -12,6 +12,7 @@ interface ProjectDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate?: () => void;
+  onTagClick?: (tag: string) => void;
   userRole?: string;
   userId?: string;
 }
@@ -54,6 +55,7 @@ export default function ProjectDetailModal({
   isOpen,
   onClose,
   onUpdate,
+  onTagClick,
   userRole,
   userId,
 }: ProjectDetailModalProps) {
@@ -784,12 +786,18 @@ export default function ProjectDetailModal({
             <h4 className="text-sm font-semibold text-gray-700 mb-3">프로젝트 태그</h4>
             <div className="flex flex-wrap gap-2">
               {projectDetail.tags.map((tag, index) => (
-                <span
+                <button
                   key={index}
-                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm rounded-full shadow-sm hover:shadow transition-shadow"
+                  onClick={() => {
+                    if (onTagClick) {
+                      onTagClick(tag);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm rounded-full shadow-sm hover:shadow hover:bg-[#0046FF] hover:text-white hover:border-[#0046FF] transition-all cursor-pointer"
+                  title={`"${tag}" 태그로 검색`}
                 >
                   #{tag}
-                </span>
+                </button>
               ))}
             </div>
           </div>

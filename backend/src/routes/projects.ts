@@ -369,10 +369,19 @@ router.get(
         queryParams.push(categoryId);
       }
 
-      // 검색어 필터
+      // 검색어 필터 (프로젝트 제목 또는 태그 검색)
       if (search) {
-        whereConditions.push(`p.title ILIKE $${paramIndex++}`);
+        whereConditions.push(`(
+          p.title ILIKE $${paramIndex} OR
+          EXISTS (
+            SELECT 1 FROM contents c
+            INNER JOIN content_tags ct ON c.id = ct.content_id
+            INNER JOIN tags t ON ct.tag_id = t.id
+            WHERE c.project_id = p.id AND t.name ILIKE $${paramIndex}
+          )
+        )`);
         queryParams.push(`%${search}%`);
+        paramIndex++;
       }
 
       // 날짜 범위 필터
