@@ -5,6 +5,7 @@ import { projectsApi, categoriesApi } from '@/lib/api';
 import { formatFileSize, isValidFileType, isValidFileSize, getFileIcon } from '@/lib/fileUtils';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
 import FileTypeSelector from '@/components/FileTypeSelector';
+import ImageSliderModal from './ImageSliderModal';
 
 interface ProjectDetailModalProps {
   projectId: string;
@@ -92,6 +93,10 @@ export default function ProjectDetailModal({
 
   // 드래그앤드롭
   const [isDragging, setIsDragging] = useState(false);
+
+  // 이미지 슬라이더 상태
+  const [isImageSliderOpen, setIsImageSliderOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     if (isOpen && projectId) {
@@ -269,6 +274,12 @@ export default function ProjectDetailModal({
     } catch (error: any) {
       alert(error.message || '파일 타입 변경 실패');
     }
+  };
+
+  // 이미지 클릭 핸들러
+  const handleImageClick = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsImageSliderOpen(true);
   };
 
   // 파일 선택 핸들러
@@ -630,13 +641,14 @@ export default function ProjectDetailModal({
               파일 목록 ({allFiles.length}개)
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {allFiles.map((file) => (
+              {allFiles.map((file, index) => (
                 <GalleryFileCard
                   key={file.id}
                   file={file}
                   canEdit={canEdit && !uploadState.isUploading}
                   onDelete={handleDeleteFile}
                   onTypeChange={handleFileTypeToggle}
+                  onClick={() => handleImageClick(index)}
                 />
               ))}
             </div>
@@ -669,6 +681,16 @@ export default function ProjectDetailModal({
 
         {/* 파일 업로드 영역 (ADMIN, CLIENT만 표시) */}
         {(userRole === 'ADMIN' || userRole === 'CLIENT') && renderFileUploadZone()}
+
+        {/* 이미지 슬라이더 모달 */}
+        <ImageSliderModal
+          isOpen={isImageSliderOpen}
+          onClose={() => setIsImageSliderOpen(false)}
+          images={allFiles}
+          initialIndex={currentImageIndex}
+          currentIndex={currentImageIndex}
+          onIndexChange={setCurrentImageIndex}
+        />
       </>
     );
   }
@@ -895,15 +917,20 @@ function GalleryFileCard({
   file,
   canEdit,
   onDelete,
-  onTypeChange
+  onTypeChange,
+  onClick
 }: {
   file: FileItem & { typeLabel: string };
   canEdit?: boolean;
   onDelete?: (fileId: string, fileName: string) => void;
   onTypeChange?: (fileId: string, currentType: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT') => void;
+  onClick?: () => void;
 }) {
   return (
-    <div className="group relative rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200">
+    <div
+      className="group relative rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer"
+      onClick={onClick}
+    >
       {/* 썸네일 */}
       {file.thumbnailUrl ? (
         <img
@@ -932,10 +959,13 @@ function GalleryFileCard({
 
       {/* 수정 버튼 (우상단, 권한 있을 때만 hover 시 표시) */}
       {canEdit && onTypeChange && onDelete && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
           {/* 타입 변경 버튼 */}
           <button
-            onClick={() => onTypeChange(file.id, file.fileTypeFlag)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTypeChange(file.id, file.fileTypeFlag);
+            }}
             className="p-1.5 bg-white/90 hover:bg-white rounded shadow-sm transition-colors"
             title="타입 변경"
           >
@@ -946,7 +976,10 @@ function GalleryFileCard({
 
           {/* 삭제 버튼 */}
           <button
-            onClick={() => onDelete(file.id, file.fileName)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(file.id, file.fileName);
+            }}
             className="p-1.5 bg-white/90 hover:bg-red-50 rounded shadow-sm transition-colors"
             title="삭제"
           >
@@ -957,20 +990,15 @@ function GalleryFileCard({
         </div>
       )}
 
-      {/* 다운로드 오버레이 (hover 시 표시) */}
-      <a
-        href={file.fileUrl}
-        download
-        className="absolute inset-0 bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all duration-200 flex items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* 확대 아이콘 (hover 시 중앙에 표시) */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
         <div className="text-white flex flex-col items-center gap-2">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
           </svg>
-          <span className="text-sm font-medium">다운로드</span>
+          <span className="text-sm font-medium">클릭하여 크게 보기</span>
         </div>
-      </a>
+      </div>
     </div>
   );
 }
