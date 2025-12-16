@@ -738,4 +738,186 @@ router.delete(
   }
 );
 
+/**
+ * PATCH /api/projects/:projectId/files/:fileId
+ * 파일 타입 변경 (제안 시안 ↔ 최종 원고)
+ */
+router.patch(
+  '/:projectId/files/:fileId',
+  authorize('ADMIN', 'CLIENT'),
+  logActivity('UPDATE_FILE_TYPE'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { projectId, fileId } = req.params;
+      const { fileTypeFlag } = req.body;
+
+      // 파일 타입 검증
+      if (!fileTypeFlag || !['PROPOSAL_DRAFT', 'FINAL_MANUSCRIPT'].includes(fileTypeFlag)) {
+        throw new AppError(400, '유효한 파일 타입을 입력해주세요 (PROPOSAL_DRAFT, FINAL_MANUSCRIPT)');
+      }
+
+      // 프로젝트 존재 및 권한 확인
+      const projectResult = await pool.query(
+        'SELECT * FROM projects WHERE id = $1',
+        [projectId]
+      );
+
+      if (projectResult.rows.length === 0) {
+        throw new AppError(404, '프로젝트를 찾을 수 없습니다');
+      }
+
+      const project = projectResult.rows[0];
+
+      // 권한 확인: ADMIN 또는 프로젝트 소유자
+      if (req.user!.role !== 'ADMIN' && project.uploader_id !== req.user!.id) {
+        throw new AppError(403, '이 프로젝트의 파일을 수정할 권한이 없습니다');
+      }
+
+      // CLIENT인 경우 수정 시간 제한 확인
+      if (req.user!.role === 'CLIENT' && project.editable_until) {
+        if (new Date() > new Date(project.editable_until)) {
+          throw new AppError(403, '수정 가능 시간이 만료되었습니다');
+        }
+      }
+
+      // 파일 존재 및 프로젝트 소속 확인
+      const fileResult = await pool.query(
+        'SELECT * FROM contents WHERE id = $1 AND project_id = $2',
+        [fileId, projectId]
+      );
+
+      if (fileResult.rows.length === 0) {
+        throw new AppError(404, '파일을 찾을 수 없습니다');
+      }
+
+      const file = fileResult.rows[0];
+
+      // 파일 타입 업데이트
+      const updateResult = await pool.query(
+        `UPDATE contents
+         SET file_type_flag = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING id, file_type_flag AS "fileTypeFlag", updated_at AS "updatedAt"`,
+        [fileTypeFlag, fileId]
+      );
+
+      // Elasticsearch 색인 업데이트
+      try {
+        await indexContent({
+          id: file.id,
+          title: file.title,
+          file_name: file.file_name,
+          file_type: file.file_type,
+          file_size: file.file_size,
+          ocr_text: file.ocr_text || '',
+          tags: [], // 태그는 별도 조회 필요하지만 생략
+          uploader_id: file.uploader_id,
+          uploader_name: req.user!.name,
+          member_type: req.user!.role,
+          created_at: file.created_at,
+          updated_at: new Date(),
+          project_id: projectId,
+          project_title: project.title,
+          file_type_flag: fileTypeFlag,
+        });
+      } catch (esError) {
+        console.error('[Elasticsearch] 색인 업데이트 실패:', esError);
+      }
+
+      res.json({
+        success: true,
+        message: '파일 타입이 변경되었습니다',
+        data: updateResult.rows[0],
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * DELETE /api/projects/:projectId/files/:fileId
+ * 개별 파일 삭제
+ */
+router.delete(
+  '/:projectId/files/:fileId',
+  authorize('ADMIN', 'CLIENT'),
+  logActivity('DELETE_FILE'),
+  async (req: AuthRequest, res: Response<ApiResponse>, next) => {
+    try {
+      const { projectId, fileId } = req.params;
+
+      // 프로젝트 존재 및 권한 확인
+      const projectResult = await pool.query(
+        'SELECT * FROM projects WHERE id = $1',
+        [projectId]
+      );
+
+      if (projectResult.rows.length === 0) {
+        throw new AppError(404, '프로젝트를 찾을 수 없습니다');
+      }
+
+      const project = projectResult.rows[0];
+
+      // 권한 확인: ADMIN 또는 프로젝트 소유자
+      if (req.user!.role !== 'ADMIN' && project.uploader_id !== req.user!.id) {
+        throw new AppError(403, '이 프로젝트의 파일을 삭제할 권한이 없습니다');
+      }
+
+      // CLIENT인 경우 수정 시간 제한 확인
+      if (req.user!.role === 'CLIENT' && project.editable_until) {
+        if (new Date() > new Date(project.editable_until)) {
+          throw new AppError(403, '수정 가능 시간이 만료되었습니다');
+        }
+      }
+
+      // 파일 존재 및 프로젝트 소속 확인
+      const fileResult = await pool.query(
+        'SELECT * FROM contents WHERE id = $1 AND project_id = $2',
+        [fileId, projectId]
+      );
+
+      if (fileResult.rows.length === 0) {
+        throw new AppError(404, '파일을 찾을 수 없습니다');
+      }
+
+      const file = fileResult.rows[0];
+
+      // 물리적 파일 삭제
+      try {
+        // 원본 파일 삭제
+        if (file.file_url) {
+          const originalPath = path.join(__dirname, '../../', file.file_url);
+          await fs.unlink(originalPath);
+        }
+
+        // 썸네일 삭제
+        if (file.thumbnail_url) {
+          const thumbPath = path.join(__dirname, '../../', file.thumbnail_url);
+          await fs.unlink(thumbPath);
+        }
+      } catch (fileError) {
+        console.error(`[파일 삭제 실패] ${file.id}:`, fileError);
+      }
+
+      // Elasticsearch 색인 삭제
+      try {
+        await deleteContentIndex(file.id);
+      } catch (esError) {
+        console.error('[Elasticsearch] 색인 삭제 실패:', esError);
+      }
+
+      // 데이터베이스에서 삭제
+      await pool.query('DELETE FROM contents WHERE id = $1', [fileId]);
+
+      res.json({
+        success: true,
+        message: '파일이 삭제되었습니다',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

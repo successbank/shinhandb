@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
+import ProjectDetailModal from '@/components/Project/ProjectDetailModal';
 import { projectsApi, categoriesApi } from '@/lib/api';
 import { formatFileSize } from '@/lib/fileUtils';
 
@@ -34,35 +35,6 @@ interface ProjectListResponse {
   };
 }
 
-interface FileItem {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  thumbnailUrl?: string;
-  fileType: string;
-  fileSize: number;
-  tags?: string[];
-  createdAt: string;
-}
-
-interface ProjectDetail {
-  id: string;
-  title: string;
-  description?: string;
-  uploaderName: string;
-  createdAt: string;
-  files: {
-    proposalDrafts: FileItem[];
-    finalManuscripts: FileItem[];
-  };
-  categories: Array<{ id: string; name: string }>;
-  tags: string[];
-  fileCount: {
-    total: number;
-    proposal: number;
-    final: number;
-  };
-}
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -87,8 +59,6 @@ export default function ProjectsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
-  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -165,44 +135,11 @@ export default function ProjectsPage() {
   const handleProjectClick = async (projectId: string) => {
     setSelectedProjectId(projectId);
     setIsModalOpen(true);
-    setModalLoading(true);
-    setProjectDetail(null);
-
-    try {
-      const response = await projectsApi.getDetail(projectId);
-      if (response.success && response.data) {
-        setProjectDetail(response.data);
-      }
-    } catch (error: any) {
-      console.error('프로젝트 상세 로드 실패:', error);
-    } finally {
-      setModalLoading(false);
-    }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProjectId(null);
-    setProjectDetail(null);
-  };
-
-  const handleDeleteProject = async () => {
-    if (!projectDetail) return;
-
-    const confirmed = confirm(
-      `프로젝트 "${projectDetail.title}"를 삭제하시겠습니까?\n연결된 모든 파일도 함께 삭제됩니다.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await projectsApi.delete(projectDetail.id);
-      alert('프로젝트가 삭제되었습니다');
-      handleCloseModal();
-      loadProjects(); // 목록 새로고침
-    } catch (error: any) {
-      alert(error.message || '프로젝트 삭제 실패');
-    }
   };
 
   if (authLoading || loading) {
@@ -586,235 +523,14 @@ export default function ProjectsPage() {
       <Footer />
 
       {/* 프로젝트 상세 모달 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={handleCloseModal}>
-          <div
-            className="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 모달 헤더 */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-2xl font-bold text-shinhan-darkGray">프로젝트 상세</h2>
-              <button
-                onClick={handleCloseModal}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* 모달 내용 */}
-            <div className="p-6">
-              {modalLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0046FF] mx-auto mb-4"></div>
-                    <p className="text-gray-600">로딩 중...</p>
-                  </div>
-                </div>
-              )}
-
-              {!modalLoading && projectDetail && (
-                <>
-                  {/* 프로젝트 정보 */}
-                  <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-shinhan-darkGray mb-2">
-                          {projectDetail.title}
-                        </h3>
-                        {projectDetail.description && (
-                          <p className="text-gray-600 mb-4">{projectDetail.description}</p>
-                        )}
-
-                        {/* 메타 정보 */}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span>업로더: {projectDetail.uploaderName}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>{new Date(projectDetail.createdAt).toLocaleDateString('ko-KR')}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            <span>전체 {projectDetail.fileCount.total}개 파일</span>
-                          </div>
-                        </div>
-
-                        {/* 카테고리 */}
-                        {projectDetail.categories.length > 0 && (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {projectDetail.categories.map((cat) => (
-                              <span
-                                key={cat.id}
-                                className="px-3 py-1 bg-blue-100 text-[#0046FF] text-sm rounded-full"
-                              >
-                                {cat.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 삭제 버튼 */}
-                      {user?.role === 'ADMIN' && (
-                        <button
-                          onClick={handleDeleteProject}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ml-4"
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </div>
-
-                    {/* 태그 클라우드 */}
-                    {projectDetail.tags.length > 0 && (
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">태그</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {projectDetail.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 제안 시안 섹션 */}
-                  {projectDetail.fileCount.proposal > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
-                        제안 시안 ({projectDetail.fileCount.proposal}개)
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {projectDetail.files.proposalDrafts.map((file) => (
-                          <div
-                            key={file.id}
-                            className="border border-[#E0E0E0] rounded-lg p-4 hover:shadow-md transition-shadow"
-                          >
-                            {/* 썸네일 */}
-                            {file.thumbnailUrl ? (
-                              <img
-                                src={file.thumbnailUrl}
-                                alt={file.fileName}
-                                className="w-full h-48 object-cover rounded mb-3"
-                              />
-                            ) : (
-                              <div className="w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
-                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-
-                            {/* 파일명 */}
-                            <p className="text-sm font-medium text-[#333333] truncate mb-1">
-                              {file.fileName}
-                            </p>
-
-                            {/* 파일 크기 */}
-                            <p className="text-xs text-gray-500 mb-2">
-                              {formatFileSize(file.fileSize)}
-                            </p>
-
-                            {/* 다운로드 버튼 */}
-                            <a
-                              href={file.fileUrl}
-                              download
-                              className="block w-full py-2 text-center bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              다운로드
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 최종 원고 섹션 */}
-                  {projectDetail.fileCount.final > 0 && (
-                    <div>
-                      <h4 className="text-xl font-bold text-shinhan-darkGray mb-4">
-                        최종 원고 ({projectDetail.fileCount.final}개)
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {projectDetail.files.finalManuscripts.map((file) => (
-                          <div
-                            key={file.id}
-                            className="border border-[#E0E0E0] rounded-lg p-4 hover:shadow-md transition-shadow"
-                          >
-                            {/* 썸네일 */}
-                            {file.thumbnailUrl ? (
-                              <img
-                                src={file.thumbnailUrl}
-                                alt={file.fileName}
-                                className="w-full h-48 object-cover rounded mb-3"
-                              />
-                            ) : (
-                              <div className="w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
-                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-
-                            {/* 파일명 */}
-                            <p className="text-sm font-medium text-[#333333] truncate mb-1">
-                              {file.fileName}
-                            </p>
-
-                            {/* 파일 크기 */}
-                            <p className="text-xs text-gray-500 mb-2">
-                              {formatFileSize(file.fileSize)}
-                            </p>
-
-                            {/* 다운로드 버튼 */}
-                            <a
-                              href={file.fileUrl}
-                              download
-                              className="block w-full py-2 text-center bg-[#0046FF] text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              다운로드
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 파일이 없는 경우 */}
-                  {projectDetail.fileCount.total === 0 && (
-                    <div className="text-center py-12">
-                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-gray-500">아직 업로드된 파일이 없습니다.</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+      {selectedProjectId && (
+        <ProjectDetailModal
+          projectId={selectedProjectId}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onUpdate={loadProjects}
+          userRole={user?.role}
+        />
       )}
     </div>
   );

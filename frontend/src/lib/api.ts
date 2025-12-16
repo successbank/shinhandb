@@ -574,4 +574,17 @@ export const projectsApi = {
     apiRequest(`/projects/${id}`, {
       method: 'DELETE',
     }),
+
+  // 파일 타입 변경 (제안 시안 ↔ 최종 원고)
+  updateFileType: (projectId: string, fileId: string, fileTypeFlag: 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT') =>
+    apiRequest(`/projects/${projectId}/files/${fileId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ fileTypeFlag }),
+    }),
+
+  // 개별 파일 삭제
+  deleteFile: (projectId: string, fileId: string) =>
+    apiRequest(`/projects/${projectId}/files/${fileId}`, {
+      method: 'DELETE',
+    }),
 };
