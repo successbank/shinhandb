@@ -79,16 +79,16 @@ export default function ImageSliderModal({
       </button>
 
       {/* 이미지 정보 (상단) */}
-      {/* <div className="absolute top-4 left-4 z-10">
-        <div className="flex items-center gap-3"> */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="flex items-center gap-3">
           {/* 타입 배지 */}
-          {/* <span className={`px-3 py-1.5 text-sm font-medium rounded-lg shadow-lg ${
+          <span className={`px-3 py-1.5 text-sm font-medium rounded-lg shadow-lg ${
             currentImage.fileTypeFlag === 'FINAL_MANUSCRIPT'
               ? 'bg-green-600 text-white'
               : 'bg-blue-600 text-white'
           }`}>
             {currentImage.typeLabel}
-          </span> */}
+          </span>
 
           {/* 파일명 */}
           {/* <span className="text-white text-sm font-medium bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
@@ -98,9 +98,9 @@ export default function ImageSliderModal({
           {/* 카운터 */}
           {/* <span className="text-white text-sm bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
             {currentIndex + 1} / {images.length}
-          </span>
+          </span> */}
         </div>
-      </div> */}
+      </div>
 
       {/* 이전 버튼 */}
       {currentIndex > 0 && (
@@ -216,13 +216,13 @@ export default function ImageSliderModal({
               )}
 
               {/* 타입 표시 */}
-              {/* <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-1 py-0.5">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-1 py-0.5">
                 <span className={`text-[10px] font-medium ${
                   img.fileTypeFlag === 'FINAL_MANUSCRIPT' ? 'text-green-400' : 'text-blue-400'
                 }`}>
                   {img.typeLabel}
                 </span>
-              </div> */}
+              </div>
             </button>
           ))}
         </div>

@@ -26,8 +26,8 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-sm">
       <div className="max-w-content mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* 로고 */}
-          <Link href="/" className="flex items-center space-x-2">
+          {/* 로고 - 모바일에서 숨김, 태블릿/PC에서만 표시 */}
+          <Link href="/" className="hidden md:flex items-center space-x-2">
             <div className="text-2xl font-bold text-[#0046FF]">신한금융</div>
             <span className="text-sm text-gray-600">광고관리 플랫폼</span>
           </Link>

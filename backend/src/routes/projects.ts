@@ -413,10 +413,19 @@ router.get(
           (SELECT COUNT(*) FROM contents WHERE project_id = p.id) AS total_files,
           (SELECT COUNT(*) FROM contents WHERE project_id = p.id AND file_type_flag = 'PROPOSAL_DRAFT') AS proposal_files,
           (SELECT COUNT(*) FROM contents WHERE project_id = p.id AND file_type_flag = 'FINAL_MANUSCRIPT') AS final_files,
-          -- 썸네일 (첫 번째 이미지)
-          (SELECT thumbnail_url FROM contents
-           WHERE project_id = p.id AND thumbnail_url IS NOT NULL
-           ORDER BY created_at ASC LIMIT 1) AS thumbnail_url,
+          -- 썸네일 (최종 원고 이미지 우선, 없으면 시안)
+          COALESCE(
+            (SELECT thumbnail_url FROM contents
+             WHERE project_id = p.id
+               AND thumbnail_url IS NOT NULL
+               AND file_type_flag = 'FINAL_MANUSCRIPT'
+             ORDER BY created_at ASC LIMIT 1),
+            (SELECT thumbnail_url FROM contents
+             WHERE project_id = p.id
+               AND thumbnail_url IS NOT NULL
+               AND file_type_flag = 'PROPOSAL_DRAFT'
+             ORDER BY created_at ASC LIMIT 1)
+          ) AS thumbnail_url,
           -- 카테고리 배열
           (SELECT array_agg(json_build_object('id', c.id, 'name', c.name))
            FROM categories c
@@ -562,7 +571,10 @@ router.get(
           proposal: proposalDrafts.length,
           final: finalManuscripts.length,
         },
-        thumbnailUrl: filesResult.rows.find((f) => f.thumbnailUrl)?.thumbnailUrl || undefined,
+        thumbnailUrl:
+          filesResult.rows.find((f) => f.thumbnailUrl && f.fileTypeFlag === 'FINAL_MANUSCRIPT')?.thumbnailUrl ||
+          filesResult.rows.find((f) => f.thumbnailUrl && f.fileTypeFlag === 'PROPOSAL_DRAFT')?.thumbnailUrl ||
+          undefined,
       };
 
       res.json({

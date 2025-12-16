@@ -180,10 +180,15 @@ export default function LoginPage() {
           }`}
         >
           {/* 타이틀 */}
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
-            신한금융그룹 인쇄광고 아카이브
-          </h1>
-          <p className="text-blue-100 text-sm md:text-base">
+          <div style={{ fontFamily: 'OneShinhan, sans-serif' }}>
+            <div className="text-lg md:text-xl font-medium text-blue-100 mb-2 tracking-wide opacity-90">
+              신한금융그룹
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight leading-tight">
+              인쇄광고 아카이브
+            </h1>
+          </div>
+          <p className="text-blue-100 text-sm md:text-base opacity-80">
             Shinhan Financial Group Print AD Archive
           </p>
         </div>
