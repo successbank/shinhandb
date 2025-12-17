@@ -46,11 +46,11 @@ export const generateThumbnail = async (
     await fs.mkdir(thumbnailDir, { recursive: true });
 
     // Sharp를 사용한 썸네일 생성
+    // fit: 'inside' - 원본 비율 유지하며 긴 쪽을 최대 크기로 제한 (여백 없음)
     await sharp(originalPath)
       .resize(width, height, {
-        fit: 'contain', // 전체 이미지 표시 (크롭 없음)
-        position: 'center', // 중앙 정렬
-        background: { r: 255, g: 255, b: 255, alpha: 1 }, // 흰색 배경 (#FFFFFF)
+        fit: 'inside', // 비율 유지하며 긴 쪽을 제한 (여백 없음)
+        withoutEnlargement: true, // 작은 이미지 확대 방지
       })
       .jpeg({
         quality: 80, // JPEG 품질 (80%)
