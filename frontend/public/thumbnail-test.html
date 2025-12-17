@@ -532,10 +532,235 @@
     </div>
   </div>
 
+    <!-- 섹션 5: 실제 적용 미리보기 -->
+    <div class="section">
+      <h2 class="section-title">5. 실제 적용 미리보기 (AFTER 스타일)</h2>
+
+      <div class="info-box" style="background: #e3f2fd; border-left-color: #2196f3;">
+        <h3 style="color: #1976d2;">🎯 실제 프로젝트 페이지에 적용될 스타일</h3>
+        <ul>
+          <li>아래는 <code>/frontend/src/app/projects/page.tsx</code>에 적용될 정확한 레이아웃입니다</li>
+          <li>실제 Next.js Tailwind 클래스를 사용합니다</li>
+          <li>데스크톱 3열 그리드 (lg 이상) / 모바일 1열 그리드</li>
+          <li>카드 높이: 모바일 160px (h-40) / 데스크톱 256px (lg:h-64)</li>
+        </ul>
+      </div>
+
+      <h3 style="margin: 30px 0 15px; color: #2e7d32; font-size: 20px;">✅ AFTER 스타일 적용 결과</h3>
+
+      <!-- 실제 프로젝트 그리드 레이아웃 시뮬레이션 -->
+      <div style="background: #F5F5F5; padding: 24px; border-radius: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+
+          <!-- 카드 1: 세로 긴 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/300/500"
+                alt="세로 긴 광고 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                신한은행 봄 시즌 캠페인
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">브랜드 PR</span> • 2025.12.17
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 마케팅팀
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 2: 가로 긴 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/500/300"
+                alt="가로 긴 광고 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                신한금융 CSR 활동
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">CSR</span> • 2025.12.16
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 홍보팀
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 3: 정사각형 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/400/400"
+                alt="정사각형 광고 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                신한카드 상품 프로모션
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">상품&서비스</span> • 2025.12.15
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 디자인팀
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 4: 극단적 세로 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/200/600"
+                alt="극단적 세로 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                모바일 배너 디자인
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">브랜드</span> • 2025.12.14
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 대행사A
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 5: 극단적 가로 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/600/200"
+                alt="극단적 가로 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                웹 배너 캠페인
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">스포츠</span> • 2025.12.13
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 마케팅팀
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 6: 일반 세로 이미지 -->
+          <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; transition: box-shadow 0.3s;">
+            <div style="width: 100%; height: 256px; overflow: hidden; border-radius: 8px 8px 0 0;">
+              <img
+                src="https://picsum.photos/350/450"
+                alt="일반 세로 이미지"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              >
+            </div>
+            <div style="padding: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #333; margin: 0 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                신한라이프 보험 광고
+              </h3>
+              <div style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                <span style="color: #0046FF;">기타</span> • 2025.12.12
+              </div>
+              <div style="font-size: 13px; color: #999;">
+                업로더: 대행사B
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top: 30px; background: #e8f5e9; border-left-color: #4caf50;">
+        <h3 style="color: #2e7d32;">✅ 위 미리보기의 주요 특징</h3>
+        <ul>
+          <li><strong>여백 완전 제거:</strong> 모든 썸네일이 카드 높이 100%를 채움</li>
+          <li><strong>통일된 그리드:</strong> 3열 그리드가 깔끔하게 정렬됨</li>
+          <li><strong>이미지 비율 유지:</strong> 각 이미지의 원본 비율이 유지됨</li>
+          <li><strong>스마트 크롭:</strong> 중앙 부분이 우선 표시되어 중요 내용 손실 최소화</li>
+          <li><strong>다양한 비율 대응:</strong> 세로, 가로, 정사각형 모든 비율 완벽 지원</li>
+        </ul>
+      </div>
+
+      <h3 style="margin: 40px 0 15px; color: #333; font-size: 18px;">📝 실제 적용할 코드</h3>
+      <div class="code-block">
+<span class="comment">// 파일: /frontend/src/app/projects/page.tsx</span>
+<span class="comment">// 위치: 417-440번 라인</span>
+
+<span class="comment">// BEFORE (제거할 코드) ❌</span>
+&lt;div
+  className=<span class="value">"w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg"</span>
+  style={{
+    display: <span class="value">'flex'</span>,
+    alignItems: <span class="value">'center'</span>,
+    justifyContent: <span class="value">'center'</span>,
+    overflow: <span class="value">'hidden'</span>
+  }}
+&gt;
+  &lt;img
+    src={project.thumbnailUrl}
+    alt={project.title}
+    style={{
+      maxWidth: <span class="value">'100%'</span>,
+      maxHeight: <span class="value">'100%'</span>,
+      width: <span class="value">'auto'</span>,
+      height: <span class="value">'auto'</span>,
+      objectFit: <span class="value">'contain'</span>,
+      objectPosition: <span class="value">'center'</span>,
+      display: <span class="value">'block'</span>
+    }}
+  /&gt;
+&lt;/div&gt;
+
+<span class="comment">// AFTER (적용할 코드) ✅</span>
+&lt;div className=<span class="value">"w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg overflow-hidden"</span>&gt;
+  &lt;img
+    src={project.thumbnailUrl}
+    alt={project.title}
+    className=<span class="value">"w-full h-full object-cover"</span>
+  /&gt;
+&lt;/div&gt;
+      </div>
+
+      <div class="warning-box" style="margin-top: 20px; background: #fff9e6; border-left-color: #ffc107;">
+        <strong>💡 적용 전 최종 확인 사항:</strong><br>
+        1. 위 미리보기 레이아웃이 요구사항과 일치하는지 확인<br>
+        2. 이미지 크롭 정도가 허용 범위 내인지 확인<br>
+        3. 승인 후 실제 코드 수정 진행<br>
+        4. 수정 후 http://211.248.112.67:5647/projects 에서 확인
+      </div>
+
+      <div class="info-box" style="margin-top: 20px; background: #fce4ec; border-left-color: #e91e63;">
+        <h3 style="color: #c2185b;">⚠️ 컨펌 필요</h3>
+        <p style="margin: 10px 0; font-size: 16px; font-weight: 600;">
+          위 미리보기가 요구사항을 만족하면 "진행" 명령 주시기 바랍니다.<br>
+          승인 후 <code>/frontend/src/app/projects/page.tsx</code> 파일을 수정하겠습니다.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script>
     console.log('썸네일 스타일 테스트 페이지 로드 완료');
     console.log('BEFORE: object-fit: contain (여백 발생)');
     console.log('AFTER: object-fit: cover (여백 없음)');
+    console.log('섹션 5: 실제 적용 미리보기 추가됨');
   </script>
 </body>
 </html>

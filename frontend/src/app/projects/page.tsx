@@ -415,27 +415,11 @@ export default function ProjectsPage() {
                     >
                       {/* 썸네일 */}
                       {project.thumbnailUrl ? (
-                        <div
-                          className="w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            overflow: 'hidden'
-                          }}
-                        >
+                        <div className="w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg overflow-hidden flex items-center justify-center">
                           <img
                             src={project.thumbnailUrl}
                             alt={project.title}
-                            style={{
-                              maxWidth: '100%',
-                              maxHeight: '100%',
-                              width: 'auto',
-                              height: 'auto',
-                              objectFit: 'contain',
-                              objectPosition: 'center',
-                              display: 'block'
-                            }}
+                            className="max-w-full max-h-full object-contain"
                           />
                         </div>
                       ) : (
