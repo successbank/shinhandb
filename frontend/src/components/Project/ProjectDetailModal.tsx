@@ -821,7 +821,7 @@ export default function ProjectDetailModal({
                           onNavigatePrev();
                         }}
                         disabled={currentIndex === 0}
-                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
+                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-[5] w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
                           currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
                         }`}
                         title={currentIndex === 0 ? '첫 번째 프로젝트입니다' : '이전 프로젝트'}
@@ -840,7 +840,7 @@ export default function ProjectDetailModal({
                           onNavigateNext();
                         }}
                         disabled={currentIndex === totalCount - 1}
-                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
+                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-[5] w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
                           currentIndex === totalCount - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
                         }`}
                         title={currentIndex === totalCount - 1 ? '마지막 프로젝트입니다' : '다음 프로젝트'}
@@ -929,7 +929,7 @@ export default function ProjectDetailModal({
                           onNavigatePrev();
                         }}
                         disabled={currentIndex === 0}
-                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
+                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-[5] w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
                           currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
                         }`}
                         title={currentIndex === 0 ? '첫 번째 프로젝트입니다' : '이전 프로젝트'}
@@ -948,7 +948,7 @@ export default function ProjectDetailModal({
                           onNavigateNext();
                         }}
                         disabled={currentIndex === totalCount - 1}
-                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
+                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-[5] w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all md:hidden ${
                           currentIndex === totalCount - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
                         }`}
                         title={currentIndex === totalCount - 1 ? '마지막 프로젝트입니다' : '다음 프로젝트'}
