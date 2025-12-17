@@ -39,14 +39,20 @@ export default function ShareModal({ isOpen, onClose, shareData }: ShareModalPro
 
   return (
     <>
-      {/* 배경 오버레이 */}
+      {/* 배경 오버레이 - z-60으로 ProjectDetailModal(z-50) 위에 표시 */}
       <div
-        className="fixed inset-0 bg-black/50 z-50"
-        onClick={onClose}
+        className="fixed inset-0 bg-black/50 z-[60]"
+        onClick={(e) => {
+          e.stopPropagation(); // 이벤트 버블링 방지 - 프로젝트 모달이 함께 닫히지 않도록
+          onClose();
+        }}
       />
 
-      {/* 모달 */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+      {/* 모달 - z-60으로 배경 오버레이와 동일 레벨 */}
+      <div
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
+        onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 버블링 방지
+      >
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">공유하기</h3>
