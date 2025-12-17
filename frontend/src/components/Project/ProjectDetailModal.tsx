@@ -807,7 +807,7 @@ export default function ProjectDetailModal({
                   {/* 이미지와 플래그 */}
                   <div className="relative cursor-pointer" onClick={() => handleImageClick(index)}>
                     {/* 플래그 */}
-                    <div className="absolute top-4 left-4 z-10">
+                    <div className="absolute top-4 left-4 z-[5]">
                       <span className="px-3 py-1 bg-[#0046FF] text-white text-sm font-medium rounded shadow-md">
                         최종 원고
                       </span>
@@ -915,7 +915,7 @@ export default function ProjectDetailModal({
                   {/* 이미지와 플래그 */}
                   <div className="relative cursor-pointer" onClick={() => handleImageClick(projectDetail.fileCount.final + index)}>
                     {/* 플래그 */}
-                    <div className="absolute top-4 left-4 z-10">
+                    <div className="absolute top-4 left-4 z-[5]">
                       <span className="px-3 py-1 bg-gray-600 text-white text-sm font-medium rounded shadow-md">
                         제안 시안
                       </span>
