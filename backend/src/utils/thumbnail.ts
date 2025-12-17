@@ -50,7 +50,7 @@ export const generateThumbnail = async (
       .resize(width, height, {
         fit: 'contain', // 전체 이미지 표시 (크롭 없음)
         position: 'center', // 중앙 정렬
-        background: { r: 245, g: 245, b: 245, alpha: 1 }, // 회색 배경 (#F5F5F5)
+        background: { r: 255, g: 255, b: 255, alpha: 1 }, // 흰색 배경 (#FFFFFF)
       })
       .jpeg({
         quality: 80, // JPEG 품질 (80%)
