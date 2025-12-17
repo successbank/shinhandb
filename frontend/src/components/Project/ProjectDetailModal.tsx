@@ -667,8 +667,8 @@ export default function ProjectDetailModal({
                       </span>
                     </div>
 
-                    {/* 이전 프로젝트 화살표 (왼쪽) */}
-                    {onNavigatePrev && currentIndex !== undefined && (
+                    {/* 이전 프로젝트 화살표 (왼쪽) - 첫 번째 이미지일 때만 */}
+                    {index === 0 && onNavigatePrev && currentIndex !== undefined && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -686,8 +686,8 @@ export default function ProjectDetailModal({
                       </button>
                     )}
 
-                    {/* 다음 프로젝트 화살표 (오른쪽) */}
-                    {onNavigateNext && currentIndex !== undefined && totalCount !== undefined && (
+                    {/* 다음 프로젝트 화살표 (오른쪽) - 첫 번째 이미지일 때만 */}
+                    {index === 0 && onNavigateNext && currentIndex !== undefined && totalCount !== undefined && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -771,6 +771,44 @@ export default function ProjectDetailModal({
                         제안 시안
                       </span>
                     </div>
+
+                    {/* 이전 프로젝트 화살표 (왼쪽) - 최종 원고가 없고 첫 번째 이미지일 때만 */}
+                    {projectDetail.fileCount.final === 0 && index === 0 && onNavigatePrev && currentIndex !== undefined && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigatePrev();
+                        }}
+                        disabled={currentIndex === 0}
+                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all ${
+                          currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
+                        }`}
+                        title={currentIndex === 0 ? '첫 번째 프로젝트입니다' : '이전 프로젝트'}
+                      >
+                        <svg className="w-5 h-5 lg:w-6 lg:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* 다음 프로젝트 화살표 (오른쪽) - 최종 원고가 없고 첫 번째 이미지일 때만 */}
+                    {projectDetail.fileCount.final === 0 && index === 0 && onNavigateNext && currentIndex !== undefined && totalCount !== undefined && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateNext();
+                        }}
+                        disabled={currentIndex === totalCount - 1}
+                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all ${
+                          currentIndex === totalCount - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
+                        }`}
+                        title={currentIndex === totalCount - 1 ? '마지막 프로젝트입니다' : '다음 프로젝트'}
+                      >
+                        <svg className="w-5 h-5 lg:w-6 lg:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
 
                     {/* 큰 이미지 (원본 사용) */}
                     {file.fileUrl ? (
