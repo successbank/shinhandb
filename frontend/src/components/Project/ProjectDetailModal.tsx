@@ -6,6 +6,7 @@ import { formatFileSize, isValidFileType, isValidFileSize, getFileIcon } from '@
 import CategoryTreeSidebar from '@/components/Category/CategoryTreeSidebar';
 import FileTypeSelector from '@/components/FileTypeSelector';
 import ImageSliderModal from './ImageSliderModal';
+import ShareModal from '@/components/Share/ShareModal';
 
 interface ProjectDetailModalProps {
   projectId: string;
@@ -109,6 +110,10 @@ export default function ProjectDetailModal({
   // 이미지 슬라이더 상태
   const [isImageSliderOpen, setIsImageSliderOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // 공유 모달 상태
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [currentShareFile, setCurrentShareFile] = useState<FileItem | null>(null);
 
   useEffect(() => {
     if (isOpen && projectId) {
@@ -405,6 +410,18 @@ export default function ProjectDetailModal({
     }
   };
 
+  // 공유 버튼 클릭 핸들러
+  const handleShareClick = (file: FileItem) => {
+    setCurrentShareFile(file);
+    setIsShareModalOpen(true);
+  };
+
+  // 공유 모달 닫기
+  const handleShareModalClose = () => {
+    setIsShareModalOpen(false);
+    setCurrentShareFile(null);
+  };
+
   // 모달 닫기 (업로드 중일 때는 경고)
   const handleClose = () => {
     if (uploadState.isUploading) {
@@ -631,6 +648,20 @@ export default function ProjectDetailModal({
           )}
         </div>
       </div>
+
+      {/* 공유 모달 */}
+      {isShareModalOpen && currentShareFile && projectDetail && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={handleShareModalClose}
+          shareData={{
+            title: projectDetail.title,
+            description: currentShareFile.fileTypeFlag === 'FINAL_MANUSCRIPT' ? '최종 원고' : '제안 시안',
+            imageUrl: currentShareFile.fileUrl,
+            webUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/projects/${projectId}`,
+          }}
+        />
+      )}
     </div>
   );
 
@@ -737,7 +768,10 @@ export default function ProjectDetailModal({
                     </a>
                     <button
                       className="inline-flex items-center px-6 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareClick(file);
+                      }}
                     >
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -842,7 +876,10 @@ export default function ProjectDetailModal({
                     </a>
                     <button
                       className="inline-flex items-center px-6 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareClick(file);
+                      }}
                     >
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
