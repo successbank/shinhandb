@@ -37,6 +37,17 @@ router.post(
         throw new AppError(400, '프로젝트 제목을 입력해주세요');
       }
 
+      // 제목 길이 검증 (255자 제한)
+      if (title.length > 255) {
+        throw new AppError(400, '제목은 최대 255자까지 입력 가능합니다');
+      }
+
+      // 줄 수 제한 (최대 2줄)
+      const lines = title.split('\n').filter((line: string) => line.trim().length > 0);
+      if (lines.length > 2) {
+        throw new AppError(400, '제목은 최대 2줄까지 가능합니다');
+      }
+
       // 카테고리 처리
       let categoryIdsArray: string[] = [];
       if (categoryIds) {
@@ -631,6 +642,24 @@ router.patch(
       if (req.user!.role === 'CLIENT' && project.editable_until) {
         if (new Date() > new Date(project.editable_until)) {
           throw new AppError(403, '수정 가능 시간이 만료되었습니다');
+        }
+      }
+
+      // 제목 검증 (업데이트 시)
+      if (title) {
+        if (!title.trim()) {
+          throw new AppError(400, '프로젝트 제목을 입력해주세요');
+        }
+
+        // 제목 길이 검증 (255자 제한)
+        if (title.length > 255) {
+          throw new AppError(400, '제목은 최대 255자까지 입력 가능합니다');
+        }
+
+        // 줄 수 제한 (최대 2줄)
+        const lines = title.split('\n').filter((line: string) => line.trim().length > 0);
+        if (lines.length > 2) {
+          throw new AppError(400, '제목은 최대 2줄까지 가능합니다');
         }
       }
 

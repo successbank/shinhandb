@@ -80,6 +80,11 @@ export default function ProjectDetailModal({
   const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
 
+  // 수정 모드: 두 줄 제목 입력
+  const [editTitleLine1Enabled, setEditTitleLine1Enabled] = useState(false);
+  const [editTitleLine1, setEditTitleLine1] = useState('');
+  const [editTitleLine2, setEditTitleLine2] = useState('');
+
   // 파일 타입 변경 상태 (임시 저장)
   const [fileTypeChanges, setFileTypeChanges] = useState<Record<string, 'PROPOSAL_DRAFT' | 'FINAL_MANUSCRIPT'>>({});
 
@@ -131,6 +136,18 @@ export default function ProjectDetailModal({
         setEditTitle(response.data.title);
         setEditDescription(response.data.description || '');
         setEditCategoryIds(response.data.categories.map((c: any) => c.id));
+
+        // 두 줄 제목 파싱
+        const lines = response.data.title.split('\n');
+        if (lines.length > 1) {
+          setEditTitleLine1Enabled(true);
+          setEditTitleLine1(lines[0]);
+          setEditTitleLine2(lines.slice(1).join('\n'));
+        } else {
+          setEditTitleLine1Enabled(false);
+          setEditTitleLine1('');
+          setEditTitleLine2(lines[0] || '');
+        }
       }
     } catch (error: any) {
       console.error('프로젝트 상세 로드 실패:', error);
@@ -171,13 +188,28 @@ export default function ProjectDetailModal({
   const handleSaveEdit = async () => {
     if (!projectDetail) return;
 
+    // 두 줄 제목 통합
+    const fullTitle = editTitleLine1Enabled && editTitleLine1.trim()
+      ? `${editTitleLine1.trim()}\n${editTitleLine2.trim()}`
+      : editTitleLine2.trim();
+
+    if (!fullTitle) {
+      alert('프로젝트 제목을 입력해주세요');
+      return;
+    }
+
+    if (fullTitle.length > 255) {
+      alert('제목은 최대 255자까지 입력 가능합니다');
+      return;
+    }
+
     try {
       // 1. 프로젝트 정보 업데이트
-      if (editTitle.trim() !== projectDetail.title ||
+      if (fullTitle !== projectDetail.title ||
           editDescription.trim() !== projectDetail.description ||
           JSON.stringify(editCategoryIds.sort()) !== JSON.stringify(projectDetail.categories.map(c => c.id).sort())) {
         await projectsApi.update(projectId, {
-          title: editTitle.trim(),
+          title: fullTitle,
           description: editDescription.trim(),
           categoryIds: editCategoryIds,
         });
@@ -550,18 +582,55 @@ export default function ProjectDetailModal({
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 {isEditMode ? (
                   <>
-                    {/* 수정 모드: 제목 */}
+                    {/* 수정 모드: 제목 (두 줄 입력) */}
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         프로젝트 제목 *
                       </label>
+
+                      {/* 첫 번째 줄 (체크박스로 활성화) */}
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="checkbox"
+                            id="editEnableTitleLine1"
+                            checked={editTitleLine1Enabled}
+                            onChange={(e) => setEditTitleLine1Enabled(e.target.checked)}
+                            className="w-4 h-4 text-[#0046FF] border-gray-300 rounded focus:ring-[#0046FF]"
+                          />
+                          <label htmlFor="editEnableTitleLine1" className="text-sm text-gray-600 cursor-pointer">
+                            첫 번째 줄 제목 사용
+                          </label>
+                        </div>
+                        <input
+                          type="text"
+                          value={editTitleLine1}
+                          onChange={(e) => setEditTitleLine1(e.target.value)}
+                          placeholder="첫 번째 줄 제목 (선택)"
+                          disabled={!editTitleLine1Enabled}
+                          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] ${
+                            !editTitleLine1Enabled ? 'bg-gray-100 cursor-not-allowed' : ''
+                          }`}
+                          maxLength={127}
+                        />
+                      </div>
+
+                      {/* 두 번째 줄 (항상 활성화) */}
                       <input
                         type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                        value={editTitleLine2}
+                        onChange={(e) => setEditTitleLine2(e.target.value)}
                         placeholder="프로젝트 제목을 입력하세요"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                        maxLength={127}
                       />
+
+                      {/* 글자 수 표시 */}
+                      <p className="mt-1 text-xs text-gray-500 text-right">
+                        {editTitleLine1Enabled && editTitleLine1.trim()
+                          ? `${editTitleLine1.length + editTitleLine2.length + 1}/255자`
+                          : `${editTitleLine2.length}/255자`}
+                      </p>
                     </div>
 
                     {/* 수정 모드: 설명 */}
@@ -617,23 +686,33 @@ export default function ProjectDetailModal({
                   </>
                 ) : (
                   <>
-                    {/* 보기 모드: 프로젝트 정보 */}
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-[22px] font-bold text-shinhan-darkGray">
-                        {projectDetail.title}
-                      </h3>
-                      <button
-                        className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProjectShare();
-                        }}
-                        title="프로젝트 공유"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                        </svg>
-                      </button>
+                    {/* 보기 모드: 프로젝트 정보 (두 줄 제목 지원) */}
+                    <div className="mb-2">
+                      {projectDetail.title.split('\n').map((line, index, array) => (
+                        <div
+                          key={index}
+                          className={`flex items-center ${index === array.length - 1 ? 'justify-between' : 'justify-start'}`}
+                        >
+                          <h3 className="text-[22px] font-bold text-shinhan-darkGray">
+                            {line}
+                          </h3>
+                          {/* 마지막 줄 끝에만 공유 버튼 표시 */}
+                          {index === array.length - 1 && (
+                            <button
+                              className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors ml-4"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProjectShare();
+                              }}
+                              title="프로젝트 공유"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                     {projectDetail.description && (
                       <p className="text-gray-600 mb-4">{projectDetail.description}</p>

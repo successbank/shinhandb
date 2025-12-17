@@ -36,6 +36,11 @@ export default function ProjectUploadPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [projectId, setProjectId] = useState<string>('');
 
+  // 두 줄 제목 입력
+  const [titleLine1Enabled, setTitleLine1Enabled] = useState(false);
+  const [titleLine1, setTitleLine1] = useState('');
+  const [titleLine2, setTitleLine2] = useState('');
+
   // Step 2: 파일 정보
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileMeta, setFileMeta] = useState<FileMeta[]>([]);
@@ -75,8 +80,18 @@ export default function ProjectUploadPage() {
    * Step 1: 프로젝트 생성
    */
   const handleCreateProject = async () => {
-    if (!projectTitle.trim()) {
+    // 두 줄 제목 통합
+    const fullTitle = titleLine1Enabled && titleLine1.trim()
+      ? `${titleLine1.trim()}\n${titleLine2.trim()}`
+      : titleLine2.trim();
+
+    if (!fullTitle) {
       alert('프로젝트 제목을 입력해주세요');
+      return;
+    }
+
+    if (fullTitle.length > 255) {
+      alert('제목은 최대 255자까지 입력 가능합니다');
       return;
     }
 
@@ -87,13 +102,14 @@ export default function ProjectUploadPage() {
 
     try {
       const response = await projectsApi.create({
-        title: projectTitle.trim(),
+        title: fullTitle,
         description: projectDescription.trim() || undefined,
         categoryIds,
       });
 
       if (response.success && response.data) {
         setProjectId(response.data.id);
+        setProjectTitle(fullTitle); // Step 2에서 표시용
         setStep(2);
       }
     } catch (error: any) {
@@ -337,22 +353,57 @@ export default function ProjectUploadPage() {
                     새 프로젝트 생성
                   </h1>
 
-                  {/* 제목 */}
+                  {/* 제목 - 두 줄 입력 */}
                   <div className="mb-6">
-                    <label
-                      htmlFor="projectTitle"
-                      className="block text-sm font-medium text-[#333333] mb-2"
-                    >
+                    <label className="block text-sm font-medium text-[#333333] mb-2">
                       프로젝트 제목 <span className="text-[#E53935]">*</span>
                     </label>
-                    <input
-                      id="projectTitle"
-                      type="text"
-                      value={projectTitle}
-                      onChange={(e) => setProjectTitle(e.target.value)}
-                      placeholder="예: 2026 위기가정지원사업"
-                      className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
-                    />
+
+                    {/* 첫 번째 줄 (체크박스로 활성화) */}
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="enableTitleLine1"
+                          checked={titleLine1Enabled}
+                          onChange={(e) => setTitleLine1Enabled(e.target.checked)}
+                          className="w-4 h-4 text-[#0046FF] border-gray-300 rounded focus:ring-[#0046FF]"
+                        />
+                        <label htmlFor="enableTitleLine1" className="text-sm text-gray-600 cursor-pointer">
+                          첫 번째 줄 제목 사용
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={titleLine1}
+                        onChange={(e) => setTitleLine1(e.target.value)}
+                        placeholder="첫 번째 줄 제목 (선택)"
+                        disabled={!titleLine1Enabled}
+                        className={`w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900 ${
+                          !titleLine1Enabled ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
+                        maxLength={127}
+                      />
+                    </div>
+
+                    {/* 두 번째 줄 (항상 활성화) + 공유 버튼 */}
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="text"
+                        value={titleLine2}
+                        onChange={(e) => setTitleLine2(e.target.value)}
+                        placeholder="예: 2026 위기가정지원사업"
+                        className="flex-1 px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
+                        maxLength={127}
+                      />
+                    </div>
+
+                    {/* 글자 수 표시 */}
+                    <p className="mt-1 text-xs text-gray-500 text-right">
+                      {titleLine1Enabled && titleLine1.trim()
+                        ? `${titleLine1.length + titleLine2.length + 1}/255자`
+                        : `${titleLine2.length}/255자`}
+                    </p>
                   </div>
 
                   {/* 설명 */}
@@ -405,7 +456,7 @@ export default function ProjectUploadPage() {
                   <div className="flex justify-end">
                     <button
                       onClick={handleCreateProject}
-                      disabled={!projectTitle.trim() || categoryIds.length === 0}
+                      disabled={!titleLine2.trim() || categoryIds.length === 0}
                       className="px-6 py-2 bg-[#0046FF] text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       다음 단계

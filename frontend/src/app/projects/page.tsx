@@ -431,9 +431,13 @@ export default function ProjectsPage() {
                       )}
 
                       <div className="p-3 lg:p-4">
-                        {/* 제목 */}
-                        <h3 className="text-sm lg:text-lg font-semibold text-shinhan-darkGray truncate">
-                          {project.title}
+                        {/* 제목 (두 줄 지원) */}
+                        <h3 className="text-sm lg:text-lg font-semibold text-shinhan-darkGray">
+                          {project.title.split('\n').map((line, index) => (
+                            <div key={index} className={index > 0 ? 'truncate' : 'truncate'}>
+                              {line}
+                            </div>
+                          ))}
                         </h3>
 
                         {/* 설명 */}
@@ -510,8 +514,12 @@ export default function ProjectsPage() {
 
                         {/* 프로젝트 정보 */}
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm lg:text-lg font-semibold text-shinhan-darkGray truncate">
-                            {project.title}
+                          <h3 className="text-sm lg:text-lg font-semibold text-shinhan-darkGray">
+                            {project.title.split('\n').map((line, index) => (
+                              <div key={index} className="truncate">
+                                {line}
+                              </div>
+                            ))}
                           </h3>
 
                           {/* {project.description && (
