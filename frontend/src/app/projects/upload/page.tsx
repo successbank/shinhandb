@@ -217,9 +217,9 @@ export default function ProjectUploadPage() {
               status: 'success',
             });
 
-            // 성공 시 프로젝트 상세 페이지로 이동
+            // 성공 시 프로젝트 목록 페이지로 이동
             setTimeout(() => {
-              router.push(`/projects/${projectId}`);
+              router.push('/projects');
             }, 2000);
           },
           onError: (error) => {

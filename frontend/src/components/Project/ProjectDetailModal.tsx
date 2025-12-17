@@ -15,6 +15,11 @@ interface ProjectDetailModalProps {
   onTagClick?: (tag: string) => void;
   userRole?: string;
   userId?: string;
+  // 프로젝트 네비게이션
+  currentIndex?: number;
+  totalCount?: number;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
 }
 
 interface FileItem {
@@ -58,10 +63,15 @@ export default function ProjectDetailModal({
   onTagClick,
   userRole,
   userId,
+  currentIndex,
+  totalCount,
+  onNavigatePrev,
+  onNavigateNext,
 }: ProjectDetailModalProps) {
   const [loading, setLoading] = useState(true);
   const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
 
   // 수정 모드 상태
   const [editTitle, setEditTitle] = useState('');
@@ -657,6 +667,44 @@ export default function ProjectDetailModal({
                       </span>
                     </div>
 
+                    {/* 이전 프로젝트 화살표 (왼쪽) */}
+                    {onNavigatePrev && currentIndex !== undefined && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigatePrev();
+                        }}
+                        disabled={currentIndex === 0}
+                        className={`absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all ${
+                          currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
+                        }`}
+                        title={currentIndex === 0 ? '첫 번째 프로젝트입니다' : '이전 프로젝트'}
+                      >
+                        <svg className="w-5 h-5 lg:w-6 lg:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* 다음 프로젝트 화살표 (오른쪽) */}
+                    {onNavigateNext && currentIndex !== undefined && totalCount !== undefined && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateNext();
+                        }}
+                        disabled={currentIndex === totalCount - 1}
+                        className={`absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all ${
+                          currentIndex === totalCount - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'
+                        }`}
+                        title={currentIndex === totalCount - 1 ? '마지막 프로젝트입니다' : '다음 프로젝트'}
+                      >
+                        <svg className="w-5 h-5 lg:w-6 lg:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
+
                     {/* 큰 이미지 (원본 사용) */}
                     {file.fileUrl ? (
                       <img
@@ -783,8 +831,47 @@ export default function ProjectDetailModal({
         {/* 태그 영역 (파일 추가 영역 위) */}
         {projectDetail.tags.length > 0 && (
           <div className="mb-6 bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">프로젝트 태그</h4>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-700">프로젝트 태그</h4>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('태그 펼치기 버튼 클릭, 현재 상태:', isTagsExpanded);
+                  setIsTagsExpanded((prev) => {
+                    console.log('상태 변경: ', prev, '->', !prev);
+                    return !prev;
+                  });
+                }}
+                className="flex items-center gap-1 px-3 py-1 text-xs text-[#0046FF] hover:bg-blue-50 rounded transition-colors"
+              >
+                {isTagsExpanded ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    접기
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    태그 펼쳐보기
+                  </>
+                )}
+              </button>
+            </div>
+            <div
+              className="relative"
+              style={{
+                maxHeight: isTagsExpanded ? '1000px' : '45px',
+                overflow: 'hidden',
+                transition: 'max-height 0.3s ease-in-out'
+              }}
+            >
+              <div className="flex flex-wrap gap-2">
               {projectDetail.tags.map((tag, index) => (
                 <button
                   key={index}
@@ -799,7 +886,17 @@ export default function ProjectDetailModal({
                   #{tag}
                 </button>
               ))}
+              </div>
+              {/* Fade effect when collapsed */}
+              {!isTagsExpanded && (
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none"></div>
+              )}
             </div>
+            {!isTagsExpanded && projectDetail.tags.length > 10 && (
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                {projectDetail.tags.length}개의 태그가 있습니다
+              </div>
+            )}
           </div>
         )}
 

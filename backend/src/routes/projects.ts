@@ -363,9 +363,12 @@ router.get(
       let queryParams: any[] = [];
       let paramIndex = 1;
 
-      // 카테고리 필터
+      // 카테고리 필터 (EXISTS 사용하여 JOIN 제거)
       if (categoryId) {
-        whereConditions.push(`pc.category_id = $${paramIndex++}`);
+        whereConditions.push(`EXISTS (
+          SELECT 1 FROM project_categories pc
+          WHERE pc.project_id = p.id AND pc.category_id = $${paramIndex++}
+        )`);
         queryParams.push(categoryId);
       }
 
@@ -400,9 +403,8 @@ router.get(
 
       // 총 개수 조회
       const countQuery = `
-        SELECT COUNT(DISTINCT p.id) as total
+        SELECT COUNT(*) as total
         FROM projects p
-        LEFT JOIN project_categories pc ON p.id = pc.project_id
         ${whereClause}
       `;
       const countResult = await pool.query(countQuery, queryParams);
@@ -410,7 +412,7 @@ router.get(
 
       // 프로젝트 목록 조회
       const projectsQuery = `
-        SELECT DISTINCT ON (p.id)
+        SELECT
           p.id,
           p.title,
           p.description,
@@ -442,9 +444,8 @@ router.get(
            WHERE pc2.project_id = p.id) AS categories
         FROM projects p
         INNER JOIN users u ON p.uploader_id = u.id
-        LEFT JOIN project_categories pc ON p.id = pc.project_id
         ${whereClause}
-        ORDER BY p.id, p.created_at DESC
+        ORDER BY p.created_at DESC, p.id
         LIMIT $${paramIndex++} OFFSET $${paramIndex++}
       `;
 

@@ -46,6 +46,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -203,17 +204,46 @@ export default function ProjectDetailPage() {
             {/* 태그 클라우드 */}
             {project.tags.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">태그</h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-gray-700">프로젝트 태그</h3>
+                  <button
+                    onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+                    className="flex items-center gap-1 px-3 py-1 text-xs text-[#0046FF] hover:bg-blue-50 rounded transition-colors"
+                  >
+                    {isTagsExpanded ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        접기
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        태그 펼쳐보기
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className={`flex flex-wrap gap-2 overflow-hidden transition-all duration-300 ${
+                  isTagsExpanded ? 'max-h-[1000px]' : 'max-h-[60px]'
+                }`}>
                   {project.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors"
                     >
                       {tag}
                     </span>
                   ))}
                 </div>
+                {!isTagsExpanded && project.tags.length > 10 && (
+                  <div className="mt-2 text-xs text-gray-500 text-center">
+                    {project.tags.length}개의 태그가 있습니다
+                  </div>
+                )}
               </div>
             )}
           </div>

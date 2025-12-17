@@ -59,6 +59,7 @@ export default function ProjectsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [currentProjectIndex, setCurrentProjectIndex] = useState<number>(-1);
 
   // Mobile category drawer
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
@@ -138,6 +139,8 @@ export default function ProjectsPage() {
   };
 
   const handleProjectClick = async (projectId: string) => {
+    const index = projects.findIndex(p => p.id === projectId);
+    setCurrentProjectIndex(index);
     setSelectedProjectId(projectId);
     setIsModalOpen(true);
   };
@@ -145,6 +148,23 @@ export default function ProjectsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProjectId(null);
+    setCurrentProjectIndex(-1);
+  };
+
+  const handleNavigatePrev = () => {
+    if (currentProjectIndex > 0) {
+      const newIndex = currentProjectIndex - 1;
+      setCurrentProjectIndex(newIndex);
+      setSelectedProjectId(projects[newIndex].id);
+    }
+  };
+
+  const handleNavigateNext = () => {
+    if (currentProjectIndex < projects.length - 1) {
+      const newIndex = currentProjectIndex + 1;
+      setCurrentProjectIndex(newIndex);
+      setSelectedProjectId(projects[newIndex].id);
+    }
   };
 
   const handleTagClick = (tag: string) => {
@@ -242,13 +262,32 @@ export default function ProjectsPage() {
 
             {/* 검색 바 */}
             <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="프로젝트 검색..."
-                className="flex-1 px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-black placeholder-gray-400"
-              />
+              <div className="flex-1 relative">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      loadProjects('');
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="검색어 지우기"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="프로젝트 검색..."
+                  className={`w-full py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-black placeholder-gray-400 ${
+                    searchQuery ? 'pl-10 pr-3 lg:pr-4' : 'px-3 lg:px-4'
+                  }`}
+                />
+              </div>
               <button
                 type="submit"
                 className="px-4 lg:px-6 py-2 bg-[#0046FF] text-white rounded-lg hover:bg-blue-600 text-sm lg:text-base"
@@ -611,6 +650,10 @@ export default function ProjectsPage() {
           onTagClick={handleTagClick}
           userRole={user?.role}
           userId={user?.id}
+          currentIndex={currentProjectIndex}
+          totalCount={projects.length}
+          onNavigatePrev={handleNavigatePrev}
+          onNavigateNext={handleNavigateNext}
         />
       )}
     </div>

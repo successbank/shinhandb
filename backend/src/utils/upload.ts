@@ -6,22 +6,13 @@ import { AppError } from '../middlewares/errorHandler';
 
 /**
  * 파일 업로드 설정 (Multer)
- * - 최대 10MB 파일 크기 제한
- * - 지원 파일 형식: JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP
+ * - 최대 200MB 파일 크기 제한
+ * - 지원 파일 형식: JPG, PNG, GIF (이미지만)
  */
 
 // 지원하는 파일 형식 (MIME 타입)
 const ALLOWED_FILE_TYPES: Record<string, string[]> = {
   image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
-  document: ['application/pdf'],
-  video: ['video/mp4', 'video/quicktime'], // MOV는 video/quicktime
-  design: [
-    'application/x-photoshop', // PSD
-    'image/vnd.adobe.photoshop', // PSD
-    'application/illustrator', // AI
-    'application/postscript', // AI
-  ],
-  archive: ['application/zip', 'application/x-zip-compressed'],
 };
 
 // 모든 허용된 MIME 타입을 하나의 배열로 변환
@@ -33,16 +24,10 @@ const ALLOWED_EXTENSIONS = [
   '.jpeg',
   '.png',
   '.gif',
-  '.pdf',
-  '.mp4',
-  '.mov',
-  '.psd',
-  '.ai',
-  '.zip',
 ];
 
-// 최대 파일 크기 (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+// 최대 파일 크기 (200MB - PRD 요구사항)
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB in bytes
 
 /**
  * 파일 필터 함수 - 파일 형식 검증
@@ -118,10 +103,6 @@ export const uploadMultiple = multer({
  */
 export const getFileType = (mimetype: string): string => {
   if (ALLOWED_FILE_TYPES.image.includes(mimetype)) return 'image';
-  if (ALLOWED_FILE_TYPES.document.includes(mimetype)) return 'document';
-  if (ALLOWED_FILE_TYPES.video.includes(mimetype)) return 'video';
-  if (ALLOWED_FILE_TYPES.design.includes(mimetype)) return 'design';
-  if (ALLOWED_FILE_TYPES.archive.includes(mimetype)) return 'archive';
   return 'unknown';
 };
 
