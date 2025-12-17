@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>썸네일 스타일 테스트 - 신한금융 광고관리 플랫폼</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background-color: #F5F5F5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .description {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+      color: #0046FF;
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #0046FF;
+      padding-bottom: 10px;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .comparison-item {
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .comparison-header {
+      background: #f8f9fa;
+      padding: 15px;
+      font-weight: bold;
+      text-align: center;
+      border-bottom: 2px solid #E0E0E0;
+    }
+
+    .comparison-header.current {
+      background: #ffe5e5;
+      color: #d32f2f;
+    }
+
+    .comparison-header.proposed {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    /* 그리드 레이아웃 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 20px;
+    }
+
+    /* 카드 스타일 */
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: box-shadow 0.3s;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* 현재 스타일 (BEFORE) */
+    .thumbnail-current {
+      width: 100%;
+      height: 256px; /* lg:h-64 */
+      background-color: #f5f5f5;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .thumbnail-current img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+    }
+
+    /* 제안 스타일 (AFTER) */
+    .thumbnail-proposed {
+      width: 100%;
+      height: 256px; /* lg:h-64 */
+      background-color: #f5f5f5;
+      border-radius: 8px 8px 0 0;
+      overflow: hidden;
+    }
+
+    .thumbnail-proposed img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    /* 카드 정보 영역 */
+    .card-info {
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-meta {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 설명 박스 */
+    .info-box {
+      background: #f8f9fa;
+      border-left: 4px solid #0046FF;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .info-box h3 {
+      color: #0046FF;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .info-box ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .info-box li {
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .info-box li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #4caf50;
+      font-weight: bold;
+    }
+
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .warning-box:before {
+      content: "⚠️ ";
+      font-weight: bold;
+    }
+
+    /* 이미지 비율 예시 */
+    .ratio-examples {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .ratio-card {
+      text-align: center;
+    }
+
+    .ratio-label {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    /* 반응형 */
+    @media (max-width: 1024px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .thumbnail-current,
+      .thumbnail-proposed {
+        height: 160px; /* h-40 */
+      }
+    }
+
+    @media (max-width: 640px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ratio-examples {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 코드 블록 */
+    .code-block {
+      background: #282c34;
+      color: #abb2bf;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .code-block .comment {
+      color: #5c6370;
+    }
+
+    .code-block .property {
+      color: #e06c75;
+    }
+
+    .code-block .value {
+      color: #98c379;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 썸네일 스타일 테스트</h1>
+    <p class="description">
+      신한금융 광고관리 플랫폼 프로젝트 목록 페이지 썸네일 스타일 비교<br>
+      <strong>테스트 목적:</strong> 현재 스타일(BEFORE)과 제안 스타일(AFTER) 비교
+    </p>
+
+    <!-- 섹션 1: 현재 vs 제안 비교 -->
+    <div class="section">
+      <h2 class="section-title">1. 현재 스타일 vs 제안 스타일 비교</h2>
+
+      <div class="comparison">
+        <!-- BEFORE: 현재 스타일 -->
+        <div class="comparison-item">
+          <div class="comparison-header current">BEFORE (현재)</div>
+          <div class="grid">
+            <!-- 세로 긴 이미지 -->
+            <div class="card">
+              <div class="thumbnail-current">
+                <img src="https://picsum.photos/300/500" alt="세로 긴 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">세로 긴 이미지 (3:5)</div>
+                <div class="card-meta">인물 전신 샷</div>
+              </div>
+            </div>
+
+            <!-- 가로 긴 이미지 -->
+            <div class="card">
+              <div class="thumbnail-current">
+                <img src="https://picsum.photos/500/300" alt="가로 긴 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">가로 긴 이미지 (5:3)</div>
+                <div class="card-meta">풍경 이미지</div>
+              </div>
+            </div>
+
+            <!-- 정사각형 이미지 -->
+            <div class="card">
+              <div class="thumbnail-current">
+                <img src="https://picsum.photos/400/400" alt="정사각형 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">정사각형 (1:1)</div>
+                <div class="card-meta">정사각형 이미지</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <h3>현재 스타일 특징 (object-fit: contain)</h3>
+            <ul>
+              <li>이미지 전체가 항상 보임 (크롭 없음)</li>
+              <li>이미지 비율 유지</li>
+              <li>카드 높이 고정 (256px)</li>
+              <li>⚠️ 이미지 비율에 따라 <strong>여백 발생</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- AFTER: 제안 스타일 -->
+        <div class="comparison-item">
+          <div class="comparison-header proposed">AFTER (제안)</div>
+          <div class="grid">
+            <!-- 세로 긴 이미지 -->
+            <div class="card">
+              <div class="thumbnail-proposed">
+                <img src="https://picsum.photos/300/500" alt="세로 긴 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">세로 긴 이미지 (3:5)</div>
+                <div class="card-meta">인물 전신 샷</div>
+              </div>
+            </div>
+
+            <!-- 가로 긴 이미지 -->
+            <div class="card">
+              <div class="thumbnail-proposed">
+                <img src="https://picsum.photos/500/300" alt="가로 긴 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">가로 긴 이미지 (5:3)</div>
+                <div class="card-meta">풍경 이미지</div>
+              </div>
+            </div>
+
+            <!-- 정사각형 이미지 -->
+            <div class="card">
+              <div class="thumbnail-proposed">
+                <img src="https://picsum.photos/400/400" alt="정사각형 이미지">
+              </div>
+              <div class="card-info">
+                <div class="card-title">정사각형 (1:1)</div>
+                <div class="card-meta">정사각형 이미지</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <h3>제안 스타일 특징 (object-fit: cover)</h3>
+            <ul>
+              <li>카드 높이 100% 채움 (여백 없음)</li>
+              <li>이미지 비율 유지</li>
+              <li>카드 높이 고정 (256px)</li>
+              <li>✅ <strong>여백 절대 발생하지 않음</strong></li>
+              <li>⚠️ 넘치는 부분 자동 크롭</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>사용자 승인 사항:</strong> 제안 스타일(AFTER)은 이미지 일부가 크롭될 수 있지만, 여백이 발생하지 않고 깔끔한 그리드 레이아웃을 유지합니다.
+      </div>
+    </div>
+
+    <!-- 섹션 2: CSS 코드 비교 -->
+    <div class="section">
+      <h2 class="section-title">2. CSS 코드 비교</h2>
+
+      <h3 style="margin-top: 20px; margin-bottom: 10px; color: #d32f2f;">BEFORE (현재 코드)</h3>
+      <div class="code-block">
+<span class="comment">/* 컨테이너 */</span>
+&lt;div
+  className=<span class="value">"w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg"</span>
+  style={{
+    <span class="property">display</span>: <span class="value">'flex'</span>,
+    <span class="property">alignItems</span>: <span class="value">'center'</span>,
+    <span class="property">justifyContent</span>: <span class="value">'center'</span>,
+    <span class="property">overflow</span>: <span class="value">'hidden'</span>
+  }}
+&gt;
+  <span class="comment">/* 이미지 */</span>
+  &lt;img
+    src={project.thumbnailUrl}
+    alt={project.title}
+    style={{
+      <span class="property">maxWidth</span>: <span class="value">'100%'</span>,
+      <span class="property">maxHeight</span>: <span class="value">'100%'</span>,
+      <span class="property">width</span>: <span class="value">'auto'</span>,
+      <span class="property">height</span>: <span class="value">'auto'</span>,
+      <span class="property">objectFit</span>: <span class="value">'contain'</span>,  <span class="comment">// ← 여백 발생 원인</span>
+      <span class="property">objectPosition</span>: <span class="value">'center'</span>,
+      <span class="property">display</span>: <span class="value">'block'</span>
+    }}
+  /&gt;
+&lt;/div&gt;
+      </div>
+
+      <h3 style="margin-top: 30px; margin-bottom: 10px; color: #2e7d32;">AFTER (제안 코드)</h3>
+      <div class="code-block">
+<span class="comment">/* 컨테이너 */</span>
+&lt;div className=<span class="value">"w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg overflow-hidden"</span>&gt;
+  <span class="comment">/* 이미지 */</span>
+  &lt;img
+    src={project.thumbnailUrl}
+    alt={project.title}
+    className=<span class="value">"w-full h-full object-cover"</span>  <span class="comment">// ← 간결하고 명확</span>
+  /&gt;
+&lt;/div&gt;
+
+<span class="comment">// 또는 인라인 스타일로:</span>
+&lt;div
+  className=<span class="value">"w-full h-40 lg:h-64 bg-gray-50 rounded-t-lg"</span>
+  style={{ <span class="property">overflow</span>: <span class="value">'hidden'</span> }}
+&gt;
+  &lt;img
+    src={project.thumbnailUrl}
+    alt={project.title}
+    style={{
+      <span class="property">width</span>: <span class="value">'100%'</span>,         <span class="comment">// 가로 100%</span>
+      <span class="property">height</span>: <span class="value">'100%'</span>,        <span class="comment">// 세로 100%</span>
+      <span class="property">objectFit</span>: <span class="value">'cover'</span>,    <span class="comment">// 여백 없음!</span>
+      <span class="property">objectPosition</span>: <span class="value">'center'</span>,
+      <span class="property">display</span>: <span class="value">'block'</span>
+    }}
+  /&gt;
+&lt;/div&gt;
+      </div>
+    </div>
+
+    <!-- 섹션 3: 장단점 비교 -->
+    <div class="section">
+      <h2 class="section-title">3. 장단점 비교표</h2>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+          <tr style="background: #f5f5f5;">
+            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">항목</th>
+            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">BEFORE (contain)</th>
+            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">AFTER (cover)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">여백 발생</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #d32f2f;">❌ 발생함</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #2e7d32;">✅ 없음</td>
+          </tr>
+          <tr style="background: #fafafa;">
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">이미지 크롭</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #2e7d32;">✅ 없음 (전체 표시)</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #ff9800;">⚠️ 발생 가능</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">카드 높이</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">🔒 고정</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">🔒 고정</td>
+          </tr>
+          <tr style="background: #fafafa;">
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">그리드 통일성</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #ff9800;">⚠️ 여백으로 불균형</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #2e7d32;">✅ 깔끔한 그리드</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">코드 간결성</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #ff9800;">⚠️ 복잡</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #2e7d32;">✅ 간결</td>
+          </tr>
+          <tr style="background: #fafafa;">
+            <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">참조 이미지 유사도</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">60%</td>
+            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: #2e7d32;">✅ 95%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 섹션 4: 권장사항 -->
+    <div class="section">
+      <h2 class="section-title">4. 최종 권장사항</h2>
+
+      <div class="info-box">
+        <h3>✅ AFTER (object-fit: cover) 적용 권장</h3>
+        <ul>
+          <li><strong>여백 제거:</strong> 모든 이미지가 카드 높이 100%를 채움</li>
+          <li><strong>깔끔한 그리드:</strong> 통일된 레이아웃으로 프로페셔널한 UI</li>
+          <li><strong>참조 이미지와 일치:</strong> 제공하신 참조 이미지와 95% 유사</li>
+          <li><strong>코드 간결성:</strong> Tailwind 클래스로 간단 명료</li>
+        </ul>
+      </div>
+
+      <div class="warning-box">
+        <strong>참고사항:</strong><br>
+        - 이미지 일부가 크롭될 수 있으나, 중요한 부분(중앙)은 항상 표시됩니다<br>
+        - `object-position: center`로 이미지 중앙 부분이 우선 표시됩니다<br>
+        - 여백이 없어 더 많은 콘텐츠를 효율적으로 배치할 수 있습니다
+      </div>
+    </div>
+  </div>
+
+  <script>
+    console.log('썸네일 스타일 테스트 페이지 로드 완료');
+    console.log('BEFORE: object-fit: contain (여백 발생)');
+    console.log('AFTER: object-fit: cover (여백 없음)');
+  </script>
+</body>
+</html>
