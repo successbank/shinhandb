@@ -249,13 +249,13 @@ export default function ProjectsPage() {
               {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
                 <button
                   onClick={() => router.push('/projects/upload')}
-                  className="px-3 lg:px-6 py-2 bg-[#0046FF] text-white rounded-lg hover:bg-blue-600 flex items-center gap-1 lg:gap-2 text-sm lg:text-base"
+                  className="hidden md:flex px-3 lg:px-6 py-2 bg-[#0046FF] text-white rounded-lg hover:bg-blue-600 items-center gap-1 lg:gap-2 text-sm lg:text-base"
                 >
                   <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="hidden sm:inline">새 프로젝트</span>
-                  <span className="sm:hidden">추가</span>
+                  <span className="hidden lg:inline">새 프로젝트</span>
+                  <span className="lg:hidden">추가</span>
                 </button>
               )}
             </div>

@@ -350,7 +350,7 @@ export default function ProjectUploadPage() {
                       type="text"
                       value={projectTitle}
                       onChange={(e) => setProjectTitle(e.target.value)}
-                      placeholder="예: 신한카드 2024 브랜드 캠페인"
+                      placeholder="예: 2026 위기가정지원사업"
                       className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                     />
                   </div>
