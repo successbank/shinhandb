@@ -571,3 +571,318 @@ git add -A
 git commit -m "메시지"
 git push origin master
 ```
+
+---
+
+### 2025-12-17: 파일 업로드 최적화 및 프로젝트 상세 모달 반응형 개선
+
+#### 완료된 작업
+
+**1. 파일 업로드 설정 변경**
+
+**파일 크기 제한 확대:**
+- 파일: `backend/src/utils/upload.ts:44-45`
+- 변경: 10MB → **200MB** (PRD 요구사항 준수)
+- 이유: 고해상도 광고 이미지 및 동영상 파일 지원 필요
+
+**업로드 가능 파일 형식 제한:**
+- 파일: `backend/src/utils/upload.ts:7-27, 104-107`
+- 변경 전: JPG, PNG, GIF, PDF, MP4, MOV, PSD, AI, ZIP
+- 변경 후: **JPG, PNG, GIF만** (이미지 전용)
+- 이유: 사용자 요청 - 프로젝트 특성상 이미지 파일만 관리
+
+**적용 내용:**
+```typescript
+// backend/src/utils/upload.ts
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
+const ALLOWED_FILE_TYPES = {
+  image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
+};
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif'];
+```
+
+**2. 프로젝트 목록 정렬 순서 변경**
+
+**파일:** `backend/src/routes/projects.ts:447`
+**변경:**
+```sql
+-- 변경 전
+ORDER BY p.id, p.created_at DESC
+
+-- 변경 후
+ORDER BY p.created_at DESC, p.id
+```
+
+**결과:** 프로젝트 목록이 최신 생성 순서로 표시 (신규 프로젝트가 맨 위)
+
+**3. SQL 쿼리 오류 수정 (500 Internal Server Error)**
+
+**오류:** `SELECT DISTINCT ON expressions must match initial ORDER BY expressions`
+
+**파일:** `backend/src/routes/projects.ts`
+
+**수정 내용:**
+- **카테고리 필터** (라인 366-373): LEFT JOIN → EXISTS 서브쿼리로 변경
+  ```typescript
+  // 변경 전
+  whereConditions.push(`pc.category_id = $${paramIndex++}`);
+
+  // 변경 후
+  whereConditions.push(`EXISTS (
+    SELECT 1 FROM project_categories pc
+    WHERE pc.project_id = p.id AND pc.category_id = $${paramIndex++}
+  )`);
+  ```
+
+- **COUNT 쿼리** (라인 405-409): DISTINCT 및 JOIN 제거
+  ```sql
+  -- 변경 전
+  SELECT COUNT(DISTINCT p.id) FROM projects p LEFT JOIN ...
+
+  -- 변경 후
+  SELECT COUNT(*) FROM projects p
+  ```
+
+- **메인 쿼리** (라인 414-450): DISTINCT ON 제거, LEFT JOIN 제거
+  ```sql
+  -- 변경 전
+  SELECT DISTINCT ON (p.id) ... LEFT JOIN project_categories pc ...
+
+  -- 변경 후
+  SELECT ... FROM projects p
+  ORDER BY p.created_at DESC, p.id
+  ```
+
+**결과:**
+- PostgreSQL 구문 오류 해결
+- 쿼리 성능 개선 (불필요한 JOIN 제거)
+- 카테고리 필터링 정상 작동
+
+**4. 프로젝트 상세 모달 반응형 레이아웃 개선**
+
+**파일:** `frontend/src/components/Project/ProjectDetailModal.tsx`
+
+**요구사항:**
+- 모바일: 세로 리스트 유지 (현재 그대로)
+- 태블릿/PC: 갤러리 형식 (그리드 레이아웃)
+- 이미지 클릭 기능 유지
+- 프로젝트 네비게이션 화살표: 모바일만 표시
+
+**변경 내용 (총 6개 라인):**
+
+1. **최종 원고 섹션 그리드 적용** (라인 655)
+   ```typescript
+   // 변경 전
+   <div className="space-y-6">
+
+   // 변경 후
+   <div className="space-y-6 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 lg:grid-cols-3">
+   ```
+
+2. **제안 시안 섹션 그리드 적용** (라인 760)
+   ```typescript
+   // 동일한 그리드 클래스 적용
+   ```
+
+3. **프로젝트 네비게이션 화살표 - 모바일 전용 설정** (라인 678, 697, 783, 802)
+   ```typescript
+   // 4개 버튼 모두에 md:hidden 클래스 추가
+   className="... md:hidden ..."
+   ```
+
+**반응형 breakpoint:**
+- 모바일: `< 768px` (md 미만)
+- 태블릿: `768px ~ 1023px` (md ~ lg 미만)
+- PC: `≥ 1024px` (lg 이상)
+
+**레이아웃 결과:**
+- 📱 모바일: 1열 세로 리스트 + 프로젝트 네비게이션 화살표 표시
+- 💻 태블릿: 2열 그리드 + 화살표 숨김
+- 🖥️ PC: 3열 그리드 + 화살표 숨김
+
+#### 기술적 의사결정
+
+**1. 파일 업로드 제한 변경**
+- **선택:** 200MB, 이미지 전용
+- **이유:**
+  - PRD 요구사항(200MB) 준수
+  - 프로젝트 특성상 광고 이미지만 관리
+  - 보안 및 스토리지 효율성 고려
+
+**2. 정렬 순서 변경**
+- **선택:** 최신순 정렬 (created_at DESC)
+- **이유:**
+  - 최신 프로젝트 우선 노출로 사용성 향상
+  - 일반적인 CMS 동작 방식과 일치
+
+**3. SQL 쿼리 최적화**
+- **선택:** DISTINCT ON 제거, EXISTS 사용
+- **이유:**
+  - PostgreSQL DISTINCT ON 제약 조건 회피
+  - JOIN 제거로 쿼리 성능 향상
+  - 서브쿼리 방식으로 가독성 개선
+
+**4. 반응형 레이아웃**
+- **선택:** Tailwind CSS 반응형 유틸리티 사용
+- **이유:**
+  - CSS만 수정으로 안전성 보장
+  - 모바일 우선 설계 (Mobile First)
+  - 표준 breakpoint 사용으로 일관성 유지
+
+#### 영향 범위 분석
+
+**✅ 수정된 파일:**
+1. `backend/src/utils/upload.ts` (파일 업로드 설정)
+2. `backend/src/routes/projects.ts` (프로젝트 목록 API)
+3. `frontend/src/components/Project/ProjectDetailModal.tsx` (모달 UI)
+
+**✅ 안전성:**
+- 데이터베이스 스키마 변경 없음
+- 기존 API 엔드포인트 호환성 유지
+- JavaScript 로직 변경 최소화 (CSS만 수정)
+
+**✅ 테스트 완료:**
+- 파일 업로드: 200MB 이하 JPG/PNG/GIF 정상 작동
+- 프로젝트 목록: 최신순 정렬 확인
+- SQL 쿼리: 500 에러 해결, 정상 응답
+- 반응형 레이아웃: 모바일/태블릿/PC 모두 정상 작동
+
+#### 현재 설정값
+
+**파일 업로드:**
+```typescript
+// backend/src/utils/upload.ts
+MAX_FILE_SIZE = 200MB
+ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
+MAX_FILES = 10개 (동시 업로드)
+```
+
+**반응형 breakpoint:**
+```typescript
+// Tailwind CSS 기준
+mobile: < 768px (md 미만)
+tablet: 768px ~ 1023px (md ~ lg 미만)
+desktop: ≥ 1024px (lg 이상)
+```
+
+**프로젝트 목록 정렬:**
+```sql
+ORDER BY created_at DESC, id  -- 최신순
+```
+
+#### 알려진 이슈 및 해결
+
+**해결된 이슈:**
+1. ✅ 413 Payload Too Large 오류 → 200MB 제한으로 해결
+2. ✅ 500 Internal Server Error → SQL 쿼리 최적화로 해결
+3. ✅ 프로젝트 목록 정렬 오류 → ORDER BY 수정으로 해결
+4. ✅ 모달 레이아웃 반응형 미지원 → Tailwind Grid로 해결
+
+**현재 이슈:**
+- 없음
+
+#### 다음 작업 권장사항
+
+1. **실제 디바이스 테스트**
+   - 다양한 모바일/태블릿 기기에서 반응형 테스트
+   - 200MB 파일 업로드 실제 성능 측정
+
+2. **사용자 피드백 수집**
+   - 갤러리 레이아웃 사용성 평가
+   - 프로젝트 네비게이션 화살표 필요성 재검토
+
+3. **추가 최적화**
+   - 이미지 압축 및 최적화 (Sharp 라이브러리 활용)
+   - 대용량 파일 업로드 시 청크 업로드 고려
+
+#### 개발 환경 상태
+
+**서비스 URL:**
+- Frontend: http://211.248.112.67:5647
+- Backend API: http://211.248.112.67:5647/api
+- Adminer: http://211.248.112.67:5650
+
+**Docker 컨테이너 상태:**
+- ✅ shinhandb_frontend: 정상 가동 (Next.js 14.2.5)
+- ✅ shinhandb_backend: 정상 가동 (Express.js + Node.js 18)
+- ✅ shinhandb_db: 정상 가동 (PostgreSQL 15)
+- ✅ shinhandb_redis: 정상 가동 (Redis 7)
+- ✅ shinhandb_adminer: 정상 가동
+
+**마지막 컨테이너 재시작:**
+- 2025-12-17 (backend, frontend 재시작 완료)
+
+#### 참고 로그
+
+**백엔드 로그 확인:**
+```bash
+docker logs shinhandb_backend --tail 50
+# 정상 작동 확인:
+# - PostgreSQL 연결 성공
+# - Redis 연결 성공
+# - Elasticsearch 연결 성공
+# - 서버 정상 가동 (Port 3001)
+```
+
+**프론트엔드 로그 확인:**
+```bash
+docker logs shinhandb_frontend --tail 30
+# Next.js 컴파일 성공 (1574ms)
+# 서버 정상 가동 (localhost:3000)
+```
+
+#### 테스트 시나리오 (QA용)
+
+**1. 파일 업로드 테스트**
+- [ ] 200MB 이하 JPG 파일 업로드 성공
+- [ ] 200MB 이하 PNG 파일 업로드 성공
+- [ ] 200MB 이하 GIF 파일 업로드 성공
+- [ ] 200MB 초과 파일 업로드 실패 (오류 메시지 확인)
+- [ ] PDF, MP4 등 다른 형식 업로드 차단 확인
+
+**2. 프로젝트 목록 테스트**
+- [ ] 최신 프로젝트가 맨 위에 표시
+- [ ] 오래된 프로젝트가 아래에 표시
+- [ ] 페이지네이션 정상 작동
+
+**3. 프로젝트 상세 모달 테스트**
+
+**모바일 (< 768px):**
+- [ ] 세로 리스트 레이아웃 확인
+- [ ] 프로젝트 네비게이션 화살표 표시 확인
+- [ ] 이미지 클릭 → 슬라이더 열림 확인
+
+**태블릿 (768px ~ 1023px):**
+- [ ] 2열 그리드 레이아웃 확인
+- [ ] 프로젝트 네비게이션 화살표 숨김 확인
+- [ ] 카드 hover 효과 확인
+- [ ] 이미지 클릭 동작 확인
+
+**PC (≥ 1024px):**
+- [ ] 3열 그리드 레이아웃 확인
+- [ ] 프로젝트 네비게이션 화살표 숨김 확인
+- [ ] 카드 간격 및 정렬 확인
+- [ ] 모든 기능 정상 작동 확인
+
+#### Git 커밋 이력
+
+```bash
+# 예상 커밋 (아직 커밋하지 않은 경우)
+git add backend/src/utils/upload.ts
+git add backend/src/routes/projects.ts
+git add frontend/src/components/Project/ProjectDetailModal.tsx
+git commit -m "feat: 파일 업로드 최적화 및 프로젝트 모달 반응형 개선
+
+- 파일 크기 제한 10MB → 200MB (PRD 준수)
+- 업로드 파일 형식 JPG/PNG/GIF로 제한
+- 프로젝트 목록 최신순 정렬
+- SQL 쿼리 최적화 (500 에러 수정)
+- 프로젝트 상세 모달 반응형 레이아웃 적용
+  - 모바일: 1열 세로 리스트
+  - 태블릿: 2열 그리드
+  - PC: 3열 그리드
+- 프로젝트 네비게이션 화살표 모바일 전용"
+```
+
+---
