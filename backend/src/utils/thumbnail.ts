@@ -48,8 +48,9 @@ export const generateThumbnail = async (
     // Sharp를 사용한 썸네일 생성
     await sharp(originalPath)
       .resize(width, height, {
-        fit: 'cover', // 비율을 유지하며 크롭
+        fit: 'contain', // 전체 이미지 표시 (크롭 없음)
         position: 'center', // 중앙 정렬
+        background: { r: 245, g: 245, b: 245, alpha: 1 }, // 회색 배경 (#F5F5F5)
       })
       .jpeg({
         quality: 80, // JPEG 품질 (80%)
