@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신한은행 모바일 캐러셀 - 미리보기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 60px;
+            align-items: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* 왼쪽 목록 영역 */
+        .menu-section {
+            flex: 0 0 320px;
+        }
+
+        .menu-title {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .menu-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .menu-item {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #0046ff, #00d4ff);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateX(8px);
+        }
+
+        .menu-item.active {
+            background: rgba(0, 70, 255, 0.15);
+            border-color: rgba(0, 70, 255, 0.4);
+        }
+
+        .menu-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .menu-item-number {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #0046ff, #00d4ff);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 28px;
+            text-align: center;
+            margin-right: 14px;
+        }
+
+        .menu-item-title {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .menu-item-desc {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            padding-left: 42px;
+        }
+
+        /* 오른쪽 스마트폰 영역 */
+        .phone-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .phone-frame {
+            position: relative;
+            width: 340px;
+            height: 700px;
+            background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+            border-radius: 50px;
+            padding: 12px;
+            box-shadow: 
+                0 50px 100px rgba(0,0,0,0.5),
+                inset 0 2px 10px rgba(255,255,255,0.1),
+                0 0 0 2px #333;
+        }
+
+        /* 스마트폰 버튼들 */
+        .phone-frame::before {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 120px;
+            width: 4px;
+            height: 80px;
+            background: linear-gradient(180deg, #444 0%, #333 100%);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .phone-frame::after {
+            content: '';
+            position: absolute;
+            left: -3px;
+            top: 140px;
+            width: 4px;
+            height: 40px;
+            background: linear-gradient(180deg, #444 0%, #333 100%);
+            border-radius: 4px 0 0 4px;
+            box-shadow: 0 60px 0 #3a3a3a;
+        }
+
+        .phone-inner {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* iframe 영역 */
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 40px;
+        }
+
+        /* 홈 인디케이터 */
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            z-index: 100;
+        }
+
+        /* 반응형 */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                gap: 40px;
+            }
+
+            .menu-section {
+                flex: none;
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .phone-frame {
+                width: 300px;
+                height: 620px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .phone-frame {
+                width: 280px;
+                height: 580px;
+                border-radius: 40px;
+            }
+
+            .phone-inner {
+                border-radius: 32px;
+            }
+
+            .phone-screen {
+                border-radius: 32px;
+            }
+
+            .menu-item {
+                padding: 16px 20px;
+            }
+        }
+
+        /* 로딩 애니메이션 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #0046ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 왼쪽: 메뉴 목록 -->
+        <div class="menu-section">
+            <h1 class="menu-title">신한은행 모바일</h1>
+            <p class="menu-subtitle">캐러셀 효과 미리보기</p>
+
+            <div class="menu-list">
+                <div class="menu-item active" data-src="carousel_kenburns_cinematic.html">
+                    <span class="menu-item-number">1</span>
+                    <span class="menu-item-title">Ken Burns Cinematic</span>
+                    <p class="menu-item-desc">시네마틱한 줌&팬 효과의 이미지 전환</p>
+                </div>
+
+                <div class="menu-item" data-src="carousel_scroll_snap.html">
+                    <span class="menu-item-number">2</span>
+                    <span class="menu-item-title">CSS Scroll Snap</span>
+                    <p class="menu-item-desc">순수 CSS 기반의 부드러운 스크롤 스냅</p>
+                </div>
+
+                <div class="menu-item" data-src="carousel_swiper_coverflow.html">
+                    <span class="menu-item-number">3</span>
+                    <span class="menu-item-title">Swiper Coverflow 3D</span>
+                    <p class="menu-item-desc">3D 회전 효과의 인터랙티브 슬라이더</p>
+                </div>
+
+                <div class="menu-item" data-src="carousel_kenburns_vertical.html">
+                    <span class="menu-item-number">4</span>
+                    <span class="menu-item-title">Ken Burns Vertical</span>
+                    <p class="menu-item-desc">위아래 스와이프로 전환하는 시네마틱 효과</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 스마트폰 프레임 -->
+        <div class="phone-section">
+            <div class="phone-frame">
+                <div class="phone-inner">
+                    <iframe 
+                        class="phone-screen" 
+                        id="phoneScreen" 
+                        src="carousel_kenburns_cinematic.html"
+                        title="미리보기"
+                    ></iframe>
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const menuItems = document.querySelectorAll('.menu-item');
+        const phoneScreen = document.getElementById('phoneScreen');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // 활성 상태 변경
+                menuItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                // 로딩 표시
+                loadingOverlay.classList.add('show');
+
+                // iframe 소스 변경
+                const src = item.dataset.src;
+                phoneScreen.src = src;
+            });
+        });
+
+        // iframe 로드 완료 시 로딩 숨김
+        phoneScreen.addEventListener('load', () => {
+            loadingOverlay.classList.remove('show');
+        });
+    </script>
+</body>
+</html>

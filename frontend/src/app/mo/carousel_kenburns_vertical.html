@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신한은행 모바일 캐러셀 - Ken Burns Vertical</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --transition-duration: 1s;
+            --kenburns-duration: 8s;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 메인 캐러셀 영역 */
+        .carousel-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 백그라운드 블러 효과 */
+        .background-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(50px) brightness(0.3);
+            transform: scale(1.2);
+            transition: background-image 1s ease;
+            z-index: -1;
+        }
+
+        /* 캐러셀 컨테이너 */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            margin: 20px auto;
+            aspect-ratio: 9/16;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 30px 100px rgba(0,0,0,0.5);
+        }
+
+        /* 슬라이드 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity var(--transition-duration) ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Ken Burns 애니메이션 */
+        .slide.active img {
+            animation: kenburns var(--kenburns-duration) ease-out forwards;
+        }
+
+        @keyframes kenburns {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                transform: scale(1.15) translate(-2%, -2%);
+            }
+        }
+
+        /* 다양한 Ken Burns 방향 */
+        .slide:nth-child(2n) img {
+            animation-name: kenburns-alt;
+        }
+
+        @keyframes kenburns-alt {
+            0% {
+                transform: scale(1.15) translate(-2%, -2%);
+            }
+            100% {
+                transform: scale(1) translate(0, 0);
+            }
+        }
+
+        .slide:nth-child(3n) img {
+            animation-name: kenburns-right;
+        }
+
+        @keyframes kenburns-right {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                transform: scale(1.12) translate(2%, -1%);
+            }
+        }
+
+        /* 슬라이드 오버레이 */
+        .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 80px 24px 24px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            z-index: 2;
+        }
+
+        .slide-number {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .slide-title {
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease 0.3s;
+        }
+
+        .slide.active .slide-title {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 프레임 장식 */
+        .carousel-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 32px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* 세로 네비게이션 - 캐러셀 오른쪽에 오버레이 */
+        .vertical-nav {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.4);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* 세로 타임라인 */
+        .timeline-vertical {
+            width: 4px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timeline-progress-vertical {
+            width: 100%;
+            background: linear-gradient(180deg, #0046ff, #00d4ff);
+            height: 0%;
+            transition: height 0.1s linear;
+            border-radius: 2px;
+        }
+
+        /* 하단 컨트롤 영역 */
+        .controls {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* 하단 타이틀 */
+        .footer-header {
+            text-align: center;
+        }
+
+        .footer-header h1 {
+            color: white;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .footer-header p {
+            color: rgba(255,255,255,0.6);
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+        }
+
+        /* 하단 컨트롤 버튼들 */
+        .bottom-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .play-pause {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0046ff, #003399);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .play-pause:hover {
+            background: linear-gradient(135deg, #0055ff, #0044aa);
+            transform: scale(1.05);
+        }
+
+        .play-pause svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* 슬라이드 카운터 */
+        .slide-counter {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .slide-counter .current {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* 썸네일 - 가로 배치 */
+        .thumbnails {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow-x: auto;
+            max-width: 100%;
+            scrollbar-width: none;
+        }
+
+        .thumbnails::-webkit-scrollbar {
+            display: none;
+        }
+
+        .thumbnail {
+            flex: 0 0 45px;
+            height: 45px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .thumbnail:hover {
+            opacity: 0.8;
+        }
+
+        .thumbnail.active {
+            opacity: 1;
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 스와이프 안내 오버레이 */
+        .swipe-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        .swipe-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .swipe-overlay-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .swipe-icon {
+            width: 100px;
+            height: 100px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: swipeAnimation 1.5s ease-in-out infinite;
+        }
+
+        .swipe-icon svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+
+        .swipe-arrow-up {
+            animation: arrowUp 1.5s ease-in-out infinite;
+        }
+
+        .swipe-arrow-down {
+            animation: arrowDown 1.5s ease-in-out infinite;
+        }
+
+        @keyframes arrowUp {
+            0%, 100% { transform: translateY(5px); opacity: 0.5; }
+            50% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        @keyframes arrowDown {
+            0%, 100% { transform: translateY(-5px); opacity: 0.5; }
+            50% { transform: translateY(5px); opacity: 1; }
+        }
+
+        @keyframes swipeAnimation {
+            0%, 100% { transform: scale(1); border-color: rgba(255,255,255,0.3); }
+            50% { transform: scale(1.1); border-color: rgba(0, 70, 255, 0.8); }
+        }
+
+        .swipe-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .swipe-subtext {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 25px;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* 반응형 */
+        @media (max-width: 480px) {
+            .carousel-container {
+                max-width: 320px;
+                border-radius: 24px;
+            }
+
+            .carousel-container::before {
+                border-radius: 24px;
+            }
+
+            .thumbnail {
+                flex: 0 0 38px;
+                height: 38px;
+            }
+
+            .vertical-nav {
+                right: 10px;
+            }
+
+            .nav-btn {
+                width: 36px;
+                height: 36px;
+            }
+
+            .timeline-vertical {
+                height: 80px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .carousel-container {
+                max-width: 420px;
+            }
+        }
+
+        /* 로딩 애니메이션 */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 5;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 스와이프 안내 오버레이 -->
+    <div class="swipe-overlay" id="swipeOverlay">
+        <div class="swipe-overlay-content">
+            <svg class="swipe-arrow-up" width="50" height="50" viewBox="0 0 24 24" fill="white">
+                <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+            </svg>
+            <div class="swipe-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74c-3.6-.76-3.54-.75-3.67-.75-.31 0-.59.13-.79.35l-.79.79 4.94 4.94c.27.27.65.43 1.03.43h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.92-1.38z"/>
+                </svg>
+            </div>
+            <svg class="swipe-arrow-down" width="50" height="50" viewBox="0 0 24 24" fill="white">
+                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+            </svg>
+            <p class="swipe-text">위아래로 스와이프하여<br>화면을 전환하세요</p>
+            <p class="swipe-subtext">화면을 터치하면 시작됩니다</p>
+        </div>
+    </div>
+
+    <div class="background-blur" id="bgBlur"></div>
+
+    <div class="carousel-wrapper">
+        <div class="carousel-container" id="carousel">
+            <!-- 세로 네비게이션 (이미지 위 오버레이) -->
+            <div class="vertical-nav">
+                <button class="nav-btn" id="prevBtn" aria-label="이전 (위)">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                    </svg>
+                </button>
+
+                <div class="timeline-vertical">
+                    <div class="timeline-progress-vertical" id="timelineProgress"></div>
+                </div>
+
+                <button class="nav-btn" id="nextBtn" aria-label="다음 (아래)">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="slide active" data-index="0">
+                <img src="./img/29342143-8af4-44bc-83cc-fb0cdb779812.jpg" alt="화면 1">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 01</div>
+                    <h3 class="slide-title">메인 대시보드</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="1">
+                <img src="./img/37fb40b3-f007-40f2-9712-3f691acb3dde.jpg" alt="화면 2">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 02</div>
+                    <h3 class="slide-title">계좌 조회</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="2">
+                <img src="./img/5b70abf1-6cc4-4b53-8026-f240dac1ebbb.jpg" alt="화면 3">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 03</div>
+                    <h3 class="slide-title">간편 이체</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="3">
+                <img src="./img/6b4a9167-8fad-4464-9813-75e5e072f089.jpg" alt="화면 4">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 04</div>
+                    <h3 class="slide-title">투자 현황</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="4">
+                <img src="./img/6bd292b1-9e3d-4c95-bfb1-c8979fa0b895.jpg" alt="화면 5">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 05</div>
+                    <h3 class="slide-title">카드 관리</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="5">
+                <img src="./img/b77b54c1-bc7e-46c3-93bf-bc45eb39f9ae.jpg" alt="화면 6">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 06</div>
+                    <h3 class="slide-title">혜택 센터</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="6">
+                <img src="./img/c8ad3a64-2d69-4ec1-a7bf-8b023d04815f.jpg" alt="화면 7">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 07</div>
+                    <h3 class="slide-title">알림 설정</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="7">
+                <img src="./img/d9e42b23-a069-4acf-a42b-fbb55026fee2.jpg" alt="화면 8">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 08</div>
+                    <h3 class="slide-title">마이페이지</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 컨트롤 -->
+        <div class="controls">
+            <div class="footer-header">
+                <h1>신한은행 모바일 뱅킹</h1>
+                <p>Ken Burns Vertical Swipe</p>
+            </div>
+
+            <div class="bottom-controls">
+                <div class="slide-counter">
+                    <span class="current" id="currentSlide">01</span>
+                    <span> / 08</span>
+                </div>
+
+                <button class="play-pause" id="playPauseBtn" aria-label="재생/일시정지">
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="thumbnails" id="thumbnails">
+                <div class="thumbnail active" data-index="0">
+                    <img src="./img/29342143-8af4-44bc-83cc-fb0cdb779812.jpg" alt="썸네일 1">
+                </div>
+                <div class="thumbnail" data-index="1">
+                    <img src="./img/37fb40b3-f007-40f2-9712-3f691acb3dde.jpg" alt="썸네일 2">
+                </div>
+                <div class="thumbnail" data-index="2">
+                    <img src="./img/5b70abf1-6cc4-4b53-8026-f240dac1ebbb.jpg" alt="썸네일 3">
+                </div>
+                <div class="thumbnail" data-index="3">
+                    <img src="./img/6b4a9167-8fad-4464-9813-75e5e072f089.jpg" alt="썸네일 4">
+                </div>
+                <div class="thumbnail" data-index="4">
+                    <img src="./img/6bd292b1-9e3d-4c95-bfb1-c8979fa0b895.jpg" alt="썸네일 5">
+                </div>
+                <div class="thumbnail" data-index="5">
+                    <img src="./img/b77b54c1-bc7e-46c3-93bf-bc45eb39f9ae.jpg" alt="썸네일 6">
+                </div>
+                <div class="thumbnail" data-index="6">
+                    <img src="./img/c8ad3a64-2d69-4ec1-a7bf-8b023d04815f.jpg" alt="썸네일 7">
+                </div>
+                <div class="thumbnail" data-index="7">
+                    <img src="./img/d9e42b23-a069-4acf-a42b-fbb55026fee2.jpg" alt="썸네일 8">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        const timelineProgress = document.getElementById('timelineProgress');
+        const bgBlur = document.getElementById('bgBlur');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const currentSlideEl = document.getElementById('currentSlide');
+        const swipeOverlay = document.getElementById('swipeOverlay');
+
+        let currentIndex = 0;
+        let isPlaying = true;
+        let autoplayTimer;
+        let progressTimer;
+        const SLIDE_DURATION = 5000;
+        const PROGRESS_INTERVAL = 50;
+
+        // 슬라이드 변경
+        function goToSlide(index) {
+            if (index < 0) index = slides.length - 1;
+            if (index >= slides.length) index = 0;
+
+            slides[currentIndex].classList.remove('active');
+            thumbnails[currentIndex].classList.remove('active');
+
+            currentIndex = index;
+
+            slides[currentIndex].classList.add('active');
+            thumbnails[currentIndex].classList.add('active');
+
+            const imgSrc = slides[currentIndex].querySelector('img').src;
+            bgBlur.style.backgroundImage = `url(${imgSrc})`;
+
+            currentSlideEl.textContent = String(currentIndex + 1).padStart(2, '0');
+
+            thumbnails[currentIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+            });
+
+            resetProgress();
+            if (isPlaying) {
+                startAutoplay();
+            }
+        }
+
+        function nextSlide() {
+            goToSlide(currentIndex + 1);
+        }
+
+        function prevSlide() {
+            goToSlide(currentIndex - 1);
+        }
+
+        function resetProgress() {
+            clearInterval(progressTimer);
+            timelineProgress.style.height = `${(currentIndex / slides.length) * 100}%`;
+        }
+
+        function startAutoplay() {
+            clearTimeout(autoplayTimer);
+            clearInterval(progressTimer);
+
+            let progress = (currentIndex / slides.length) * 100;
+            const progressPerTick = (100 / slides.length) / (SLIDE_DURATION / PROGRESS_INTERVAL);
+
+            progressTimer = setInterval(() => {
+                progress += progressPerTick;
+                if (progress > ((currentIndex + 1) / slides.length) * 100) {
+                    progress = ((currentIndex + 1) / slides.length) * 100;
+                }
+                timelineProgress.style.height = `${progress}%`;
+            }, PROGRESS_INTERVAL);
+
+            autoplayTimer = setTimeout(() => {
+                nextSlide();
+            }, SLIDE_DURATION);
+        }
+
+        function stopAutoplay() {
+            clearTimeout(autoplayTimer);
+            clearInterval(progressTimer);
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                startAutoplay();
+            } else {
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                stopAutoplay();
+            }
+        }
+
+        // 이벤트 리스너
+        prevBtn.addEventListener('click', prevSlide);
+        nextBtn.addEventListener('click', nextSlide);
+        playPauseBtn.addEventListener('click', togglePlayPause);
+
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                const index = parseInt(thumb.dataset.index);
+                goToSlide(index);
+            });
+        });
+
+        // 키보드 - 위아래 화살표
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    prevSlide();
+                    break;
+                case 'ArrowDown':
+                    nextSlide();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    togglePlayPause();
+                    break;
+            }
+        });
+
+        // 터치 스와이프 - 세로 방향
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        const carousel = document.getElementById('carousel');
+
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartY = e.changedTouches[0].screenY;
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartY - touchEndY;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+
+        // 마우스 휠 지원
+        carousel.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY > 0) {
+                nextSlide();
+            } else {
+                prevSlide();
+            }
+        }, { passive: false });
+
+        // 초기화
+        bgBlur.style.backgroundImage = `url(${slides[0].querySelector('img').src})`;
+        
+        // 오버레이 클릭/터치 시 숨기고 자동재생 시작
+        swipeOverlay.addEventListener('click', () => {
+            swipeOverlay.classList.add('hidden');
+            startAutoplay();
+        });
+
+        swipeOverlay.addEventListener('touchstart', () => {
+            swipeOverlay.classList.add('hidden');
+            startAutoplay();
+        });
+    </script>
+</body>
+</html>

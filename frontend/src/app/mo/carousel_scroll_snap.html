@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신한은행 모바일 캐러셀 - CSS Scroll Snap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0046ff;
+            --primary-dark: #003399;
+            /* 30% 증가: 300 → 390, 540 → 702 */
+            --card-width: 390px;
+            --card-height: 702px;
+            --gap: 24px;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 캐러셀 컨테이너 - 상단에 배치 */
+        .carousel-container {
+            padding: 30px 0 20px;
+            flex: 1;
+        }
+
+        .carousel {
+            display: flex;
+            gap: var(--gap);
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            padding: 20px calc(50vw - var(--card-width) / 2);
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 카드 스타일 - 30% 크게 */
+        .card {
+            flex: 0 0 var(--card-width);
+            height: var(--card-height);
+            scroll-snap-align: center;
+            border-radius: 28px;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.88);
+            opacity: 0.5;
+        }
+
+        .card.active {
+            transform: scale(1);
+            opacity: 1;
+            box-shadow: 0 30px 80px rgba(0,70,255,0.25);
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .card:hover img {
+            transform: scale(1.03);
+        }
+
+        /* 카드 오버레이 */
+        .card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 80px 24px 24px;
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+        }
+
+        .card.active .card-overlay {
+            transform: translateY(0);
+        }
+
+        .card-overlay span {
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-overlay span::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        /* 컨트롤 영역 */
+        .controls-section {
+            padding: 15px 20px;
+        }
+
+        /* 진행 바 */
+        .progress-container {
+            max-width: 450px;
+            margin: 0 auto 15px;
+            padding: 0 20px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #00d4ff);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 12.5%;
+        }
+
+        /* 인디케이터 */
+        .indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dee2e6;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .indicator.active {
+            width: 36px;
+            border-radius: 5px;
+            background: var(--primary);
+        }
+
+        .indicator:hover:not(.active) {
+            background: #adb5bd;
+        }
+
+        /* 네비게이션 & 자동재생 */
+        .nav-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+        }
+
+        .nav-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .autoplay-toggle {
+            background: none;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            padding: 10px 24px;
+            font-size: 0.9rem;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .autoplay-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .autoplay-toggle.playing {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* 스크롤 힌트 */
+        .scroll-hint {
+            text-align: center;
+            padding: 10px;
+            color: #868e96;
+            font-size: 0.9rem;
+            animation: bounce 2s ease infinite;
+        }
+
+        .scroll-hint svg {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* 하단 헤더 (타이틀) */
+        .footer-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 35px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .footer-header h1 {
+            color: white;
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-header p {
+            color: rgba(255,255,255,0.8);
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 반응형 - 30% 크기 유지하면서 조정 */
+        @media (max-width: 768px) {
+            :root {
+                /* 기존 260 → 338, 460 → 598 (30% 증가) */
+                --card-width: 338px;
+                --card-height: 598px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                /* 기존 220 → 286, 400 → 520 (30% 증가) */
+                --card-width: 286px;
+                --card-height: 520px;
+                --gap: 18px;
+            }
+
+            .nav-btn {
+                width: 46px;
+                height: 46px;
+            }
+
+            .carousel {
+                padding: 15px calc(50vw - var(--card-width) / 2);
+            }
+
+            .footer-header {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 캐러셀 영역 (상단) -->
+    <div class="carousel-container">
+        <div class="carousel" id="carousel">
+            <div class="card" data-index="0">
+                <img src="./img/29342143-8af4-44bc-83cc-fb0cdb779812.jpg" alt="화면 1">
+                <div class="card-overlay">
+                    <span>화면 1 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="1">
+                <img src="./img/37fb40b3-f007-40f2-9712-3f691acb3dde.jpg" alt="화면 2">
+                <div class="card-overlay">
+                    <span>화면 2 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="2">
+                <img src="./img/5b70abf1-6cc4-4b53-8026-f240dac1ebbb.jpg" alt="화면 3">
+                <div class="card-overlay">
+                    <span>화면 3 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="3">
+                <img src="./img/6b4a9167-8fad-4464-9813-75e5e072f089.jpg" alt="화면 4">
+                <div class="card-overlay">
+                    <span>화면 4 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="4">
+                <img src="./img/6bd292b1-9e3d-4c95-bfb1-c8979fa0b895.jpg" alt="화면 5">
+                <div class="card-overlay">
+                    <span>화면 5 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="5">
+                <img src="./img/b77b54c1-bc7e-46c3-93bf-bc45eb39f9ae.jpg" alt="화면 6">
+                <div class="card-overlay">
+                    <span>화면 6 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="6">
+                <img src="./img/c8ad3a64-2d69-4ec1-a7bf-8b023d04815f.jpg" alt="화면 7">
+                <div class="card-overlay">
+                    <span>화면 7 / 8</span>
+                </div>
+            </div>
+            <div class="card" data-index="7">
+                <img src="./img/d9e42b23-a069-4acf-a42b-fbb55026fee2.jpg" alt="화면 8">
+                <div class="card-overlay">
+                    <span>화면 8 / 8</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 컨트롤 영역 -->
+        <div class="controls-section">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="indicators" id="indicators">
+                <button class="indicator active" data-index="0"></button>
+                <button class="indicator" data-index="1"></button>
+                <button class="indicator" data-index="2"></button>
+                <button class="indicator" data-index="3"></button>
+                <button class="indicator" data-index="4"></button>
+                <button class="indicator" data-index="5"></button>
+                <button class="indicator" data-index="6"></button>
+                <button class="indicator" data-index="7"></button>
+            </div>
+
+            <div class="nav-row">
+                <button class="nav-btn" id="prevBtn" aria-label="이전">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                </button>
+
+                <button class="autoplay-toggle playing" id="autoplayToggle">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    <span id="autoplayText">자동 재생 중</span>
+                </button>
+
+                <button class="nav-btn" id="nextBtn" aria-label="다음">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="scroll-hint">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16.01 11H4v2h12.01v3L20 12l-3.99-4z"/>
+                </svg>
+                좌우로 스와이프하세요
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 헤더 (타이틀) -->
+    <footer class="footer-header">
+        <h1>신한은행 모바일 뱅킹</h1>
+        <p>Pure CSS Scroll Snap Effect</p>
+    </footer>
+
+    <script>
+        const carousel = document.getElementById('carousel');
+        const cards = document.querySelectorAll('.card');
+        const indicators = document.querySelectorAll('.indicator');
+        const progressFill = document.getElementById('progressFill');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const autoplayToggle = document.getElementById('autoplayToggle');
+        const playIcon = document.getElementById('playIcon');
+        const autoplayText = document.getElementById('autoplayText');
+
+        let currentIndex = 0;
+        let isAutoplay = true;
+        let autoplayInterval;
+
+        // Intersection Observer로 현재 활성 카드 감지
+        const observerOptions = {
+            root: carousel,
+            rootMargin: '0px',
+            threshold: 0.7
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const index = parseInt(entry.target.dataset.index);
+                    updateActiveState(index);
+                }
+            });
+        }, observerOptions);
+
+        cards.forEach(card => observer.observe(card));
+
+        function updateActiveState(index) {
+            currentIndex = index;
+            
+            // 카드 활성화
+            cards.forEach((card, i) => {
+                card.classList.toggle('active', i === index);
+            });
+
+            // 인디케이터 활성화
+            indicators.forEach((indicator, i) => {
+                indicator.classList.toggle('active', i === index);
+            });
+
+            // 진행 바 업데이트
+            const progress = ((index + 1) / cards.length) * 100;
+            progressFill.style.width = `${progress}%`;
+        }
+
+        // 특정 카드로 스크롤
+        function scrollToCard(index) {
+            if (index < 0) index = cards.length - 1;
+            if (index >= cards.length) index = 0;
+            
+            cards[index].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+            });
+        }
+
+        // 인디케이터 클릭
+        indicators.forEach(indicator => {
+            indicator.addEventListener('click', () => {
+                const index = parseInt(indicator.dataset.index);
+                scrollToCard(index);
+            });
+        });
+
+        // 네비게이션 버튼
+        prevBtn.addEventListener('click', () => {
+            scrollToCard(currentIndex - 1);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            scrollToCard(currentIndex + 1);
+        });
+
+        // 키보드 네비게이션
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                scrollToCard(currentIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                scrollToCard(currentIndex + 1);
+            }
+        });
+
+        // 자동 재생
+        function startAutoplay() {
+            autoplayInterval = setInterval(() => {
+                scrollToCard(currentIndex + 1);
+            }, 3500);
+        }
+
+        function stopAutoplay() {
+            clearInterval(autoplayInterval);
+        }
+
+        function toggleAutoplay() {
+            isAutoplay = !isAutoplay;
+            
+            if (isAutoplay) {
+                startAutoplay();
+                autoplayToggle.classList.add('playing');
+                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                autoplayText.textContent = '자동 재생 중';
+            } else {
+                stopAutoplay();
+                autoplayToggle.classList.remove('playing');
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                autoplayText.textContent = '자동 재생';
+            }
+        }
+
+        autoplayToggle.addEventListener('click', toggleAutoplay);
+
+        // 터치/마우스 인터랙션 시 자동재생 일시정지
+        carousel.addEventListener('touchstart', stopAutoplay);
+        carousel.addEventListener('mousedown', stopAutoplay);
+
+        carousel.addEventListener('touchend', () => {
+            if (isAutoplay) setTimeout(startAutoplay, 1000);
+        });
+
+        carousel.addEventListener('mouseup', () => {
+            if (isAutoplay) setTimeout(startAutoplay, 1000);
+        });
+
+        // 초기화
+        updateActiveState(0);
+        startAutoplay();
+
+        // 5초 후 스크롤 힌트 숨기기
+        setTimeout(() => {
+            document.querySelector('.scroll-hint').style.opacity = '0';
+        }, 5000);
+    </script>
+</body>
+</html>
