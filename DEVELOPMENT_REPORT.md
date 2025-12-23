@@ -394,6 +394,14 @@ npm run db:test
 - Backend API: http://localhost:5648/api
 - Adminer (DB UI): http://localhost:5651
 
+### 관리자 로그인
+**초기 관리자 계정:**
+- **아이디**: `admin`
+- **비밀번호**: `1234!@#$`
+- **역할**: 최고관리자 (ADMIN)
+
+**주의**: 프로덕션 환경에서는 반드시 비밀번호를 변경하세요.
+
 ---
 
 ## 📞 문의

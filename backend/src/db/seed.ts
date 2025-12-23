@@ -18,11 +18,11 @@ export async function seedDatabase() {
     console.log('Seeding database...');
 
     // Create admin user
-    const hashedPassword = await bcrypt.hash('admin123!@#', 10);
+    const hashedPassword = await bcrypt.hash('1234!@#$', 10);
     await client.query(`
-      INSERT INTO users (email, name, password, role)
+      INSERT INTO users (username, name, password, role)
       VALUES ($1, $2, $3, $4)
-    `, ['admin@shinhan.com', '최고관리자', hashedPassword, 'ADMIN']);
+    `, ['admin', '최고관리자', hashedPassword, 'ADMIN']);
 
     // Create categories for HOLDING
     const holdingCategories = [

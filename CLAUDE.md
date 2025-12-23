@@ -137,6 +137,16 @@ Copy `.env.example` to `.env` and configure:
 
 **NEVER commit `.env` file.** Always use `.env.example` as template.
 
+### Default Admin Account
+
+**Initial administrator credentials:**
+- **Username:** `admin`
+- **Password:** `1234!@#$`
+- **Role:** ADMIN (최고관리자)
+- **Login URL:** `http://localhost:5647/login`
+
+**IMPORTANT:** Change the default password immediately in production environments for security.
+
 ## Task Master AI Integration
 
 This project uses Task Master AI for development workflow management. 12 tasks have been generated from the PRD.
