@@ -18,6 +18,10 @@ const nextConfig = {
         source: '/uploads/:path*',
         destination: 'http://shinhandb_backend:3001/uploads/:path*',
       },
+      {
+        source: '/mo',
+        destination: '/mo/index.html',
+      },
     ];
   },
   images: {

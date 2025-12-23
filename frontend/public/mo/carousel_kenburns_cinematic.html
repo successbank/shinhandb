@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신한은행 모바일 캐러셀 - Ken Burns Cinematic</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --transition-duration: 1s;
+            --kenburns-duration: 8s;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 메인 캐러셀 영역 */
+        .carousel-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 백그라운드 블러 효과 */
+        .background-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(50px) brightness(0.3);
+            transform: scale(1.2);
+            transition: background-image 1s ease;
+            z-index: -1;
+        }
+
+        /* 헤더 */
+        .header {
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.6);
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+        }
+
+        /* 캐러셀 컨테이너 */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+            aspect-ratio: 9/16;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 30px 100px rgba(0,0,0,0.5);
+        }
+
+        /* 슬라이드 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity var(--transition-duration) ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Ken Burns 애니메이션 */
+        .slide.active img {
+            animation: kenburns var(--kenburns-duration) ease-out forwards;
+        }
+
+        @keyframes kenburns {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                transform: scale(1.15) translate(-2%, -2%);
+            }
+        }
+
+        /* 다양한 Ken Burns 방향 */
+        .slide:nth-child(2n) img {
+            animation-name: kenburns-alt;
+        }
+
+        @keyframes kenburns-alt {
+            0% {
+                transform: scale(1.15) translate(-2%, -2%);
+            }
+            100% {
+                transform: scale(1) translate(0, 0);
+            }
+        }
+
+        .slide:nth-child(3n) img {
+            animation-name: kenburns-right;
+        }
+
+        @keyframes kenburns-right {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                transform: scale(1.12) translate(2%, -1%);
+            }
+        }
+
+        /* 슬라이드 오버레이 */
+        .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 80px 24px 24px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            z-index: 2;
+        }
+
+        .slide-number {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .slide-title {
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease 0.3s;
+        }
+
+        .slide.active .slide-title {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 프레임 장식 */
+        .carousel-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 32px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* 컨트롤 영역 */
+        .controls {
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 썸네일 */
+        .thumbnails {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow-x: auto;
+            max-width: 100%;
+            scrollbar-width: none;
+        }
+
+        .thumbnails::-webkit-scrollbar {
+            display: none;
+        }
+
+        .thumbnail {
+            flex: 0 0 50px;
+            height: 50px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .thumbnail:hover {
+            opacity: 0.8;
+        }
+
+        .thumbnail.active {
+            opacity: 1;
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 타임라인 */
+        .timeline {
+            width: 100%;
+            max-width: 350px;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timeline-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #0046ff, #00d4ff);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .timeline-segments {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .timeline-segment {
+            flex: 1;
+            border-right: 1px solid rgba(0,0,0,0.5);
+        }
+
+        .timeline-segment:last-child {
+            border-right: none;
+        }
+
+        /* 네비게이션 버튼 */
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .play-pause {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #0046ff, #003399);
+            border: none;
+        }
+
+        .play-pause:hover {
+            background: linear-gradient(135deg, #0055ff, #0044aa);
+            transform: scale(1.05);
+        }
+
+        /* 슬라이드 카운터 */
+        .slide-counter {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .slide-counter .current {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* 반응형 */
+        @media (max-width: 480px) {
+            .carousel-container {
+                max-width: 320px;
+                border-radius: 24px;
+            }
+
+            .carousel-container::before {
+                border-radius: 24px;
+            }
+
+            .thumbnail {
+                flex: 0 0 40px;
+                height: 40px;
+            }
+
+            .notch {
+                width: 80px;
+                height: 24px;
+            }
+
+            .nav-btn {
+                width: 44px;
+                height: 44px;
+            }
+
+            .play-pause {
+                width: 56px;
+                height: 56px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .carousel-container {
+                max-width: 420px;
+            }
+        }
+
+        /* 로딩 애니메이션 */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 5;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .slide img.loaded ~ .loader {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-blur" id="bgBlur"></div>
+
+    <div class="carousel-wrapper">
+        <header class="header">
+            <h1>신한은행 모바일 뱅킹</h1>
+            <p>Ken Burns Cinematic Effect</p>
+        </header>
+
+        <div class="carousel-container" id="carousel">
+            <div class="slide active" data-index="0">
+                <img src="./img/29342143-8af4-44bc-83cc-fb0cdb779812.jpg" alt="화면 1">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 01</div>
+                    <h3 class="slide-title">메인 대시보드</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="1">
+                <img src="./img/37fb40b3-f007-40f2-9712-3f691acb3dde.jpg" alt="화면 2">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 02</div>
+                    <h3 class="slide-title">계좌 조회</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="2">
+                <img src="./img/5b70abf1-6cc4-4b53-8026-f240dac1ebbb.jpg" alt="화면 3">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 03</div>
+                    <h3 class="slide-title">간편 이체</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="3">
+                <img src="./img/6b4a9167-8fad-4464-9813-75e5e072f089.jpg" alt="화면 4">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 04</div>
+                    <h3 class="slide-title">투자 현황</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="4">
+                <img src="./img/6bd292b1-9e3d-4c95-bfb1-c8979fa0b895.jpg" alt="화면 5">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 05</div>
+                    <h3 class="slide-title">카드 관리</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="5">
+                <img src="./img/b77b54c1-bc7e-46c3-93bf-bc45eb39f9ae.jpg" alt="화면 6">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 06</div>
+                    <h3 class="slide-title">혜택 센터</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="6">
+                <img src="./img/c8ad3a64-2d69-4ec1-a7bf-8b023d04815f.jpg" alt="화면 7">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 07</div>
+                    <h3 class="slide-title">알림 설정</h3>
+                </div>
+            </div>
+            <div class="slide" data-index="7">
+                <img src="./img/d9e42b23-a069-4acf-a42b-fbb55026fee2.jpg" alt="화면 8">
+                <div class="slide-overlay">
+                    <div class="slide-number">Screen 08</div>
+                    <h3 class="slide-title">마이페이지</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="timeline">
+                <div class="timeline-progress" id="timelineProgress"></div>
+                <div class="timeline-segments">
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                    <div class="timeline-segment"></div>
+                </div>
+            </div>
+
+            <div class="thumbnails" id="thumbnails">
+                <div class="thumbnail active" data-index="0">
+                    <img src="./img/29342143-8af4-44bc-83cc-fb0cdb779812.jpg" alt="썸네일 1">
+                </div>
+                <div class="thumbnail" data-index="1">
+                    <img src="./img/37fb40b3-f007-40f2-9712-3f691acb3dde.jpg" alt="썸네일 2">
+                </div>
+                <div class="thumbnail" data-index="2">
+                    <img src="./img/5b70abf1-6cc4-4b53-8026-f240dac1ebbb.jpg" alt="썸네일 3">
+                </div>
+                <div class="thumbnail" data-index="3">
+                    <img src="./img/6b4a9167-8fad-4464-9813-75e5e072f089.jpg" alt="썸네일 4">
+                </div>
+                <div class="thumbnail" data-index="4">
+                    <img src="./img/6bd292b1-9e3d-4c95-bfb1-c8979fa0b895.jpg" alt="썸네일 5">
+                </div>
+                <div class="thumbnail" data-index="5">
+                    <img src="./img/b77b54c1-bc7e-46c3-93bf-bc45eb39f9ae.jpg" alt="썸네일 6">
+                </div>
+                <div class="thumbnail" data-index="6">
+                    <img src="./img/c8ad3a64-2d69-4ec1-a7bf-8b023d04815f.jpg" alt="썸네일 7">
+                </div>
+                <div class="thumbnail" data-index="7">
+                    <img src="./img/d9e42b23-a069-4acf-a42b-fbb55026fee2.jpg" alt="썸네일 8">
+                </div>
+            </div>
+
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevBtn" aria-label="이전">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                </button>
+
+                <button class="nav-btn play-pause" id="playPauseBtn" aria-label="재생/일시정지">
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                </button>
+
+                <button class="nav-btn" id="nextBtn" aria-label="다음">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="slide-counter">
+                <span class="current" id="currentSlide">01</span>
+                <span> / 08</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        const timelineProgress = document.getElementById('timelineProgress');
+        const bgBlur = document.getElementById('bgBlur');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const currentSlideEl = document.getElementById('currentSlide');
+
+        let currentIndex = 0;
+        let isPlaying = true;
+        let autoplayTimer;
+        let progressTimer;
+        const SLIDE_DURATION = 5000; // 5초
+        const PROGRESS_INTERVAL = 50; // 50ms
+
+        // 슬라이드 변경
+        function goToSlide(index) {
+            if (index < 0) index = slides.length - 1;
+            if (index >= slides.length) index = 0;
+
+            // 이전 슬라이드 비활성화
+            slides[currentIndex].classList.remove('active');
+            thumbnails[currentIndex].classList.remove('active');
+
+            currentIndex = index;
+
+            // 새 슬라이드 활성화
+            slides[currentIndex].classList.add('active');
+            thumbnails[currentIndex].classList.add('active');
+
+            // 백그라운드 블러 업데이트
+            const imgSrc = slides[currentIndex].querySelector('img').src;
+            bgBlur.style.backgroundImage = `url(${imgSrc})`;
+
+            // 슬라이드 카운터 업데이트
+            currentSlideEl.textContent = String(currentIndex + 1).padStart(2, '0');
+
+            // 썸네일 스크롤
+            thumbnails[currentIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+            });
+
+            // 타임라인 리셋 및 재시작
+            resetProgress();
+            if (isPlaying) {
+                startAutoplay();
+            }
+        }
+
+        // 다음 슬라이드
+        function nextSlide() {
+            goToSlide(currentIndex + 1);
+        }
+
+        // 이전 슬라이드
+        function prevSlide() {
+            goToSlide(currentIndex - 1);
+        }
+
+        // 프로그레스 리셋
+        function resetProgress() {
+            clearInterval(progressTimer);
+            timelineProgress.style.width = `${(currentIndex / slides.length) * 100}%`;
+        }
+
+        // 자동 재생 시작
+        function startAutoplay() {
+            clearTimeout(autoplayTimer);
+            clearInterval(progressTimer);
+
+            let progress = (currentIndex / slides.length) * 100;
+            const progressPerTick = (100 / slides.length) / (SLIDE_DURATION / PROGRESS_INTERVAL);
+
+            progressTimer = setInterval(() => {
+                progress += progressPerTick;
+                if (progress > ((currentIndex + 1) / slides.length) * 100) {
+                    progress = ((currentIndex + 1) / slides.length) * 100;
+                }
+                timelineProgress.style.width = `${progress}%`;
+            }, PROGRESS_INTERVAL);
+
+            autoplayTimer = setTimeout(() => {
+                nextSlide();
+            }, SLIDE_DURATION);
+        }
+
+        // 자동 재생 중지
+        function stopAutoplay() {
+            clearTimeout(autoplayTimer);
+            clearInterval(progressTimer);
+        }
+
+        // 재생/일시정지 토글
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                startAutoplay();
+            } else {
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                stopAutoplay();
+            }
+        }
+
+        // 이벤트 리스너
+        prevBtn.addEventListener('click', prevSlide);
+        nextBtn.addEventListener('click', nextSlide);
+        playPauseBtn.addEventListener('click', togglePlayPause);
+
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                const index = parseInt(thumb.dataset.index);
+                goToSlide(index);
+            });
+        });
+
+        // 키보드 네비게이션
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowLeft':
+                    prevSlide();
+                    break;
+                case 'ArrowRight':
+                    nextSlide();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    togglePlayPause();
+                    break;
+            }
+        });
+
+        // 터치 스와이프
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        const carousel = document.getElementById('carousel');
+
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+
+        // 초기화
+        bgBlur.style.backgroundImage = `url(${slides[0].querySelector('img').src})`;
+        startAutoplay();
+    </script>
+</body>
+</html>
