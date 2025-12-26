@@ -18,6 +18,14 @@ interface Timeline {
   bank?: Record<string, Record<string, QuarterData[]>>;
 }
 
+interface SelectedQuarter {
+  year: string;
+  quarter: string;
+  category: 'holding' | 'bank';
+  categoryName: string;
+  projects: QuarterData[];
+}
+
 export default function PublicSharePage() {
   const params = useParams();
   const shareId = params.shareId as string;
@@ -28,7 +36,11 @@ export default function PublicSharePage() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<Timeline | null>(null);
+  const [selectedQuarter, setSelectedQuarter] = useState<SelectedQuarter | null>(null);
   const [selectedProject, setSelectedProject] = useState<QuarterData | null>(null);
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [projectImages, setProjectImages] = useState<string[]>([]);
 
   // sessionStorage에서 토큰 복원
   useEffect(() => {
@@ -115,6 +127,46 @@ export default function PublicSharePage() {
     }
   };
 
+  // 프로젝트 이미지 가져오기
+  const fetchProjectImages = async (projectId: string) => {
+    if (!token) return;
+
+    try {
+      const response = await publicShareAPI.getProject(shareId, projectId, token);
+      if (response.success && response.data.files) {
+        const imageUrls = response.data.files.map((file: any) => file.url);
+        setProjectImages(imageUrls);
+      }
+    } catch (err) {
+      console.error('이미지 로딩 실패:', err);
+      setProjectImages([]);
+    }
+  };
+
+  // 이미지 갤러리 열기
+  const openImageGallery = async (project: QuarterData, initialIndex: number = 0) => {
+    setSelectedProject(project);
+    setCurrentImageIndex(initialIndex);
+    await fetchProjectImages(project.projectId);
+    setImageGalleryOpen(true);
+  };
+
+  // 이미지 갤러리 닫기
+  const closeImageGallery = () => {
+    setImageGalleryOpen(false);
+    setCurrentImageIndex(0);
+    setProjectImages([]);
+  };
+
+  // 이전/다음 이미지
+  const goToPrevImage = () => {
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : projectImages.length - 1));
+  };
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev < projectImages.length - 1 ? prev + 1 : 0));
+  };
+
   // 엔터 키 처리
   useEffect(() => {
     const handleEnter = (e: KeyboardEvent) => {
@@ -126,6 +178,24 @@ export default function PublicSharePage() {
     window.addEventListener('keydown', handleEnter);
     return () => window.removeEventListener('keydown', handleEnter);
   }, [password, step]);
+
+  // 이미지 갤러리 키보드 네비게이션
+  useEffect(() => {
+    const handleKeyNav = (e: KeyboardEvent) => {
+      if (!imageGalleryOpen) return;
+
+      if (e.key === 'Escape') {
+        closeImageGallery();
+      } else if (e.key === 'ArrowLeft') {
+        goToPrevImage();
+      } else if (e.key === 'ArrowRight') {
+        goToNextImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyNav);
+    return () => window.removeEventListener('keydown', handleKeyNav);
+  }, [imageGalleryOpen, projectImages]);
 
   // 비밀번호 입력 화면
   if (step === 'password') {
@@ -247,25 +317,29 @@ export default function PublicSharePage() {
                               {year}년
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {Object.entries(quarters).map(([quarter, projects]) =>
-                                projects.map((project, idx) => (
-                                  <button
-                                    key={`${quarter}-${idx}`}
-                                    onClick={() => setSelectedProject(project)}
-                                    className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
-                                  >
-                                    <div className="font-bold text-[#0046FF] text-lg mb-2">
-                                      {quarter}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mb-1 truncate">
-                                      {project.title}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      파일 {project.fileCount}개
-                                    </div>
-                                  </button>
-                                ))
-                              )}
+                              {Object.entries(quarters).map(([quarter, projects]) => (
+                                <button
+                                  key={quarter}
+                                  onClick={() => setSelectedQuarter({
+                                    year,
+                                    quarter,
+                                    category: 'holding',
+                                    categoryName: '신한금융지주',
+                                    projects
+                                  })}
+                                  className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
+                                >
+                                  <div className="font-bold text-[#0046FF] text-lg mb-2">
+                                    {quarter}
+                                  </div>
+                                  <div className="text-sm text-gray-600 mb-1">
+                                    프로젝트 {projects.length}개
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    총 {projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일
+                                  </div>
+                                </button>
+                              ))}
                             </div>
                           </div>
                         ))}
@@ -301,25 +375,29 @@ export default function PublicSharePage() {
                               {year}년
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {Object.entries(quarters).map(([quarter, projects]) =>
-                                projects.map((project, idx) => (
-                                  <button
-                                    key={`${quarter}-${idx}`}
-                                    onClick={() => setSelectedProject(project)}
-                                    className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
-                                  >
-                                    <div className="font-bold text-[#0046FF] text-lg mb-2">
-                                      {quarter}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mb-1 truncate">
-                                      {project.title}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      파일 {project.fileCount}개
-                                    </div>
-                                  </button>
-                                ))
-                              )}
+                              {Object.entries(quarters).map(([quarter, projects]) => (
+                                <button
+                                  key={quarter}
+                                  onClick={() => setSelectedQuarter({
+                                    year,
+                                    quarter,
+                                    category: 'bank',
+                                    categoryName: '신한은행',
+                                    projects
+                                  })}
+                                  className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
+                                >
+                                  <div className="font-bold text-[#0046FF] text-lg mb-2">
+                                    {quarter}
+                                  </div>
+                                  <div className="text-sm text-gray-600 mb-1">
+                                    프로젝트 {projects.length}개
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    총 {projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일
+                                  </div>
+                                </button>
+                              ))}
                             </div>
                           </div>
                         ))}
@@ -340,22 +418,22 @@ export default function PublicSharePage() {
         )}
       </div>
 
-      {/* 프로젝트 상세 모달 */}
-      {selectedProject && (
+      {/* 분기별 프로젝트 목록 모달 */}
+      {selectedQuarter && !imageGalleryOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-[#E0E0E0] sticky top-0 bg-white">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-[#E0E0E0]">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-[#333333] mb-2">
-                    {selectedProject.title}
+                    {selectedQuarter.categoryName} - {selectedQuarter.year}년 {selectedQuarter.quarter}
                   </h2>
-                  {selectedProject.description && (
-                    <p className="text-gray-600">{selectedProject.description}</p>
-                  )}
+                  <p className="text-gray-600">
+                    프로젝트 {selectedQuarter.projects.length}개
+                  </p>
                 </div>
                 <button
-                  onClick={() => setSelectedProject(null)}
+                  onClick={() => setSelectedQuarter(null)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
                   ×
@@ -363,35 +441,135 @@ export default function PublicSharePage() {
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">
-                  총 {selectedProject.fileCount}개 파일
-                </p>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {selectedQuarter.projects.map((project) => (
+                  <div
+                    key={project.projectId}
+                    className="bg-white border border-[#E0E0E0] rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    {project.thumbnailUrl && (
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => openImageGallery(project)}
+                      >
+                        <img
+                          src={project.thumbnailUrl}
+                          alt={project.title}
+                          className="w-full h-48 object-cover hover:opacity-90 transition-opacity"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-bold text-[#333333] mb-2 line-clamp-2">
+                        {project.title}
+                      </h3>
+                      {project.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {project.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>파일 {project.fileCount}개</span>
+                        <span>{new Date(project.createdAt).toLocaleDateString('ko-KR')}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {selectedProject.thumbnailUrl && (
-                <img
-                  src={selectedProject.thumbnailUrl}
-                  alt={selectedProject.title}
-                  className="w-full rounded-lg mb-4"
-                />
-              )}
-
-              <p className="text-sm text-gray-500">
-                생성일: {new Date(selectedProject.createdAt).toLocaleDateString('ko-KR')}
-              </p>
             </div>
 
             <div className="p-6 border-t border-[#E0E0E0]">
               <button
-                onClick={() => setSelectedProject(null)}
+                onClick={() => setSelectedQuarter(null)}
                 className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
               >
                 닫기
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 이미지 캐러셀 모달 */}
+      {imageGalleryOpen && selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
+          <button
+            onClick={closeImageGallery}
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+          >
+            ×
+          </button>
+
+          {/* 프로젝트 정보 */}
+          <div className="absolute top-4 left-4 text-white z-10">
+            <h3 className="text-xl font-bold mb-1">{selectedProject.title}</h3>
+            <p className="text-sm text-gray-300">
+              {currentImageIndex + 1} / {projectImages.length}
+            </p>
+          </div>
+
+          {/* 이미지 */}
+          <div className="relative w-full h-full flex items-center justify-center p-16">
+            {projectImages.length > 0 ? (
+              <img
+                src={projectImages[currentImageIndex]}
+                alt={`${selectedProject.title} - ${currentImageIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <div className="text-white text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
+                <p>이미지 로딩 중...</p>
+              </div>
+            )}
+          </div>
+
+          {/* 좌우 네비게이션 버튼 */}
+          {projectImages.length > 1 && (
+            <>
+              <button
+                onClick={goToPrevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-75 transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={goToNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-75 transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* 하단 썸네일 네비게이션 */}
+          {projectImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black bg-opacity-50 p-3 rounded-lg max-w-full overflow-x-auto">
+              {projectImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden transition-all ${
+                    idx === currentImageIndex
+                      ? 'border-[#0046FF] opacity-100'
+                      : 'border-white border-opacity-30 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img
+                    src={img}
+                    alt={`썸네일 ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -187,9 +187,15 @@ router.get(
       const isActive = req.query.isActive;
       const isExpired = req.query.isExpired;
 
-      let whereConditions: string[] = ['created_by = $1'];
-      const params: any[] = [req.user!.id];
-      let paramIndex = 2;
+      let whereConditions: string[] = [];
+      const params: any[] = [];
+      let paramIndex = 1;
+
+      // ADMIN이 아닌 경우만 created_by 필터 적용
+      if (req.user!.role !== 'ADMIN') {
+        whereConditions.push(`created_by = $${paramIndex++}`);
+        params.push(req.user!.id);
+      }
 
       // 활성화 상태 필터
       if (isActive !== undefined) {
