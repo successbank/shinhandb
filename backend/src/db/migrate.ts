@@ -8,12 +8,20 @@ export async function runMigrations() {
   try {
     console.log('Running database migrations...');
 
-    const migrationPath = path.join(__dirname, 'migrations', '001_init_schema.sql');
-    const sql = fs.readFileSync(migrationPath, 'utf8');
+    const migrationsDir = path.join(__dirname, 'migrations');
+    const files = fs.readdirSync(migrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .sort(); // 001_, 002_, 003_ 순서대로 정렬
 
-    await client.query(sql);
+    for (const file of files) {
+      console.log(`  Running migration: ${file}`);
+      const migrationPath = path.join(migrationsDir, file);
+      const sql = fs.readFileSync(migrationPath, 'utf8');
+      await client.query(sql);
+      console.log(`  ✓ ${file} completed`);
+    }
 
-    console.log('✓ Migrations completed successfully');
+    console.log('✓ All migrations completed successfully');
   } catch (error) {
     console.error('Error running migrations:', error);
     throw error;

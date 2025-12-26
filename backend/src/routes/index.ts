@@ -9,6 +9,8 @@ import categoriesRoutes from './categories';
 import mypageRoutes from './mypage';
 import logsRoutes from './logs';
 import adminRoutes from './admin';
+import externalShareRoutes from './external-share';
+import publicShareRoutes from './public-share';
 
 const router = Router();
 
@@ -39,6 +41,12 @@ router.use('/logs', logsRoutes);
 // Admin dashboard routes (Admin only)
 router.use('/admin', adminRoutes);
 
+// External share routes (Admin only - 외부공유 관리)
+router.use('/admin/external-shares', externalShareRoutes);
+
+// Public share routes (No auth required - 외부 공개 접근)
+router.use('/public/share', publicShareRoutes);
+
 router.get('/health', (req: Request, res: Response<ApiResponse>) => {
   res.json({
     success: true,
@@ -67,6 +75,8 @@ router.get('/', (req: Request, res: Response<ApiResponse>) => {
         mypage: '/api/mypage',
         logs: '/api/logs',
         admin: '/api/admin',
+        externalShares: '/api/admin/external-shares',
+        publicShare: '/api/public/share/:shareId',
       },
     },
   });

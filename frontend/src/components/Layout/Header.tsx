@@ -91,6 +91,13 @@ export default function Header() {
                     >
                       활동 로그
                     </Link>
+                    <Link
+                      href="/admin/external-shares"
+                      className="block px-4 py-2 text-sm text-[#333333] hover:bg-gray-50 hover:text-[#0046FF] transition-colors"
+                      onClick={() => setShowAdminMenu(false)}
+                    >
+                      외부공유 관리
+                    </Link>
                   </div>
                 )}
               </div>
