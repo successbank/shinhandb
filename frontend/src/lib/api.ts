@@ -588,3 +588,128 @@ export const projectsApi = {
       method: 'DELETE',
     }),
 };
+
+/**
+ * 외부공유 API
+ */
+export const externalShareAPI = {
+  // 공유 생성
+  create: (data: {
+    projectSelections: Array<{
+      projectId: string;
+      category: 'holding' | 'bank';
+      year: number;
+      quarter: '1Q' | '2Q' | '3Q' | '4Q';
+    }>;
+    password: string;
+    expiresAt?: string;
+  }) =>
+    apiRequest('/admin/external-shares', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 공유 목록 조회
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+    isExpired?: boolean;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+    if (params?.isExpired !== undefined) queryParams.append('isExpired', params.isExpired.toString());
+
+    const queryString = queryParams.toString();
+    return apiRequest(`/admin/external-shares${queryString ? '?' + queryString : ''}`);
+  },
+
+  // 공유 상세 조회
+  get: (id: string) => apiRequest(`/admin/external-shares/${id}`),
+
+  // 공유 수정
+  update: (id: string, data: {
+    password?: string;
+    isActive?: boolean;
+    expiresAt?: string | null;
+  }) =>
+    apiRequest(`/admin/external-shares/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  // 공유 삭제
+  delete: (id: string) =>
+    apiRequest(`/admin/external-shares/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // 프로젝트 추가
+  addProject: (shareId: string, data: {
+    projectId: string;
+    category: 'holding' | 'bank';
+    year: number;
+    quarter: '1Q' | '2Q' | '3Q' | '4Q';
+  }) =>
+    apiRequest(`/admin/external-shares/${shareId}/contents`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // 프로젝트 제거
+  removeProject: (shareId: string, contentId: string) =>
+    apiRequest(`/admin/external-shares/${shareId}/contents/${contentId}`, {
+      method: 'DELETE',
+    }),
+};
+
+/**
+ * 외부 공개 API (인증 불필요)
+ */
+export const publicShareAPI = {
+  // 비밀번호 검증
+  verify: (shareId: string, password: string) =>
+    fetch(`${API_BASE_URL}/public/share/${shareId}/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || '인증 실패');
+      }
+      return data;
+    }),
+
+  // 타임라인 조회
+  getContents: (shareId: string, token: string) =>
+    fetch(`${API_BASE_URL}/public/share/${shareId}/contents`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || '조회 실패');
+      }
+      return data;
+    }),
+
+  // 프로젝트 상세 조회
+  getProject: (shareId: string, projectId: string, token: string) =>
+    fetch(`${API_BASE_URL}/public/share/${shareId}/project/${projectId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || '조회 실패');
+      }
+      return data;
+    }),
+};
