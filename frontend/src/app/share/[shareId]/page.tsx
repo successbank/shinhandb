@@ -217,12 +217,16 @@ export default function PublicSharePage() {
 
         // 썸네일 Swiper 먼저 초기화
         const thumbSwiper = new Swiper('.thumb-swiper', {
-          spaceBetween: 10,
+          spaceBetween: 8,
           slidesPerView: 'auto',
           freeMode: true,
           watchSlidesProgress: true,
           centeredSlides: true,
           slideToClickedSlide: true,
+          navigation: {
+            nextEl: '#thumb-next-btn',
+            prevEl: '#thumb-prev-btn',
+          },
         });
 
         // 메인 Swiper 초기화 (thumbs 연결)
@@ -247,6 +251,10 @@ export default function PublicSharePage() {
           },
           keyboard: {
             enabled: true,
+          },
+          mousewheel: {
+            forceToAxis: true,
+            sensitivity: 1,
           },
           thumbs: {
             swiper: thumbSwiper,
@@ -502,7 +510,7 @@ export default function PublicSharePage() {
 
       {/* 분기별 프로젝트 Swiper Coverflow 모달 */}
       {selectedQuarter && !imageGalleryOpen && (
-        <div className="fixed inset-0 bg-gradient-to-br from-[#0046FF] to-[#003399] z-50 flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 bg-gradient-to-br from-[#0046FF] to-[#003399] z-50 flex flex-col items-center justify-center p-4 overflow-hidden">
           <style jsx>{`
             .quarter-swiper {
               width: 100%;
@@ -537,22 +545,56 @@ export default function PublicSharePage() {
               transform: scale(1.02);
             }
 
-            /* 썸네일 Swiper 스타일 */
-            .thumb-swiper {
+            /* 썸네일 외부 컨테이너 - overflow 강제 제어 */
+            .thumb-outer-container {
               width: 100%;
               max-width: 500px;
-              padding: 0;
+              margin: 0 auto;
+              position: relative;
+              overflow: hidden !important;
+              overflow: clip !important;
+              contain: content;
+            }
+
+            /* 썸네일 배경 박스 */
+            .thumb-bg-box {
+              background: rgba(0, 0, 0, 0.4);
+              backdrop-filter: blur(10px);
+              border-radius: 16px;
+              padding: 12px 40px;
+              position: relative;
+              overflow: hidden !important;
+              overflow: clip !important;
+            }
+
+            /* 썸네일 Swiper 컨테이너 */
+            .thumb-swiper {
+              width: calc(100% - 0px) !important;
+              overflow: hidden !important;
+              overflow: clip !important;
+              margin: 0 auto;
+              position: relative;
+            }
+
+            .thumb-swiper .swiper-wrapper {
+              display: flex;
+              align-items: center;
+              width: 100%;
             }
 
             .thumb-swiper .swiper-slide {
-              width: 60px;
-              height: 60px;
+              width: 60px !important;
+              height: 60px !important;
+              min-width: 60px !important;
+              max-width: 60px !important;
               border-radius: 12px;
               overflow: hidden;
               opacity: 0.5;
               cursor: pointer;
               transition: all 0.3s ease;
               border: 2px solid transparent;
+              flex-shrink: 0;
+              background: #333;
             }
 
             .thumb-swiper .swiper-slide-thumb-active {
@@ -567,19 +609,88 @@ export default function PublicSharePage() {
               object-fit: cover;
             }
 
+            /* 썸네일 네비게이션 버튼 - 배경 박스 양 끝에 위치 */
+            .thumb-nav-btn {
+              position: absolute;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 32px;
+              height: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              cursor: pointer;
+              z-index: 20;
+              opacity: 0.8;
+              transition: all 0.3s ease;
+              background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
+            }
+
+            .thumb-nav-btn:hover {
+              opacity: 1;
+            }
+
+            .thumb-nav-btn.prev {
+              left: 0;
+              border-radius: 16px 0 0 16px;
+              background: linear-gradient(to right, rgba(0,0,0,0.5), transparent);
+            }
+
+            .thumb-nav-btn.next {
+              right: 0;
+              border-radius: 0 16px 16px 0;
+              background: linear-gradient(to left, rgba(0,0,0,0.5), transparent);
+            }
+
+            .thumb-nav-btn svg {
+              width: 20px;
+              height: 20px;
+            }
+
+            /* 썸네일 Swiper 기본 네비게이션 숨기기 */
+            .thumb-swiper .swiper-button-prev,
+            .thumb-swiper .swiper-button-next {
+              display: none !important;
+            }
+
             @media (max-width: 768px) {
+              .thumb-bg-box {
+                padding: 10px 35px;
+              }
               .thumb-swiper .swiper-slide {
-                width: 50px;
-                height: 50px;
+                width: 50px !important;
+                height: 50px !important;
+                min-width: 50px !important;
+                max-width: 50px !important;
                 border-radius: 10px;
+              }
+              .thumb-nav-btn {
+                width: 28px;
+              }
+              .thumb-nav-btn svg {
+                width: 16px;
+                height: 16px;
               }
             }
 
             @media (max-width: 480px) {
+              .thumb-bg-box {
+                padding: 8px 30px;
+              }
               .thumb-swiper .swiper-slide {
-                width: 45px;
-                height: 45px;
+                width: 45px !important;
+                height: 45px !important;
+                min-width: 45px !important;
+                max-width: 45px !important;
                 border-radius: 8px;
+              }
+              .thumb-nav-btn {
+                width: 24px;
+              }
+              .thumb-nav-btn svg {
+                width: 14px;
+                height: 14px;
               }
             }
 
@@ -674,32 +785,48 @@ export default function PublicSharePage() {
 
             {/* 썸네일 네비게이션 */}
             <div className="flex justify-center mt-6">
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl px-4 py-3" style={{ width: '100%', maxWidth: '500px' }}>
-                <div className="thumb-swiper">
-                  <div className="swiper-wrapper">
-                    {selectedQuarter.projects.map((project) => (
-                      <div key={`thumb-${project.projectId}`} className="swiper-slide">
-                        {project.thumbnailUrl && (
-                          <img
-                            src={project.thumbnailUrl}
-                            alt={`${project.title} 썸네일`}
-                          />
-                        )}
-                      </div>
-                    ))}
+              <div className="thumb-outer-container">
+                <div className="thumb-bg-box">
+                  {/* 왼쪽 화살표 버튼 */}
+                  <button className="thumb-nav-btn prev" id="thumb-prev-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+
+                  {/* 썸네일 Swiper */}
+                  <div className="thumb-swiper">
+                    <div className="swiper-wrapper">
+                      {selectedQuarter.projects.map((project) => (
+                        <div key={`thumb-${project.projectId}`} className="swiper-slide">
+                          {project.thumbnailUrl ? (
+                            <img
+                              src={project.thumbnailUrl}
+                              alt={`${project.title} 썸네일`}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                              <span className="text-white text-xs">No Image</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* 오른쪽 화살표 버튼 */}
+                  <button className="thumb-nav-btn next" id="thumb-next-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
           {/* 터치 힌트 (모바일) */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-white text-sm flex items-center gap-2 opacity-60 md:hidden">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
-            </svg>
-            스와이프하여 탐색
-          </div>
+          
         </div>
       )}
 
