@@ -27,6 +27,48 @@ interface SelectedQuarter {
   projects: QuarterData[];
 }
 
+// 분기 날짜 계산 함수
+const getQuarterDates = (year: number, quarter: string) => {
+  const quarterNum = parseInt(quarter.replace('Q', ''));
+  const startMonth = (quarterNum - 1) * 3; // 0, 3, 6, 9
+  const endMonth = startMonth + 2; // 2, 5, 8, 11
+
+  const start = new Date(year, startMonth, 1);
+  const end = new Date(year, endMonth + 1, 0); // 마지막 날
+
+  return { start, end };
+};
+
+// 분기 상태 계산 함수
+const getQuarterStatus = (year: number, quarter: string): {
+  status: 'current' | 'past' | 'upcoming';
+  days: number;
+  label: string;
+} => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const { start, end } = getQuarterDates(year, quarter);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+
+  if (today < start) {
+    // 아직 시작 안함
+    const daysUntil = Math.ceil((start.getTime() - today.getTime()) / msPerDay);
+    return { status: 'upcoming', days: daysUntil, label: `${daysUntil}일 후 시작` };
+  } else if (today > end) {
+    // 이미 종료됨
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / msPerDay) + 1;
+    return { status: 'past', days: totalDays, label: `${totalDays}일간 진행` };
+  } else {
+    // 현재 진행 중
+    const daysLeft = Math.ceil((end.getTime() - today.getTime()) / msPerDay) + 1;
+    return { status: 'current', days: daysLeft, label: `D-${daysLeft}` };
+  }
+};
+
 export default function PublicSharePage() {
   const params = useParams();
   const shareId = params.shareId as string;
@@ -613,7 +655,12 @@ export default function PublicSharePage() {
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(quarters)
                                   .sort(([a], [b]) => a.localeCompare(b))
-                                  .map(([quarter, projects]) => (
+                                  .map(([quarter, projects]) => {
+                                    const quarterStatus = getQuarterStatus(parseInt(year), quarter);
+                                    const isCurrent = quarterStatus.status === 'current';
+                                    const isPast = quarterStatus.status === 'past';
+
+                                    return (
                                   <button
                                     key={quarter}
                                     onClick={() => {
@@ -626,41 +673,75 @@ export default function PublicSharePage() {
                                         projects
                                       });
                                     }}
-                                    className="group relative bg-white/95 backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md"
+                                    className={`group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md ${
+                                      isCurrent
+                                        ? 'bg-gradient-to-br from-[#FFF5EB] to-[#FFEFE0] ring-2 ring-[#FF6B00]/30'
+                                        : isPast
+                                          ? 'bg-gray-100/95'
+                                          : 'bg-white/95'
+                                    }`}
                                   >
                                     {/* 좌측 액센트 바 */}
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
+                                      isCurrent
+                                        ? 'bg-gradient-to-b from-[#FF6B00] to-[#FF9500]'
+                                        : isPast
+                                          ? 'bg-gradient-to-b from-gray-400 to-gray-500'
+                                          : 'bg-gradient-to-b from-[#0046FF] to-[#003399]'
+                                    }`}></div>
 
                                     {/* 분기 표시 */}
                                     <div className="flex items-baseline gap-0 mb-2 pl-2">
-                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
-                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
+                                      <span className={`text-2xl font-black ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>{quarter.replace('Q', '')}</span>
+                                      <span className={`text-2xl font-black ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
                                     <div className="pl-2 space-y-1">
-                                      <div className="flex items-center gap-1.5 text-gray-700">
-                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <div className={`flex items-center gap-1.5 ${isPast ? 'text-gray-500' : 'text-gray-700'}`}>
+                                        <svg className={`w-3.5 h-3.5 ${isPast ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                         </svg>
                                         <span className="text-sm font-medium">{projects.length}개</span>
                                       </div>
-                                      <div className="flex items-center gap-1.5 text-gray-500">
-                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span className="text-xs">{projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일</span>
+                                      {/* 상태별 날짜 표시 */}
+                                      <div className={`flex items-center gap-1.5 ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>
+                                        {isCurrent ? (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                        ) : isPast ? (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        ) : (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                          </svg>
+                                        )}
+                                        <span className={`text-xs font-semibold ${isCurrent ? 'animate-pulse' : ''}`}>
+                                          {quarterStatus.label}
+                                        </span>
                                       </div>
                                     </div>
 
                                     {/* 화살표 아이콘 */}
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className={`w-5 h-5 ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                       </svg>
                                     </div>
                                   </button>
-                                ))}
+                                    );
+                                  })}
                               </div>
                             </div>
                           );
@@ -714,7 +795,12 @@ export default function PublicSharePage() {
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(quarters)
                                   .sort(([a], [b]) => a.localeCompare(b))
-                                  .map(([quarter, projects]) => (
+                                  .map(([quarter, projects]) => {
+                                    const quarterStatus = getQuarterStatus(parseInt(year), quarter);
+                                    const isCurrent = quarterStatus.status === 'current';
+                                    const isPast = quarterStatus.status === 'past';
+
+                                    return (
                                   <button
                                     key={quarter}
                                     onClick={() => {
@@ -727,41 +813,75 @@ export default function PublicSharePage() {
                                         projects
                                       });
                                     }}
-                                    className="group relative bg-white/95 backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md"
+                                    className={`group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md ${
+                                      isCurrent
+                                        ? 'bg-gradient-to-br from-[#FFF5EB] to-[#FFEFE0] ring-2 ring-[#FF6B00]/30'
+                                        : isPast
+                                          ? 'bg-gray-100/95'
+                                          : 'bg-white/95'
+                                    }`}
                                   >
                                     {/* 좌측 액센트 바 */}
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
+                                      isCurrent
+                                        ? 'bg-gradient-to-b from-[#FF6B00] to-[#FF9500]'
+                                        : isPast
+                                          ? 'bg-gradient-to-b from-gray-400 to-gray-500'
+                                          : 'bg-gradient-to-b from-[#0046FF] to-[#003399]'
+                                    }`}></div>
 
                                     {/* 분기 표시 */}
                                     <div className="flex items-baseline gap-0 mb-2 pl-2">
-                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
-                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
+                                      <span className={`text-2xl font-black ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>{quarter.replace('Q', '')}</span>
+                                      <span className={`text-2xl font-black ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
                                     <div className="pl-2 space-y-1">
-                                      <div className="flex items-center gap-1.5 text-gray-700">
-                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <div className={`flex items-center gap-1.5 ${isPast ? 'text-gray-500' : 'text-gray-700'}`}>
+                                        <svg className={`w-3.5 h-3.5 ${isPast ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                         </svg>
                                         <span className="text-sm font-medium">{projects.length}개</span>
                                       </div>
-                                      <div className="flex items-center gap-1.5 text-gray-500">
-                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span className="text-xs">{projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일</span>
+                                      {/* 상태별 날짜 표시 */}
+                                      <div className={`flex items-center gap-1.5 ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`}>
+                                        {isCurrent ? (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                        ) : isPast ? (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        ) : (
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                          </svg>
+                                        )}
+                                        <span className={`text-xs font-semibold ${isCurrent ? 'animate-pulse' : ''}`}>
+                                          {quarterStatus.label}
+                                        </span>
                                       </div>
                                     </div>
 
                                     {/* 화살표 아이콘 */}
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className={`w-5 h-5 ${
+                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
+                                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                       </svg>
                                     </div>
                                   </button>
-                                ))}
+                                    );
+                                  })}
                               </div>
                             </div>
                           );
