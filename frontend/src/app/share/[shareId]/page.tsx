@@ -535,7 +535,7 @@ export default function PublicSharePage() {
                   value={digit}
                   onChange={(e) => handlePasswordChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-14 h-14 md:w-16 md:h-16 text-center text-2xl md:text-3xl font-bold border-2 border-gray-300 rounded-xl bg-gray-50 hover:bg-white focus:border-[#0046FF] focus:ring-2 focus:ring-[#0046FF]/30 focus:bg-white focus:outline-none transition-all duration-300"
+                  className="w-14 h-14 md:w-16 md:h-16 text-center text-2xl md:text-3xl font-bold text-gray-900 border-2 border-gray-300 rounded-xl bg-gray-50 hover:bg-white focus:border-[#0046FF] focus:ring-2 focus:ring-[#0046FF]/30 focus:bg-white focus:outline-none transition-all duration-300"
                   autoFocus={index === 0}
                 />
               ))}
