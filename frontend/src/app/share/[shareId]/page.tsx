@@ -420,62 +420,65 @@ export default function PublicSharePage() {
                     <div className="space-y-12">
                       {Object.entries(timeline.holding)
                         .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                        .map(([year, quarters]) => (
-                          <div key={year}>
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                              <span className="w-2 h-2 bg-blue-300 rounded-full"></span>
-                              {year}년
-                            </h3>
+                        .map(([year, quarters]) => {
+                          // 모든 분기의 프로젝트를 평탄화하여 하나의 배열로 만들기
+                          const allProjects = Object.entries(quarters)
+                            .sort(([a], [b]) => a.localeCompare(b)) // 1Q, 2Q, 3Q, 4Q 순서
+                            .flatMap(([quarter, projects]) =>
+                              projects.map(project => ({ ...project, quarter }))
+                            );
 
-                            {Object.entries(quarters).map(([quarter, projects]) => (
-                              <div key={quarter} className="mb-8">
-                                <div className="flex items-center gap-2 mb-4">
-                                  <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm font-medium">
-                                    {quarter}
-                                  </span>
-                                  <span className="text-blue-200 text-sm">
-                                    {projects.length}개 프로젝트
-                                  </span>
-                                </div>
+                          return (
+                            <div key={year}>
+                              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-blue-300 rounded-full"></span>
+                                {year}년
+                                <span className="text-blue-200 text-sm font-normal ml-2">
+                                  ({allProjects.length}개 프로젝트)
+                                </span>
+                              </h3>
 
-                                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                  {projects.map((project) => (
-                                    <div
-                                      key={project.projectId}
-                                      onClick={() => openImageGallery(project)}
-                                      className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
-                                    >
-                                      <div className="aspect-[3/4] overflow-hidden bg-gray-100">
-                                        {project.thumbnailUrl ? (
-                                          <img
-                                            src={project.thumbnailUrl}
-                                            alt={project.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                          />
-                                        ) : (
-                                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                            <span className="text-gray-400 text-sm">No Image</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="p-4">
-                                        <h4 className="font-bold text-gray-800 text-sm mb-2 line-clamp-2">
-                                          {project.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                          </svg>
-                                          <span>{project.fileCount}개 파일</span>
+                              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {allProjects.map((project) => (
+                                  <div
+                                    key={project.projectId}
+                                    onClick={() => openImageGallery(project)}
+                                    className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
+                                  >
+                                    <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
+                                      {project.thumbnailUrl ? (
+                                        <img
+                                          src={project.thumbnailUrl}
+                                          alt={project.title}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                          <span className="text-gray-400 text-sm">No Image</span>
                                         </div>
+                                      )}
+                                      {/* 분기 뱃지 */}
+                                      <span className="absolute top-2 left-2 px-2 py-1 bg-[#0046FF] text-white text-xs font-bold rounded">
+                                        {project.quarter}
+                                      </span>
+                                    </div>
+                                    <div className="p-4">
+                                      <h4 className="font-bold text-gray-800 text-sm mb-2 line-clamp-2">
+                                        {project.title}
+                                      </h4>
+                                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span>{project.fileCount}개 파일</span>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -491,62 +494,65 @@ export default function PublicSharePage() {
                     <div className="space-y-12">
                       {Object.entries(timeline.bank)
                         .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                        .map(([year, quarters]) => (
-                          <div key={year}>
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                              <span className="w-2 h-2 bg-blue-300 rounded-full"></span>
-                              {year}년
-                            </h3>
+                        .map(([year, quarters]) => {
+                          // 모든 분기의 프로젝트를 평탄화하여 하나의 배열로 만들기
+                          const allProjects = Object.entries(quarters)
+                            .sort(([a], [b]) => a.localeCompare(b)) // 1Q, 2Q, 3Q, 4Q 순서
+                            .flatMap(([quarter, projects]) =>
+                              projects.map(project => ({ ...project, quarter }))
+                            );
 
-                            {Object.entries(quarters).map(([quarter, projects]) => (
-                              <div key={quarter} className="mb-8">
-                                <div className="flex items-center gap-2 mb-4">
-                                  <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm font-medium">
-                                    {quarter}
-                                  </span>
-                                  <span className="text-blue-200 text-sm">
-                                    {projects.length}개 프로젝트
-                                  </span>
-                                </div>
+                          return (
+                            <div key={year}>
+                              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-blue-300 rounded-full"></span>
+                                {year}년
+                                <span className="text-blue-200 text-sm font-normal ml-2">
+                                  ({allProjects.length}개 프로젝트)
+                                </span>
+                              </h3>
 
-                                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                  {projects.map((project) => (
-                                    <div
-                                      key={project.projectId}
-                                      onClick={() => openImageGallery(project)}
-                                      className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
-                                    >
-                                      <div className="aspect-[3/4] overflow-hidden bg-gray-100">
-                                        {project.thumbnailUrl ? (
-                                          <img
-                                            src={project.thumbnailUrl}
-                                            alt={project.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                          />
-                                        ) : (
-                                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                            <span className="text-gray-400 text-sm">No Image</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="p-4">
-                                        <h4 className="font-bold text-gray-800 text-sm mb-2 line-clamp-2">
-                                          {project.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                          </svg>
-                                          <span>{project.fileCount}개 파일</span>
+                              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {allProjects.map((project) => (
+                                  <div
+                                    key={project.projectId}
+                                    onClick={() => openImageGallery(project)}
+                                    className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
+                                  >
+                                    <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
+                                      {project.thumbnailUrl ? (
+                                        <img
+                                          src={project.thumbnailUrl}
+                                          alt={project.title}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                          <span className="text-gray-400 text-sm">No Image</span>
                                         </div>
+                                      )}
+                                      {/* 분기 뱃지 */}
+                                      <span className="absolute top-2 left-2 px-2 py-1 bg-[#0046FF] text-white text-xs font-bold rounded">
+                                        {project.quarter}
+                                      </span>
+                                    </div>
+                                    <div className="p-4">
+                                      <h4 className="font-bold text-gray-800 text-sm mb-2 line-clamp-2">
+                                        {project.title}
+                                      </h4>
+                                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span>{project.fileCount}개 파일</span>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -560,65 +566,105 @@ export default function PublicSharePage() {
                   )}
               </div>
             ) : (
-              /* ===== 모바일 뷰 (768px 미만) - 기존 유지 ===== */
-              <div className="space-y-12">
+              /* ===== 모바일 뷰 (768px 미만) - 디자인 리뉴얼 ===== */
+              <div className="space-y-10">
                 {/* 신한금융지주 */}
                 {timeline.holding && Object.keys(timeline.holding).length > 0 && (
                   <div className="relative">
-                    <div className="flex items-start gap-6">
-                      {/* 타임라인 선 */}
-                      <div className="hidden md:flex flex-col items-center">
-                        <div className="w-4 h-4 bg-white rounded-full"></div>
-                        <div className="w-0.5 flex-1 bg-white bg-opacity-30 my-2"></div>
-                        <div className="w-4 h-4 bg-white rounded-full"></div>
+                    {/* 섹션 헤더 */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
                       </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-white">신한금융지주</h2>
+                        <p className="text-blue-200 text-xs">Shinhan Financial Group</p>
+                      </div>
+                    </div>
 
-                      {/* 콘텐츠 */}
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-white mb-6 md:mb-0 md:absolute md:left-20 md:top-0">
-                          신한금융지주
-                        </h2>
+                    {/* 연도별 콘텐츠 */}
+                    <div className="space-y-6">
+                      {Object.entries(timeline.holding)
+                        .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                        .map(([year, quarters]) => {
+                          const totalProjects = Object.values(quarters).reduce((sum, projects) => sum + projects.length, 0);
 
-                        <div className="space-y-8 md:ml-8">
-                          {Object.entries(timeline.holding)
-                            .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                            .map(([year, quarters]) => (
-                              <div key={year}>
-                                <h3 className="text-xl font-bold text-white mb-4">
-                                  {year}년
-                                </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  {Object.entries(quarters).map(([quarter, projects]) => (
-                                    <button
-                                      key={quarter}
-                                      onClick={() => {
-                                        setCurrentSlideIndex(0);
-                                        setSelectedQuarter({
-                                          year,
-                                          quarter,
-                                          category: 'holding',
-                                          categoryName: '신한금융지주',
-                                          projects
-                                        });
-                                      }}
-                                      className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
-                                    >
-                                      <div className="font-bold text-[#0046FF] text-lg mb-2">
-                                        {quarter}
-                                      </div>
-                                      <div className="text-sm text-gray-600 mb-1">
-                                        프로젝트 {projects.length}개
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        총 {projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일
-                                      </div>
-                                    </button>
-                                  ))}
+                          return (
+                            <div key={year} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
+                              {/* 연도 헤더 */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-2xl font-bold text-white">{year}</span>
+                                  <span className="text-blue-200 text-sm">년</span>
+                                </div>
+                                <div className="flex items-center text-xs text-blue-200">
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    {totalProjects}개 프로젝트
+                                  </span>
                                 </div>
                               </div>
-                            ))}
-                        </div>
-                      </div>
+
+                              {/* 분기 카드 그리드 */}
+                              <div className="grid grid-cols-2 gap-3">
+                                {Object.entries(quarters)
+                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .map(([quarter, projects]) => (
+                                  <button
+                                    key={quarter}
+                                    onClick={() => {
+                                      setCurrentSlideIndex(0);
+                                      setSelectedQuarter({
+                                        year,
+                                        quarter,
+                                        category: 'holding',
+                                        categoryName: '신한금융지주',
+                                        projects
+                                      });
+                                    }}
+                                    className="group relative bg-white/95 backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md"
+                                  >
+                                    {/* 좌측 액센트 바 */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
+
+                                    {/* 분기 표시 */}
+                                    <div className="flex items-baseline gap-1 mb-2 pl-2">
+                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
+                                      <span className="text-sm font-bold text-[#0046FF]/70">Q</span>
+                                    </div>
+
+                                    {/* 프로젝트 정보 */}
+                                    <div className="pl-2 space-y-1">
+                                      <div className="flex items-center gap-1.5 text-gray-700">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        <span className="text-sm font-medium">{projects.length}개</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 text-gray-500">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs">{projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일</span>
+                                      </div>
+                                    </div>
+
+                                    {/* 화살표 아이콘 */}
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -626,60 +672,100 @@ export default function PublicSharePage() {
                 {/* 신한은행 */}
                 {timeline.bank && Object.keys(timeline.bank).length > 0 && (
                   <div className="relative">
-                    <div className="flex items-start gap-6">
-                      {/* 타임라인 선 */}
-                      <div className="hidden md:flex flex-col items-center">
-                        <div className="w-4 h-4 bg-white rounded-full"></div>
-                        <div className="w-0.5 flex-1 bg-white bg-opacity-30 my-2"></div>
-                        <div className="w-4 h-4 bg-white rounded-full"></div>
+                    {/* 섹션 헤더 */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                        </svg>
                       </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-white">신한은행</h2>
+                        <p className="text-blue-200 text-xs">Shinhan Bank</p>
+                      </div>
+                    </div>
 
-                      {/* 콘텐츠 */}
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-white mb-6 md:mb-0 md:absolute md:left-20 md:top-0">
-                          신한은행
-                        </h2>
+                    {/* 연도별 콘텐츠 */}
+                    <div className="space-y-6">
+                      {Object.entries(timeline.bank)
+                        .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                        .map(([year, quarters]) => {
+                          const totalProjects = Object.values(quarters).reduce((sum, projects) => sum + projects.length, 0);
 
-                        <div className="space-y-8 md:ml-8">
-                          {Object.entries(timeline.bank)
-                            .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                            .map(([year, quarters]) => (
-                              <div key={year}>
-                                <h3 className="text-xl font-bold text-white mb-4">
-                                  {year}년
-                                </h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  {Object.entries(quarters).map(([quarter, projects]) => (
-                                    <button
-                                      key={quarter}
-                                      onClick={() => {
-                                        setCurrentSlideIndex(0);
-                                        setSelectedQuarter({
-                                          year,
-                                          quarter,
-                                          category: 'bank',
-                                          categoryName: '신한은행',
-                                          projects
-                                        });
-                                      }}
-                                      className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
-                                    >
-                                      <div className="font-bold text-[#0046FF] text-lg mb-2">
-                                        {quarter}
-                                      </div>
-                                      <div className="text-sm text-gray-600 mb-1">
-                                        프로젝트 {projects.length}개
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        총 {projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일
-                                      </div>
-                                    </button>
-                                  ))}
+                          return (
+                            <div key={year} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
+                              {/* 연도 헤더 */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-2xl font-bold text-white">{year}</span>
+                                  <span className="text-blue-200 text-sm">년</span>
+                                </div>
+                                <div className="flex items-center text-xs text-blue-200">
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    {totalProjects}개 프로젝트
+                                  </span>
                                 </div>
                               </div>
-                            ))}
-                        </div>
-                      </div>
+
+                              {/* 분기 카드 그리드 */}
+                              <div className="grid grid-cols-2 gap-3">
+                                {Object.entries(quarters)
+                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .map(([quarter, projects]) => (
+                                  <button
+                                    key={quarter}
+                                    onClick={() => {
+                                      setCurrentSlideIndex(0);
+                                      setSelectedQuarter({
+                                        year,
+                                        quarter,
+                                        category: 'bank',
+                                        categoryName: '신한은행',
+                                        projects
+                                      });
+                                    }}
+                                    className="group relative bg-white/95 backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md"
+                                  >
+                                    {/* 좌측 액센트 바 */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
+
+                                    {/* 분기 표시 */}
+                                    <div className="flex items-baseline gap-1 mb-2 pl-2">
+                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
+                                      <span className="text-sm font-bold text-[#0046FF]/70">Q</span>
+                                    </div>
+
+                                    {/* 프로젝트 정보 */}
+                                    <div className="pl-2 space-y-1">
+                                      <div className="flex items-center gap-1.5 text-gray-700">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        <span className="text-sm font-medium">{projects.length}개</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 text-gray-500">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs">{projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일</span>
+                                      </div>
+                                    </div>
+
+                                    {/* 화살표 아이콘 */}
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -687,8 +773,11 @@ export default function PublicSharePage() {
                 {/* 빈 메시지 */}
                 {(!timeline.holding || Object.keys(timeline.holding).length === 0) &&
                   (!timeline.bank || Object.keys(timeline.bank).length === 0) && (
-                    <div className="bg-white rounded-lg p-12 text-center">
-                      <p className="text-gray-500">공유된 프로젝트가 없습니다</p>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 text-center">
+                      <svg className="w-16 h-16 text-white/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <p className="text-white/60">공유된 프로젝트가 없습니다</p>
                     </div>
                   )}
               </div>
