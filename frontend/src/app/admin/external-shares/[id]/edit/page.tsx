@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { externalShareAPI, projectsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 interface Project {
   id: string;
@@ -20,26 +20,90 @@ interface ProjectSelection {
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
 }
 
-export default function CreateExternalSharePage() {
+interface ShareProject {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  projectDescription: string;
+  category: 'holding' | 'bank';
+  year: number;
+  quarter: '1Q' | '2Q' | '3Q' | '4Q';
+  displayOrder: number;
+}
+
+interface ShareDetail {
+  id: string;
+  shareId: string;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+  viewCount: number;
+  lastAccessedAt: string | null;
+  shareUrl: string;
+  projects: ShareProject[];
+}
+
+export default function EditExternalSharePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const shareId = params.id as string;
+
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<ProjectSelection[]>([]);
-  const [password, setPassword] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [showProjectList, setShowProjectList] = useState(false);
+  const [shareData, setShareData] = useState<ShareDetail | null>(null);
 
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
   const quarters: Array<'1Q' | '2Q' | '3Q' | '4Q'> = ['1Q', '2Q', '3Q', '4Q'];
+
+  // 기존 데이터 조회
+  const fetchShareData = async () => {
+    setLoadingData(true);
+    try {
+      const response = await externalShareAPI.get(shareId);
+      if (response.success) {
+        const data = response.data;
+        setShareData(data);
+
+        // 만료일 설정
+        if (data.expiresAt) {
+          const date = new Date(data.expiresAt);
+          const localISOTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+          setExpiresAt(localISOTime);
+        }
+
+        // 선택된 프로젝트 설정
+        if (data.projects && data.projects.length > 0) {
+          const selections = data.projects.map((project: ShareProject) => ({
+            projectId: project.projectId,
+            projectTitle: project.projectTitle,
+            category: project.category,
+            year: project.year,
+            quarter: project.quarter,
+          }));
+          setSelectedProjects(selections);
+        }
+      }
+    } catch (err: any) {
+      alert(err.message || '데이터 조회에 실패했습니다');
+      router.push('/admin/external-shares');
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   // 프로젝트 목록 조회
   const fetchProjects = async () => {
     try {
       const response = await projectsApi.getList({ pageSize: 100 });
       if (response.success) {
-        // API 응답 구조 확인 후 배열 추출
         const projectData = Array.isArray(response.data)
           ? response.data
           : response.data?.projects || [];
@@ -52,11 +116,12 @@ export default function CreateExternalSharePage() {
 
   useEffect(() => {
     if (user && user.role === 'ADMIN') {
+      fetchShareData();
       fetchProjects();
     } else if (user && user.role !== 'ADMIN') {
       router.push('/');
     }
-  }, [user]);
+  }, [user, shareId]);
 
   // 프로젝트 추가
   const handleAddProject = (project: Project) => {
@@ -85,26 +150,11 @@ export default function CreateExternalSharePage() {
     setSelectedProjects(updated);
   };
 
-  // 비밀번호 검증
-  const validatePassword = (pwd: string): boolean => {
-    return /^\d{4}$/.test(pwd);
-  };
-
-  // 생성
-  const handleCreate = async () => {
+  // 수정
+  const handleUpdate = async () => {
     // 검증
     if (selectedProjects.length === 0) {
       alert('최소 1개 이상의 프로젝트를 선택해주세요');
-      return;
-    }
-
-    if (!password) {
-      alert('비밀번호를 입력해주세요');
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      alert('비밀번호는 4자리 숫자여야 합니다');
       return;
     }
 
@@ -118,22 +168,22 @@ export default function CreateExternalSharePage() {
           year: s.year,
           quarter: s.quarter,
         })),
-        password,
       };
 
       if (expiresAt) {
         data.expiresAt = new Date(expiresAt).toISOString();
+      } else {
+        data.expiresAt = null;
       }
 
-      const response = await externalShareAPI.create(data);
+      const response = await externalShareAPI.update(shareId, data);
 
       if (response.success) {
-        const shareUrl = `${window.location.origin}/share/${response.data.shareId}`;
-        alert(`공유가 생성되었습니다!\n\nURL: ${shareUrl}\n비밀번호: ${password}`);
+        alert('수정되었습니다');
         router.push('/admin/external-shares');
       }
     } catch (err: any) {
-      alert(err.message || '생성에 실패했습니다');
+      alert(err.message || '수정에 실패했습니다');
     } finally {
       setLoading(false);
     }
@@ -141,6 +191,19 @@ export default function CreateExternalSharePage() {
 
   if (!user || user.role !== 'ADMIN') {
     return null;
+  }
+
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F5] py-8">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#0046FF] border-t-transparent"></div>
+            <p className="mt-4 text-gray-600">로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -154,10 +217,23 @@ export default function CreateExternalSharePage() {
           >
             ← 목록으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-[#333333] mb-2">외부공유 생성</h1>
+          <h1 className="text-3xl font-bold text-[#333333] mb-2">외부공유 수정</h1>
           <p className="text-gray-600">
-            프로젝트를 선택하고 분기를 지정한 후 비밀번호를 설정하세요
+            프로젝트 선택 및 분기를 수정하세요
           </p>
+          {shareData && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">공유 ID:</span> {shareData.shareId}
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                <span className="font-medium">조회수:</span> {shareData.viewCount}회
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                <span className="font-medium">비밀번호:</span> 비밀번호는 보안상 수정할 수 없습니다
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -277,33 +353,10 @@ export default function CreateExternalSharePage() {
             )}
           </div>
 
-          {/* 비밀번호 설정 */}
-          <div className="mb-8">
-            <h2 className="text-lg font-bold text-[#333333] mb-4">
-              2. 비밀번호 설정 (필수)
-            </h2>
-            <div className="max-w-xs">
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPassword(value);
-                }}
-                placeholder="4자리 숫자"
-                maxLength={4}
-                className="w-full px-4 py-3 border border-[#E0E0E0] rounded-lg text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                외부 사용자가 입력할 4자리 숫자 비밀번호
-              </p>
-            </div>
-          </div>
-
           {/* 만료일 설정 (선택) */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-[#333333] mb-4">
-              3. 만료일 설정 (선택)
+              2. 만료일 설정 (선택)
             </h2>
             <div className="max-w-xs">
               <input
@@ -318,14 +371,14 @@ export default function CreateExternalSharePage() {
             </div>
           </div>
 
-          {/* 생성 버튼 */}
+          {/* 수정 버튼 */}
           <div className="flex items-center gap-3">
             <button
-              onClick={handleCreate}
-              disabled={loading || selectedProjects.length === 0 || !password}
+              onClick={handleUpdate}
+              disabled={loading || selectedProjects.length === 0}
               className="px-8 py-3 bg-[#0046FF] text-white rounded-lg font-bold hover:bg-[#003ACC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '생성 중...' : '공유 생성'}
+              {loading ? '수정 중...' : '수정 완료'}
             </button>
             <button
               onClick={() => router.push('/admin/external-shares')}

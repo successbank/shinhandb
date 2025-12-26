@@ -93,11 +93,51 @@ export default function ExternalSharesPage() {
     }
   };
 
-  // URL 복사
+  // URL 복사 (HTTP 환경 fallback 포함)
   const handleCopyUrl = (shareId: string) => {
     const url = `${window.location.origin}/share/${shareId}`;
-    navigator.clipboard.writeText(url);
-    alert('URL이 복사되었습니다');
+
+    // Clipboard API 사용 가능 여부 확인
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          alert('URL이 복사되었습니다');
+        })
+        .catch((err) => {
+          console.error('Clipboard API 실패:', err);
+          fallbackCopyTextToClipboard(url);
+        });
+    } else {
+      // Fallback 방식 사용
+      fallbackCopyTextToClipboard(url);
+    }
+  };
+
+  // Fallback: textarea를 이용한 복사
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        alert('URL이 복사되었습니다');
+      } else {
+        alert('복사에 실패했습니다. 수동으로 복사해주세요:\n' + text);
+      }
+    } catch (err) {
+      console.error('Fallback 복사 실패:', err);
+      alert('복사에 실패했습니다. 수동으로 복사해주세요:\n' + text);
+    }
+
+    document.body.removeChild(textArea);
   };
 
   // 날짜 포맷
@@ -290,6 +330,12 @@ export default function ExternalSharesPage() {
                           className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           상세보기
+                        </button>
+                        <button
+                          onClick={() => router.push(`/admin/external-shares/${share.id}/edit`)}
+                          className="px-4 py-2 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          수정
                         </button>
                         <button
                           onClick={() => handleToggleActive(share.id, share.isActive)}
