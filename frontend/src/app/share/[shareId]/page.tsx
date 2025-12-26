@@ -43,7 +43,9 @@ export default function PublicSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [projectImages, setProjectImages] = useState<string[]>([]);
   const [swiperLoaded, setSwiperLoaded] = useState(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const swiperRef = useRef<any>(null);
+  const thumbSwiperRef = useRef<any>(null);
 
   // sessionStorage에서 토큰 복원
   useEffect(() => {
@@ -143,8 +145,14 @@ export default function PublicSharePage() {
 
     try {
       const response = await publicShareAPI.getProject(shareId, projectId, token);
-      if (response.success && response.data.files) {
-        const imageUrls = response.data.files.map((file: any) => file.url);
+      if (response.success && response.data) {
+        // 백엔드 응답: proposalDrafts (제안 시안), finalManuscripts (최종 원고)
+        const allFiles = [
+          ...(response.data.finalManuscripts || []),
+          ...(response.data.proposalDrafts || []),
+        ];
+        // fileUrl 또는 thumbnailUrl 사용
+        const imageUrls = allFiles.map((file: any) => file.fileUrl || file.thumbnailUrl).filter(Boolean);
         setProjectImages(imageUrls);
       }
     } catch (err) {
@@ -166,6 +174,7 @@ export default function PublicSharePage() {
     setImageGalleryOpen(false);
     setCurrentImageIndex(0);
     setProjectImages([]);
+    // currentSlideIndex는 유지 - 캐러셀 위치 기억
   };
 
   // 이전/다음 이미지
@@ -207,22 +216,35 @@ export default function PublicSharePage() {
     return () => window.removeEventListener('keydown', handleKeyNav);
   }, [imageGalleryOpen, projectImages]);
 
-  // Swiper 초기화
+  // Swiper 초기화 (갤러리 닫힐 때 재초기화 포함)
   useEffect(() => {
     if (!selectedQuarter || !swiperLoaded) return;
+    // 이미지 갤러리가 열려있으면 Swiper 초기화 건너뛰기
+    if (imageGalleryOpen) return;
 
     const initSwiper = () => {
-      if (typeof window !== 'undefined' && (window as any).Swiper && !swiperRef.current) {
+      if (typeof window !== 'undefined' && (window as any).Swiper) {
         const Swiper = (window as any).Swiper;
 
+        // 기존 Swiper 인스턴스 정리
+        if (thumbSwiperRef.current) {
+          thumbSwiperRef.current.destroy(true, true);
+          thumbSwiperRef.current = null;
+        }
+        if (swiperRef.current) {
+          swiperRef.current.destroy(true, true);
+          swiperRef.current = null;
+        }
+
         // 썸네일 Swiper 먼저 초기화
-        const thumbSwiper = new Swiper('.thumb-swiper', {
+        thumbSwiperRef.current = new Swiper('.thumb-swiper', {
           spaceBetween: 8,
           slidesPerView: 'auto',
           freeMode: true,
           watchSlidesProgress: true,
           centeredSlides: true,
           slideToClickedSlide: true,
+          initialSlide: currentSlideIndex,
           navigation: {
             nextEl: '#thumb-next-btn',
             prevEl: '#thumb-prev-btn',
@@ -238,6 +260,7 @@ export default function PublicSharePage() {
           loop: false,
           rewind: selectedQuarter.projects.length > 1,
           speed: 800,
+          initialSlide: currentSlideIndex,
           coverflowEffect: {
             rotate: 0,
             stretch: 0,
@@ -257,7 +280,12 @@ export default function PublicSharePage() {
             sensitivity: 1,
           },
           thumbs: {
-            swiper: thumbSwiper,
+            swiper: thumbSwiperRef.current,
+          },
+          on: {
+            slideChange: function(swiper: any) {
+              setCurrentSlideIndex(swiper.activeIndex);
+            },
           },
         });
       }
@@ -266,12 +294,8 @@ export default function PublicSharePage() {
     const timer = setTimeout(initSwiper, 100);
     return () => {
       clearTimeout(timer);
-      if (swiperRef.current) {
-        swiperRef.current.destroy();
-        swiperRef.current = null;
-      }
     };
-  }, [selectedQuarter, swiperLoaded]);
+  }, [selectedQuarter, swiperLoaded, imageGalleryOpen]);
 
   // 비밀번호 입력 화면
   if (step === 'password') {
@@ -396,13 +420,16 @@ export default function PublicSharePage() {
                               {Object.entries(quarters).map(([quarter, projects]) => (
                                 <button
                                   key={quarter}
-                                  onClick={() => setSelectedQuarter({
-                                    year,
-                                    quarter,
-                                    category: 'holding',
-                                    categoryName: '신한금융지주',
-                                    projects
-                                  })}
+                                  onClick={() => {
+                                    setCurrentSlideIndex(0);
+                                    setSelectedQuarter({
+                                      year,
+                                      quarter,
+                                      category: 'holding',
+                                      categoryName: '신한금융지주',
+                                      projects
+                                    });
+                                  }}
                                   className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
                                 >
                                   <div className="font-bold text-[#0046FF] text-lg mb-2">
@@ -454,13 +481,16 @@ export default function PublicSharePage() {
                               {Object.entries(quarters).map(([quarter, projects]) => (
                                 <button
                                   key={quarter}
-                                  onClick={() => setSelectedQuarter({
-                                    year,
-                                    quarter,
-                                    category: 'bank',
-                                    categoryName: '신한은행',
-                                    projects
-                                  })}
+                                  onClick={() => {
+                                    setCurrentSlideIndex(0);
+                                    setSelectedQuarter({
+                                      year,
+                                      quarter,
+                                      category: 'bank',
+                                      categoryName: '신한은행',
+                                      projects
+                                    });
+                                  }}
                                   className="bg-white rounded-lg p-4 hover:shadow-lg transition-shadow text-left"
                                 >
                                   <div className="font-bold text-[#0046FF] text-lg mb-2">
