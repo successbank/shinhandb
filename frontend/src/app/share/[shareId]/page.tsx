@@ -51,7 +51,14 @@ export default function PublicSharePage() {
     if (savedToken) {
       setToken(savedToken);
       setStep('timeline');
-      fetchTimeline(savedToken);
+      // 토큰 만료 가능성 있으므로 오류 처리
+      fetchTimeline(savedToken).catch(() => {
+        // 토큰 만료 시 sessionStorage 삭제하고 비밀번호 입력으로 이동
+        sessionStorage.removeItem(`share_token_${shareId}`);
+        setStep('password');
+        setToken(null);
+        setError(null);
+      });
     }
   }, [shareId]);
 
@@ -207,12 +214,25 @@ export default function PublicSharePage() {
     const initSwiper = () => {
       if (typeof window !== 'undefined' && (window as any).Swiper && !swiperRef.current) {
         const Swiper = (window as any).Swiper;
+
+        // 썸네일 Swiper 먼저 초기화
+        const thumbSwiper = new Swiper('.thumb-swiper', {
+          spaceBetween: 10,
+          slidesPerView: 'auto',
+          freeMode: true,
+          watchSlidesProgress: true,
+          centeredSlides: true,
+          slideToClickedSlide: true,
+        });
+
+        // 메인 Swiper 초기화 (thumbs 연결)
         swiperRef.current = new Swiper('.quarter-swiper', {
           effect: 'coverflow',
           grabCursor: true,
           centeredSlides: true,
           slidesPerView: 'auto',
-          loop: selectedQuarter.projects.length > 1,
+          loop: false,
+          rewind: selectedQuarter.projects.length > 1,
           speed: 800,
           coverflowEffect: {
             rotate: 0,
@@ -221,17 +241,15 @@ export default function PublicSharePage() {
             modifier: 1.5,
             slideShadows: true,
           },
-          pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-            dynamicBullets: true,
-          },
           navigation: {
             nextEl: '.swiper-button-next',
             prevEl: '.swiper-button-prev',
           },
           keyboard: {
             enabled: true,
+          },
+          thumbs: {
+            swiper: thumbSwiper,
           },
         });
       }
@@ -519,22 +537,50 @@ export default function PublicSharePage() {
               transform: scale(1.02);
             }
 
-            .quarter-swiper .swiper-pagination {
-              bottom: 20px !important;
+            /* 썸네일 Swiper 스타일 */
+            .thumb-swiper {
+              width: 100%;
+              max-width: 500px;
+              padding: 0;
             }
 
-            .quarter-swiper .swiper-pagination-bullet {
-              width: 10px;
-              height: 10px;
-              background: rgba(255,255,255,0.5);
-              opacity: 1;
+            .thumb-swiper .swiper-slide {
+              width: 60px;
+              height: 60px;
+              border-radius: 12px;
+              overflow: hidden;
+              opacity: 0.5;
+              cursor: pointer;
               transition: all 0.3s ease;
+              border: 2px solid transparent;
             }
 
-            .quarter-swiper .swiper-pagination-bullet-active {
-              background: white;
-              width: 30px;
-              border-radius: 5px;
+            .thumb-swiper .swiper-slide-thumb-active {
+              opacity: 1;
+              border-color: white;
+              box-shadow: 0 0 15px rgba(255,255,255,0.5);
+            }
+
+            .thumb-swiper .swiper-slide img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+
+            @media (max-width: 768px) {
+              .thumb-swiper .swiper-slide {
+                width: 50px;
+                height: 50px;
+                border-radius: 10px;
+              }
+            }
+
+            @media (max-width: 480px) {
+              .thumb-swiper .swiper-slide {
+                width: 45px;
+                height: 45px;
+                border-radius: 8px;
+              }
             }
 
             .quarter-swiper .swiper-button-next,
@@ -584,14 +630,17 @@ export default function PublicSharePage() {
             }
           `}</style>
 
+          {/* 닫기 버튼 */}
+          <button
+            onClick={() => setSelectedQuarter(null)}
+            className="fixed top-4 left-4 text-white text-base font-medium hover:bg-white/30 z-50 px-5 py-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg"
+            style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
+          >
+            닫기
+          </button>
+
           {/* 헤더 */}
           <div className="text-center mb-8 relative w-full max-w-1200px">
-            <button
-              onClick={() => setSelectedQuarter(null)}
-              className="absolute top-0 left-4 text-white text-lg font-medium hover:text-gray-300 z-10 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm"
-            >
-              닫기
-            </button>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
               {selectedQuarter.categoryName}
             </h1>
@@ -619,9 +668,28 @@ export default function PublicSharePage() {
                   </div>
                 ))}
               </div>
-              <div className="swiper-pagination"></div>
               <div className="swiper-button-prev"></div>
               <div className="swiper-button-next"></div>
+            </div>
+
+            {/* 썸네일 네비게이션 */}
+            <div className="flex justify-center mt-6">
+              <div className="bg-black/40 backdrop-blur-md rounded-2xl px-4 py-3" style={{ width: '100%', maxWidth: '500px' }}>
+                <div className="thumb-swiper">
+                  <div className="swiper-wrapper">
+                    {selectedQuarter.projects.map((project) => (
+                      <div key={`thumb-${project.projectId}`} className="swiper-slide">
+                        {project.thumbnailUrl && (
+                          <img
+                            src={project.thumbnailUrl}
+                            alt={`${project.title} 썸네일`}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
