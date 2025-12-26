@@ -493,21 +493,22 @@ export default function PublicSharePage() {
             }
 
             .quarter-swiper .swiper-slide {
-              width: 280px;
-              height: 500px;
+              width: 94%;
+              max-width: 500px;
               border-radius: 24px;
               overflow: hidden;
               box-shadow: 0 25px 50px rgba(0,0,0,0.3);
               transition: all 0.4s ease;
-              background: white;
+              background: transparent;
               cursor: pointer;
             }
 
             .quarter-swiper .swiper-slide img {
               width: 100%;
-              height: 320px;
-              object-fit: cover;
+              height: auto;
+              object-fit: contain;
               transition: transform 0.5s ease;
+              border-radius: 24px;
             }
 
             .quarter-swiper .swiper-slide-active {
@@ -561,12 +562,8 @@ export default function PublicSharePage() {
 
             @media (max-width: 768px) {
               .quarter-swiper .swiper-slide {
-                width: 240px;
-                height: 420px;
-              }
-
-              .quarter-swiper .swiper-slide img {
-                height: 260px;
+                width: 94%;
+                max-width: 400px;
               }
 
               .quarter-swiper .swiper-button-next,
@@ -581,12 +578,8 @@ export default function PublicSharePage() {
 
             @media (max-width: 480px) {
               .quarter-swiper .swiper-slide {
-                width: 200px;
-                height: 360px;
-              }
-
-              .quarter-swiper .swiper-slide img {
-                height: 220px;
+                width: 94%;
+                max-width: 320px;
               }
             }
           `}</style>
@@ -595,9 +588,9 @@ export default function PublicSharePage() {
           <div className="text-center mb-8 relative w-full max-w-1200px">
             <button
               onClick={() => setSelectedQuarter(null)}
-              className="absolute top-0 right-4 text-white text-4xl hover:text-gray-300 z-10"
+              className="absolute top-0 left-4 text-white text-lg font-medium hover:text-gray-300 z-10 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm"
             >
-              ×
+              닫기
             </button>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
               {selectedQuarter.categoryName}
@@ -608,7 +601,7 @@ export default function PublicSharePage() {
           </div>
 
           {/* Swiper Container */}
-          <div className="w-full max-w-[1200px]">
+          <div className="w-full" style={{ padding: '0 1%' }}>
             <div className="quarter-swiper">
               <div className="swiper-wrapper">
                 {selectedQuarter.projects.map((project, idx) => (
@@ -623,27 +616,6 @@ export default function PublicSharePage() {
                         alt={project.title}
                       />
                     )}
-                    <div className="p-4">
-                      <h3 className="font-bold text-[#333333] text-lg mb-2 line-clamp-2">
-                        {project.title}
-                      </h3>
-                      {project.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                          {project.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-200">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
-                          </svg>
-                          {project.fileCount}개
-                        </span>
-                        <span className="text-gray-400">
-                          {new Date(project.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -652,14 +624,6 @@ export default function PublicSharePage() {
               <div className="swiper-button-next"></div>
             </div>
           </div>
-
-          {/* 닫기 버튼 */}
-          <button
-            onClick={() => setSelectedQuarter(null)}
-            className="mt-8 px-8 py-3 bg-white text-[#0046FF] rounded-lg font-bold hover:bg-gray-100 transition-colors shadow-lg"
-          >
-            닫기
-          </button>
 
           {/* 터치 힌트 (모바일) */}
           <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-white text-sm flex items-center gap-2 opacity-60 md:hidden">

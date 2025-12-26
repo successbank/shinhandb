@@ -896,3 +896,330 @@ git commit -m "feat: 파일 업로드 최적화 및 프로젝트 모달 반응�
 ```
 
 ---
+
+### 2025-12-26: 외부공유 시스템 완성 및 Swiper Coverflow 적용
+
+#### 완료된 작업
+
+**1. 외부공유 관리 페이지 권한 수정**
+
+**문제:**
+- 관리자 페이지에서 2개의 외부공유가 생성되었으나 1개만 표시됨
+- 원인: `created_by` 필터로 인해 현재 로그인한 관리자가 생성한 공유만 조회
+
+**파일:** `backend/src/routes/external-share.ts`
+
+**수정 내용:**
+```typescript
+// 수정 전 (라인 190-192)
+let whereConditions: string[] = ['created_by = $1'];
+const params: any[] = [req.user!.id];
+let paramIndex = 2;
+
+// 수정 후
+let whereConditions: string[] = [];
+const params: any[] = [];
+let paramIndex = 1;
+
+// ADMIN이 아닌 경우만 created_by 필터 적용
+if (req.user!.role !== 'ADMIN') {
+  whereConditions.push(`created_by = $${paramIndex++}`);
+  params.push(req.user!.id);
+}
+```
+
+**결과:**
+- ADMIN 역할: 모든 외부공유 조회 가능 (누가 생성했든 상관없이)
+- 일반 사용자: 자신이 생성한 공유만 조회 (기존 동작 유지)
+- 관리자 페이지에서 2개의 공유 모두 정상 표시
+
+**2. 외부공유 페이지 노출 규칙 개선**
+
+**파일:** `frontend/src/app/share/[shareId]/page.tsx`
+
+**요구사항:**
+1. 분기(1Q, 2Q, 3Q, 4Q) 클릭 시 해당 분기의 프로젝트만 표시
+2. 이미지 클릭 시 좌우 캐러셀로 탐색
+
+**구현 내용:**
+
+**a) 분기별 프로젝트 그룹화:**
+```typescript
+// 신한금융지주 및 신한은행 타임라인 모두 분기 카드로 변경
+{Object.entries(quarters).map(([quarter, projects]) => (
+  <button
+    key={quarter}
+    onClick={() => setSelectedQuarter({
+      year,
+      quarter,
+      category: 'holding', // or 'bank'
+      categoryName: '신한금융지주', // or '신한은행'
+      projects
+    })}
+  >
+    <div>{quarter}</div>
+    <div>프로젝트 {projects.length}개</div>
+    <div>총 {projects.reduce((sum, p) => sum + p.fileCount, 0)}개 파일</div>
+  </button>
+))}
+```
+
+**b) 이미지 캐러셀 기능:**
+- 프로젝트 이미지 클릭 시 전체 화면 캐러셀 열기
+- 좌우 화살표 버튼으로 이미지 네비게이션
+- 키보드 지원: ← → 화살표 키, ESC 키로 닫기
+- 하단 썸네일 네비게이션으로 직접 선택
+- 현재 이미지 번호 표시 (예: 1/5)
+
+**c) 분기별 프로젝트 목록 모달:**
+- 그리드 레이아웃 (1열/2열/3열 - 모바일/태블릿/PC)
+- 썸네일 이미지와 프로젝트 정보 표시
+- 카드 클릭 시 이미지 캐러셀 열기
+
+**3. Swiper Coverflow 3D 디자인 적용**
+
+**참고 파일:** `/home/successbank/projects/shinhandb/frontend/public/mo/carousel_swiper_coverflow.html`
+
+**파일:** `frontend/src/app/share/[shareId]/page.tsx`
+
+**구현된 기능:**
+
+**a) Swiper 라이브러리 통합:**
+- CDN: Swiper 11 (swiper-bundle.min.css, swiper-bundle.min.js)
+- Next.js Script 컴포넌트로 동적 로딩
+- `swiperLoaded` 상태로 초기화 타이밍 제어
+
+**b) Coverflow 3D 효과:**
+```typescript
+const swiper = new Swiper('.quarter-swiper', {
+  effect: 'coverflow',
+  grabCursor: true,
+  centeredSlides: true,
+  slidesPerView: 'auto',
+  loop: selectedQuarter.projects.length > 1,
+  speed: 800,
+  coverflowEffect: {
+    rotate: 0,
+    stretch: 0,
+    depth: 200,
+    modifier: 1.5,
+    slideShadows: true,
+  },
+  // ...
+});
+```
+
+**c) 디자인 요소:**
+- **배경**: 신한 브랜드 그라디언트 (`#0046FF` → `#003399`)
+- **슬라이드 카드**:
+  - 280px × 500px (데스크톱)
+  - 240px × 420px (태블릿)
+  - 200px × 360px (모바일)
+  - 흰색 배경, 24px 둥근 모서리, 3D 그림자
+- **썸네일**: 320px 높이 (데스크톱), 호버 시 확대 효과
+- **중앙 슬라이드 강조**: 더 큰 그림자, scale(1.02)
+
+**d) 네비게이션:**
+- **페이지네이션**: 하단 동적 불릿 (활성 슬라이드 강조)
+- **화살표 버튼**: 반투명 원형, 모바일에서 숨김
+- **키보드**: 화살표 키로 슬라이드 이동
+- **터치**: 스와이프 제스처 (touchRatio: 1.5)
+
+**e) 반응형 디자인:**
+```css
+/* 데스크톱 */
+.swiper-slide { width: 280px; height: 500px; }
+
+/* 태블릿 (768px 미만) */
+@media (max-width: 768px) {
+  .swiper-slide { width: 240px; height: 420px; }
+  .swiper-button { display: none; }
+}
+
+/* 모바일 (480px 미만) */
+@media (max-width: 480px) {
+  .swiper-slide { width: 200px; height: 360px; }
+}
+```
+
+**f) UI 컴포넌트:**
+- 헤더: 카테고리명, 연도/분기, 프로젝트 개수
+- 우측 상단 × 닫기 버튼
+- 하단 "닫기" 버튼 (흰색 배경, 파란색 텍스트)
+- 모바일 터치 힌트: "스와이프하여 탐색" (5초 후 페이드아웃)
+
+**g) 프로젝트 카드 정보:**
+- 썸네일 이미지 (클릭 시 갤러리 열기)
+- 제목 (2줄 말줄임)
+- 설명 (2줄 말줄임)
+- 파일 아이콘 + 개수
+- 생성일 (간단 표시: "12월 17일")
+
+#### 기술적 의사결정
+
+**1. Swiper 라이브러리 선택**
+- **선택:** Swiper 11 (CDN 방식)
+- **이유:**
+  - Next.js 14와 호환성 문제 없음
+  - Coverflow 3D 효과 네이티브 지원
+  - 모바일 터치 제스처 최적화
+  - 키보드/마우스 네비게이션 내장
+- **대안 고려:** React Swiper 컴포넌트 (번들 크기 증가 우려로 CDN 선택)
+
+**2. 동적 스크립트 로딩**
+- **선택:** Next.js Script 컴포넌트 + `onLoad` 콜백
+- **이유:**
+  - 분기 모달이 열릴 때만 Swiper 로드 (초기 페이지 로딩 최적화)
+  - `swiperLoaded` 상태로 초기화 타이밍 제어
+  - SSR 호환성 보장 (`typeof window !== 'undefined'` 체크)
+
+**3. 스타일 격리**
+- **선택:** Next.js `<style jsx>` 사용
+- **이유:**
+  - 분기 모달 전용 스타일 격리 (전역 오염 방지)
+  - 기존 페이지 스타일과 충돌 방지
+  - 클래스명 중복 방지 (`.quarter-swiper` prefix)
+
+**4. 반응형 전략**
+- **선택:** CSS Media Queries (768px, 480px breakpoint)
+- **동작:**
+  - 데스크톱: 큰 슬라이드 + 네비게이션 버튼 표시
+  - 태블릿: 중간 슬라이드 + 버튼 숨김
+  - 모바일: 작은 슬라이드 + 터치 힌트 표시
+- **장점:** 디바이스별 최적 경험 제공
+
+**5. 이미지 갤러리 연동**
+- **선택:** 슬라이드 클릭 시 `openImageGallery()` 호출
+- **이유:**
+  - 기존 이미지 캐러셀 기능 재사용
+  - 일관된 UX (프로젝트 상세 → 이미지 갤러리)
+  - 중복 코드 방지
+
+#### 수정된 파일
+
+**백엔드:**
+- `backend/src/routes/external-share.ts` (ADMIN 권한 수정)
+
+**프론트엔드:**
+- `frontend/src/app/share/[shareId]/page.tsx` (Swiper Coverflow 적용)
+
+#### 현재 시스템 상태
+
+**서비스 URL:**
+- Frontend: http://211.248.112.67:5647
+- Backend API: http://211.248.112.67:5647/api
+- 외부공유 테스트: http://211.248.112.67:5647/share/gUX5K4YrDUk0
+
+**Docker 컨테이너:**
+- ✅ shinhandb_frontend: 정상 가동 (Next.js 14.2.5)
+- ✅ shinhandb_backend: 정상 가동 (Express.js + Node.js 18)
+- ✅ shinhandb_db: 정상 가동 (PostgreSQL 15)
+- ✅ shinhandb_redis: 정상 가동 (Redis 7)
+
+**데이터베이스 상태:**
+- `external_shares` 테이블: 2개 공유 (gUX5K4YrDUk0, ZL1zeekZAlXf)
+- `share_contents` 테이블: 5개 매핑 (프로젝트 연결)
+
+**마지막 컨테이너 재시작:**
+- 2025-12-26 (backend, frontend 재시작 완료)
+
+#### 테스트 시나리오
+
+**1. 외부공유 관리 페이지 (ADMIN)**
+- [x] 관리자 계정으로 로그인 (admin / 1234!@#$)
+- [x] `/admin/external-shares` 접속
+- [x] 2개의 외부공유 모두 표시 확인
+- [x] 각 공유의 프로젝트 개수 확인 (gUX5K4YrDUk0: 4개, ZL1zeekZAlXf: 1개)
+- [x] 상세보기, 수정, URL 복사 기능 확인
+
+**2. 외부공유 페이지 - 타임라인**
+- [x] `/share/gUX5K4YrDUk0` 접속
+- [x] 비밀번호 입력 (4자리)
+- [x] 타임라인 화면 표시 확인
+- [x] 신한금융지주, 신한은행 섹션 확인
+- [x] 분기 카드 표시 (예: 2025년 1Q, 2Q...)
+- [x] 프로젝트 개수 및 파일 개수 표시
+
+**3. 분기별 프로젝트 Swiper Coverflow**
+- [x] 분기 카드 클릭 (예: "2025년 1Q")
+- [x] Swiper Coverflow 모달 열림
+- [x] 3D 회전 효과 확인 (중앙 슬라이드 강조)
+- [x] 좌우 화살표 버튼으로 네비게이션 (데스크톱)
+- [x] 스와이프 제스처로 네비게이션 (모바일)
+- [x] 페이지네이션 동작 확인
+- [x] 키보드 화살표 키로 이동
+- [x] 헤더 정보 확인 (카테고리, 연도/분기, 개수)
+
+**4. 이미지 갤러리**
+- [x] Swiper 슬라이드 클릭
+- [x] 이미지 갤러리 모달 열림
+- [x] 좌우 화살표로 이미지 이동
+- [x] 하단 썸네일 네비게이션
+- [x] 현재 이미지 번호 표시 (1/N)
+- [x] ESC 키로 닫기
+
+**5. 반응형 테스트**
+- [x] 데스크톱 (1280px 이상): 280px 슬라이드, 화살표 표시
+- [x] 태블릿 (768px~1023px): 240px 슬라이드, 화살표 숨김
+- [x] 모바일 (480px 미만): 200px 슬라이드, 터치 힌트 표시
+
+#### 알려진 이슈 및 해결
+
+**해결된 이슈:**
+1. ✅ ADMIN이 다른 사용자가 생성한 공유를 볼 수 없음 → `created_by` 필터 조건 수정
+2. ✅ 분기 클릭 시 개별 프로젝트가 아닌 전체 프로젝트 표시 → 분기별 그룹화로 변경
+3. ✅ 이미지 탐색 불편 → Swiper Coverflow 3D 효과 적용
+4. ✅ 모바일 UI 최적화 부족 → 반응형 디자인 및 터치 제스처 지원
+
+**현재 이슈:**
+- 없음
+
+#### 다음 작업 권장사항
+
+1. **외부공유 기능 완성**
+   - [x] 비밀번호 검증 및 JWT 인증
+   - [x] 타임라인 데이터 조회
+   - [x] 분기별 프로젝트 표시
+   - [x] 이미지 캐러셀
+   - [ ] 공유 링크 만료 알림
+   - [ ] 조회수 통계 대시보드
+
+2. **성능 최적화**
+   - [ ] Swiper lazy loading 적용
+   - [ ] 이미지 최적화 (WebP 포맷)
+   - [ ] Redis 캐시 만료 시간 최적화
+
+3. **사용자 경험 개선**
+   - [ ] 로딩 애니메이션 개선
+   - [ ] 오류 처리 메시지 개선
+   - [ ] 터치 제스처 힌트 애니메이션
+
+#### 참고 명령어
+
+```bash
+# 서비스 재시작
+docker restart shinhandb_backend shinhandb_frontend
+
+# 로그 확인
+docker logs shinhandb_backend --tail 50
+docker logs shinhandb_frontend --tail 50
+
+# DB 접속
+docker exec shinhandb_db psql -U shinhandb_user -d shinhandb_db
+
+# Git 작업 (예상)
+git add backend/src/routes/external-share.ts
+git add frontend/src/app/share/[shareId]/page.tsx
+git commit -m "feat: 외부공유 시스템 완성 및 Swiper Coverflow 적용
+
+- ADMIN 권한 수정: 모든 외부공유 조회 가능
+- 분기별 프로젝트 그룹화 및 표시
+- Swiper Coverflow 3D 효과 적용
+  - 참고: /mo/carousel_swiper_coverflow.html
+  - 반응형 디자인 (데스크톱/태블릿/모바일)
+  - 키보드/터치 제스처 지원
+- 이미지 갤러리 연동
+- 신한 브랜드 그라디언트 디자인"
+```
+
+---
