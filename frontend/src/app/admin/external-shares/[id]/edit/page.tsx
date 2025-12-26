@@ -372,7 +372,7 @@ export default function EditExternalSharePage() {
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg text-[#333333] bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
               />
               <p className="mt-2 text-sm text-gray-500">
                 설정하지 않으면 무제한으로 공유됩니다
