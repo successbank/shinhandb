@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import api from '@/lib/api';
+import { dashboardAPI } from '@/lib/api';
 
 interface DashboardStats {
   basic: {
@@ -67,8 +67,8 @@ export default function AdminDashboard() {
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/dashboard/stats');
-      setStats(response.data.data);
+      const response = await dashboardAPI.getStats();
+      setStats(response.data);
     } catch (err: any) {
       console.error('[Dashboard] Error loading stats:', err);
       setError(err.response?.data?.message || '통계 로딩 실패');

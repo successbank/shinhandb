@@ -713,3 +713,8 @@ export const publicShareAPI = {
       return data;
     }),
 };
+
+// Dashboard API
+export const dashboardAPI = {
+  getStats: () => apiRequest('/admin/dashboard/stats'),
+};

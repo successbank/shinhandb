@@ -6,6 +6,7 @@ import { logActivity } from '../middlewares/activityLog';
 import { authenticate, authorize } from '../middlewares/auth';
 import { generateShareId, validateShareId } from '../utils/shareId';
 import bcrypt from 'bcrypt';
+import { redis } from '../services/cache.service';
 
 const router = Router();
 
@@ -258,7 +259,7 @@ router.get(
     try {
       const { id } = req.params;
 
-      // 공유 정보 조회
+      // 공유 정보 조회 (ADMIN은 모든 공유 조회 가능)
       const shareResult = await pool.query(
         `SELECT
            id,
@@ -269,8 +270,8 @@ router.get(
            view_count AS "viewCount",
            last_accessed_at AS "lastAccessedAt"
          FROM external_shares
-         WHERE id = $1 AND created_by = $2`,
-        [id, req.user!.id]
+         WHERE id = $1`,
+        [id]
       );
 
       if (shareResult.rows.length === 0) {
@@ -321,12 +322,12 @@ router.patch(
   async (req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { password, isActive, expiresAt } = req.body;
+      const { password, isActive, expiresAt, projectSelections } = req.body;
 
-      // 권한 확인
+      // 권한 확인 (ADMIN은 모든 공유 수정 가능)
       const checkResult = await pool.query(
-        'SELECT id FROM external_shares WHERE id = $1 AND created_by = $2',
-        [id, req.user!.id]
+        'SELECT id FROM external_shares WHERE id = $1',
+        [id]
       );
 
       if (checkResult.rows.length === 0) {
@@ -367,24 +368,96 @@ router.patch(
         }
       }
 
-      if (updates.length === 0) {
-        throw new AppError(400, '수정할 항목이 없습니다');
+      // 프로젝트 선택 수정
+      if (projectSelections && Array.isArray(projectSelections)) {
+        // 트랜잭션 시작
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          // 기존 share_contents 삭제
+          await client.query('DELETE FROM share_contents WHERE share_id = $1', [id]);
+
+          // 새로운 프로젝트 추가
+          if (projectSelections.length > 0) {
+            const insertValues: string[] = [];
+            const insertParams: any[] = [];
+            let insertParamIndex = 1;
+
+            for (let i = 0; i < projectSelections.length; i++) {
+              const selection = projectSelections[i];
+
+              // 프로젝트 존재 여부 확인
+              const projectCheck = await client.query(
+                'SELECT id FROM projects WHERE id = $1',
+                [selection.projectId]
+              );
+
+              if (projectCheck.rows.length === 0) {
+                throw new AppError(404, `프로젝트를 찾을 수 없습니다: ${selection.projectId}`);
+              }
+
+              insertValues.push(
+                `($${insertParamIndex++}, $${insertParamIndex++}, $${insertParamIndex++}, $${insertParamIndex++}, $${insertParamIndex++}, $${insertParamIndex++})`
+              );
+
+              insertParams.push(
+                id,
+                selection.projectId,
+                selection.category,
+                selection.year,
+                selection.quarter,
+                i // display_order
+              );
+            }
+
+            await client.query(
+              `INSERT INTO share_contents (share_id, project_id, category, year, quarter, display_order)
+               VALUES ${insertValues.join(', ')}`,
+              insertParams
+            );
+          }
+
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw err;
+        } finally {
+          client.release();
+        }
       }
 
-      params.push(id);
+      // external_shares 테이블 업데이트
+      if (updates.length > 0) {
+        params.push(id);
 
-      const result = await pool.query(
-        `UPDATE external_shares
-         SET ${updates.join(', ')}, updated_at = NOW()
-         WHERE id = $${paramIndex}
-         RETURNING id, share_id AS "shareId", is_active AS "isActive",
-                   expires_at AS "expiresAt", updated_at AS "updatedAt"`,
-        params
+        await pool.query(
+          `UPDATE external_shares
+           SET ${updates.join(', ')}, updated_at = NOW()
+           WHERE id = $${paramIndex}`,
+          params
+        );
+      }
+
+      // 최종 결과 조회
+      const finalResult = await pool.query(
+        `SELECT id, share_id AS "shareId", is_active AS "isActive",
+                expires_at AS "expiresAt", updated_at AS "updatedAt"
+         FROM external_shares
+         WHERE id = $1`,
+        [id]
       );
+
+      // Redis 캐시 삭제 (공유 페이지에 즉시 반영)
+      if (finalResult.rows[0]) {
+        const shareId = finalResult.rows[0].shareId;
+        const cacheKey = `share_contents:${shareId}`;
+        await redis.del(cacheKey);
+      }
 
       res.json({
         success: true,
-        data: result.rows[0],
+        data: finalResult.rows[0],
         message: '외부공유가 수정되었습니다',
       });
     } catch (error) {

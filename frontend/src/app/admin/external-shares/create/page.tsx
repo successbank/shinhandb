@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { externalShareAPI, projectsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Layout/Header';
+import Footer from '@/components/Layout/Footer';
 
 interface Project {
   id: string;
@@ -144,8 +146,10 @@ export default function CreateExternalSharePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] py-8">
-      <div className="max-w-4xl mx-auto px-6">
+    <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
+      <Header />
+
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
           <button
@@ -154,7 +158,7 @@ export default function CreateExternalSharePage() {
           >
             ← 목록으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-[#333333] mb-2">외부공유 생성</h1>
+          <h1 className="text-3xl font-bold text-shinhan-darkGray">외부공유 생성</h1>
           <p className="text-gray-600">
             프로젝트를 선택하고 분기를 지정한 후 비밀번호를 설정하세요
           </p>
@@ -335,7 +339,9 @@ export default function CreateExternalSharePage() {
             </button>
           </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
 
       {/* 프로젝트 선택 모달 */}
       {showProjectList && (

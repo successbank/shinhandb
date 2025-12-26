@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { externalShareAPI, projectsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
+import Header from '@/components/Layout/Header';
+import Footer from '@/components/Layout/Footer';
 
 interface Project {
   id: string;
@@ -66,7 +68,7 @@ export default function EditExternalSharePage() {
     setLoadingData(true);
     try {
       const response = await externalShareAPI.get(shareId);
-      if (response.success) {
+      if (response.success && response.data) {
         const data = response.data;
         setShareData(data);
 
@@ -80,7 +82,7 @@ export default function EditExternalSharePage() {
         }
 
         // 선택된 프로젝트 설정
-        if (data.projects && data.projects.length > 0) {
+        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
           const selections = data.projects.map((project: ShareProject) => ({
             projectId: project.projectId,
             projectTitle: project.projectTitle,
@@ -195,20 +197,24 @@ export default function EditExternalSharePage() {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] py-8">
-        <div className="max-w-4xl mx-auto px-6">
+      <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
+        <Header />
+        <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#0046FF] border-t-transparent"></div>
             <p className="mt-4 text-gray-600">로딩 중...</p>
           </div>
-        </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] py-8">
-      <div className="max-w-4xl mx-auto px-6">
+    <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
+      <Header />
+
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
           <button
@@ -217,7 +223,7 @@ export default function EditExternalSharePage() {
           >
             ← 목록으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-[#333333] mb-2">외부공유 수정</h1>
+          <h1 className="text-3xl font-bold text-shinhan-darkGray mb-2">외부공유 수정</h1>
           <p className="text-gray-600">
             프로젝트 선택 및 분기를 수정하세요
           </p>
@@ -388,83 +394,85 @@ export default function EditExternalSharePage() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* 프로젝트 선택 모달 */}
-      {showProjectList && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-[#E0E0E0]">
-              <h2 className="text-xl font-bold text-[#333333]">프로젝트 선택</h2>
-            </div>
+        {/* 프로젝트 선택 모달 */}
+        {showProjectList && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-[#E0E0E0]">
+                <h2 className="text-xl font-bold text-[#333333]">프로젝트 선택</h2>
+              </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              {projects.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  프로젝트가 없습니다
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {projects.map((project) => {
-                    const isSelected = selectedProjects.some(
-                      (s) => s.projectId === project.id
-                    );
+              <div className="flex-1 overflow-y-auto p-6">
+                {projects.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    프로젝트가 없습니다
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {projects.map((project) => {
+                      const isSelected = selectedProjects.some(
+                        (s) => s.projectId === project.id
+                      );
 
-                    return (
-                      <div
-                        key={project.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                          isSelected
-                            ? 'border-[#0046FF] bg-blue-50'
-                            : 'border-[#E0E0E0] hover:border-gray-400'
-                        }`}
-                        onClick={() => !isSelected && handleAddProject(project)}
-                      >
-                        <h3 className="font-medium text-[#333333] mb-1">
-                          {project.title}
-                        </h3>
-                        {project.description && (
-                          <p className="text-sm text-gray-500 mb-2">
-                            {project.description}
-                          </p>
-                        )}
-                        {project.categoryNames && project.categoryNames.length > 0 && (
-                          <div className="flex gap-2">
-                            {project.categoryNames.map((cat, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                              >
-                                {cat}
+                      return (
+                        <div
+                          key={project.id}
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'border-[#0046FF] bg-blue-50'
+                              : 'border-[#E0E0E0] hover:border-gray-400'
+                          }`}
+                          onClick={() => !isSelected && handleAddProject(project)}
+                        >
+                          <h3 className="font-medium text-[#333333] mb-1">
+                            {project.title}
+                          </h3>
+                          {project.description && (
+                            <p className="text-sm text-gray-500 mb-2">
+                              {project.description}
+                            </p>
+                          )}
+                          {project.categoryNames && project.categoryNames.length > 0 && (
+                            <div className="flex gap-2">
+                              {project.categoryNames.map((cat, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                                >
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="mt-2">
+                              <span className="text-xs text-[#0046FF] font-medium">
+                                ✓ 선택됨
                               </span>
-                            ))}
-                          </div>
-                        )}
-                        {isSelected && (
-                          <div className="mt-2">
-                            <span className="text-xs text-[#0046FF] font-medium">
-                              ✓ 선택됨
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-            <div className="p-6 border-t border-[#E0E0E0]">
-              <button
-                onClick={() => setShowProjectList(false)}
-                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              >
-                닫기
-              </button>
+              <div className="p-6 border-t border-[#E0E0E0]">
+                <button
+                  onClick={() => setShowProjectList(false)}
+                  className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
+
+      <Footer />
     </div>
   );
 }

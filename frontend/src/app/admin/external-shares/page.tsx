@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { externalShareAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Layout/Header';
+import Footer from '@/components/Layout/Footer';
 
 interface ExternalShare {
   id: string;
@@ -163,11 +165,13 @@ export default function ExternalSharesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] py-8">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
+      <Header />
+
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#333333] mb-2">외부공유 관리</h1>
+          <h1 className="text-3xl font-bold text-shinhan-darkGray">외부공유 관리</h1>
           <p className="text-gray-600">
             외부 사용자와 공유할 프로젝트 URL을 생성하고 관리합니다
           </p>
@@ -384,7 +388,9 @@ export default function ExternalSharesPage() {
             )}
           </>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
