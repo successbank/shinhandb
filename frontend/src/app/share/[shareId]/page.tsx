@@ -632,9 +632,9 @@ export default function PublicSharePage() {
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
 
                                     {/* 분기 표시 */}
-                                    <div className="flex items-baseline gap-1 mb-2 pl-2">
+                                    <div className="flex items-baseline gap-0 mb-2 pl-2">
                                       <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
-                                      <span className="text-sm font-bold text-[#0046FF]/70">Q</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
@@ -733,9 +733,9 @@ export default function PublicSharePage() {
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0046FF] to-[#003399] rounded-l-xl"></div>
 
                                     {/* 분기 표시 */}
-                                    <div className="flex items-baseline gap-1 mb-2 pl-2">
+                                    <div className="flex items-baseline gap-0 mb-2 pl-2">
                                       <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
-                                      <span className="text-sm font-bold text-[#0046FF]/70">Q</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
