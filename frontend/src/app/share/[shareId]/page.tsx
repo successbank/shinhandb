@@ -27,6 +27,19 @@ interface SelectedQuarter {
   projects: QuarterData[];
 }
 
+// 파티클 데이터 타입 (로그인 페이지와 동일)
+interface Particle {
+  id: number;
+  size: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  duration: number;
+  delay: number;
+  fadeDelay: number;
+}
+
 // 분기 날짜 계산 함수
 const getQuarterDates = (year: number, quarter: string) => {
   const quarterNum = parseInt(quarter.replace('Q', ''));
@@ -87,6 +100,9 @@ export default function PublicSharePage() {
   const [swiperLoaded, setSwiperLoaded] = useState(false);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const swiperRef = useRef<any>(null);
   const thumbSwiperRef = useRef<any>(null);
 
@@ -119,6 +135,33 @@ export default function PublicSharePage() {
     // 리사이즈 이벤트 리스너
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // 파티클 애니메이션 초기화 (로그인 페이지와 동일)
+  useEffect(() => {
+    setIsMounted(true);
+    const particleCount = 50;
+    const result: Particle[] = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      result.push({
+        id: i,
+        size: Math.random() * 8 + 4,
+        startX: Math.random() * 100,
+        startY: Math.random() * 100,
+        endX: Math.random() * 100,
+        endY: -(Math.random() * 30 + 10),
+        duration: Math.random() * 15000 + 30000,
+        delay: Math.random() * 2000,
+        fadeDelay: Math.random() * 1000,
+      });
+    }
+
+    setParticles(result);
+
+    // 페이드인 애니메이션 트리거
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   // 비밀번호 입력 처리
@@ -357,55 +400,271 @@ export default function PublicSharePage() {
   // 비밀번호 입력 화면
   if (step === 'password') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0046FF] to-[#0056DD] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 w-full max-w-md">
-          {/* 로고/타이틀 */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-[#333333] mb-2">
-              신한금융그룹
-            </h1>
-            <p className="text-gray-600">광고자료 열람 시스템</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
+        {/* 신한 블루 그라디언트 배경 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0046FF] via-[#0041E8] to-[#002D9C]"></div>
 
-          {/* 안내 */}
-          <p className="text-center text-[#333333] font-medium mb-8">
-            비밀번호를 입력해주세요
-          </p>
-
-          {/* PIN 입력 */}
-          <div className="flex justify-center gap-3 mb-6">
-            {password.map((digit, index) => (
-              <input
-                key={index}
-                id={`pin-${index}`}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handlePasswordChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-16 h-16 md:w-20 md:h-20 text-center text-3xl font-bold border-2 border-[#E0E0E0] rounded-lg focus:border-[#0046FF] focus:outline-none transition-colors"
-                autoFocus={index === 0}
-              />
+        {/* 빛 파티클 효과 (아래에서 위로 올라옴) */}
+        {isMounted && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {particles.map((particle) => (
+              <div
+                key={particle.id}
+                className="particle-container absolute"
+                style={{
+                  width: `${particle.size}px`,
+                  height: `${particle.size}px`,
+                  left: `${particle.startX}vw`,
+                  top: `${particle.startY}vh`,
+                  animationName: `particle-rise-${particle.id}`,
+                  animationDuration: `${particle.duration}ms`,
+                  animationDelay: `${particle.delay}ms`,
+                  animationIterationCount: 'infinite',
+                  animationTimingFunction: 'linear',
+                  willChange: 'transform',
+                }}
+              >
+                <div
+                  className="particle-circle"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(0, 70, 255, 0.6) 20%, rgba(0, 70, 255, 0) 70%)',
+                    mixBlendMode: 'screen',
+                    animationName: 'particle-fade-scale',
+                    animationDuration: '2s',
+                    animationDelay: `${particle.fadeDelay}ms`,
+                    animationIterationCount: 'infinite',
+                    animationTimingFunction: 'ease-in-out',
+                  }}
+                />
+              </div>
             ))}
           </div>
+        )}
 
-          {/* 에러 메시지 */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm text-center">{error}</p>
-            </div>
-          )}
+        {/* 배경 애니메이션 요소들 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute top-1/4 -right-20 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl animate-float-delayed"></div>
+          <div className="absolute bottom-20 left-1/4 w-64 h-64 bg-blue-300 opacity-10 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-white opacity-5 rounded-full blur-2xl animate-float"></div>
 
-          {/* 확인 버튼 */}
-          <button
-            onClick={handleVerify}
-            disabled={loading || password.some((p) => !p)}
-            className="w-full py-4 bg-[#0046FF] text-white font-bold rounded-lg hover:bg-[#003ACC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? '확인 중...' : '확인'}
-          </button>
+          {/* 기하학적 패턴 */}
+          <div className="absolute top-0 left-0 w-full h-full opacity-5">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="white" strokeWidth="0.5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
         </div>
+
+        {/* 비밀번호 입력 카드 */}
+        <div
+          className={`relative z-10 w-full max-w-md transition-all duration-1000 ease-out ${
+            isVisible
+              ? 'opacity-100 translate-y-0 scale-100'
+              : 'opacity-0 translate-y-12 scale-95'
+          }`}
+        >
+          {/* 로고 및 타이틀 섹션 */}
+          <div
+            className={`text-center mb-8 transition-all duration-700 delay-100 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+            }`}
+          >
+            <div style={{ fontFamily: 'OneShinhan, sans-serif' }}>
+              <div className="text-lg md:text-xl font-medium text-blue-100 mb-2 tracking-wide opacity-90">
+                신한금융그룹
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight leading-tight">
+                광고자료 열람
+              </h1>
+            </div>
+            <p className="text-blue-100 text-sm md:text-base opacity-80">
+              Shinhan Financial Group AD Archive
+            </p>
+          </div>
+
+          {/* 비밀번호 입력 폼 카드 */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 md:p-10 border border-white/20">
+            {/* 안내 */}
+            <div
+              className={`text-center mb-8 transition-all duration-700 delay-200 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+            >
+              <h2 className="text-2xl font-semibold text-[#333333] mb-2">
+                비밀번호 입력
+              </h2>
+              <p className="text-sm text-gray-500">
+                공유받은 비밀번호 4자리를 입력하세요
+              </p>
+            </div>
+
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="mb-6 bg-red-50 border-l-4 border-red-500 text-red-600 px-4 py-3 rounded-r animate-shake">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                  </svg>
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+              </div>
+            )}
+
+            {/* PIN 입력 */}
+            <div
+              className={`flex justify-center gap-3 mb-8 transition-all duration-700 delay-300 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+            >
+              {password.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`pin-${index}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handlePasswordChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className="w-14 h-14 md:w-16 md:h-16 text-center text-2xl md:text-3xl font-bold border-2 border-gray-300 rounded-xl bg-gray-50 hover:bg-white focus:border-[#0046FF] focus:ring-2 focus:ring-[#0046FF]/30 focus:bg-white focus:outline-none transition-all duration-300"
+                  autoFocus={index === 0}
+                />
+              ))}
+            </div>
+
+            {/* 확인 버튼 */}
+            <div
+              className={`transition-all duration-700 delay-400 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+            >
+              <button
+                onClick={handleVerify}
+                disabled={loading || password.some((p) => !p)}
+                className="w-full bg-gradient-to-r from-[#0046FF] to-blue-600 text-white py-3.5 px-4 rounded-lg font-semibold text-base hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0046FF] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    확인 중...
+                  </span>
+                ) : (
+                  '확인'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* 하단 안내 문구 */}
+          <div
+            className={`transition-all duration-700 delay-500 ${
+              isVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <p className="text-center text-xs text-blue-100 mt-6 opacity-80">
+              신한금융지주 및 신한은행 광고 자료 통합 검색 및 관리 시스템
+            </p>
+            <p className="text-center text-xs text-blue-200 mt-2 opacity-60">
+              © 2025 Shinhan Financial Group. All rights reserved.
+            </p>
+          </div>
+        </div>
+
+        {/* 커스텀 애니메이션 스타일 */}
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0) translateX(0);
+            }
+            50% {
+              transform: translateY(-30px) translateX(15px);
+            }
+          }
+
+          @keyframes float-delayed {
+            0%, 100% {
+              transform: translateY(0) translateX(0);
+            }
+            50% {
+              transform: translateY(-40px) translateX(-20px);
+            }
+          }
+
+          @keyframes pulse-slow {
+            0%, 100% {
+              opacity: 0.1;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.15;
+              transform: scale(1.05);
+            }
+          }
+
+          @keyframes particle-fade-scale {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(0.4);
+            }
+            50% {
+              opacity: 0.7;
+              transform: scale(2.2);
+            }
+          }
+
+          @keyframes shake {
+            0%, 100% {
+              transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+              transform: translateX(-5px);
+            }
+            20%, 40%, 60%, 80% {
+              transform: translateX(5px);
+            }
+          }
+
+          .animate-float {
+            animation: float 25s ease-in-out infinite;
+          }
+
+          .animate-float-delayed {
+            animation: float-delayed 30s ease-in-out infinite;
+          }
+
+          .animate-pulse-slow {
+            animation: pulse-slow 20s ease-in-out infinite;
+          }
+
+          .animate-shake {
+            animation: shake 0.5s ease-in-out;
+          }
+
+          ${isMounted && particles.length > 0 ? particles.map(
+            (p) => `
+            @keyframes particle-rise-${p.id} {
+              from {
+                transform: translate3d(${p.startX}vw, ${p.startY}vh, 0);
+              }
+              to {
+                transform: translate3d(${p.endX}vw, ${p.endY}vh, 0);
+              }
+            }
+          `
+          ).join('\n') : ''}
+        `}</style>
       </div>
     );
   }
