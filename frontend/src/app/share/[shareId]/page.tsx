@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { publicShareAPI } from '@/lib/api';
 import { useParams } from 'next/navigation';
+import Script from 'next/script';
 
 interface QuarterData {
   projectId: string;
@@ -41,6 +42,8 @@ export default function PublicSharePage() {
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [projectImages, setProjectImages] = useState<string[]>([]);
+  const [swiperLoaded, setSwiperLoaded] = useState(false);
+  const swiperRef = useRef<any>(null);
 
   // sessionStorage에서 토큰 복원
   useEffect(() => {
@@ -196,6 +199,53 @@ export default function PublicSharePage() {
     window.addEventListener('keydown', handleKeyNav);
     return () => window.removeEventListener('keydown', handleKeyNav);
   }, [imageGalleryOpen, projectImages]);
+
+  // Swiper 초기화
+  useEffect(() => {
+    if (!selectedQuarter || !swiperLoaded) return;
+
+    const initSwiper = () => {
+      if (typeof window !== 'undefined' && (window as any).Swiper && !swiperRef.current) {
+        const Swiper = (window as any).Swiper;
+        swiperRef.current = new Swiper('.quarter-swiper', {
+          effect: 'coverflow',
+          grabCursor: true,
+          centeredSlides: true,
+          slidesPerView: 'auto',
+          loop: selectedQuarter.projects.length > 1,
+          speed: 800,
+          coverflowEffect: {
+            rotate: 0,
+            stretch: 0,
+            depth: 200,
+            modifier: 1.5,
+            slideShadows: true,
+          },
+          pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+            dynamicBullets: true,
+          },
+          navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+          },
+          keyboard: {
+            enabled: true,
+          },
+        });
+      }
+    };
+
+    const timer = setTimeout(initSwiper, 100);
+    return () => {
+      clearTimeout(timer);
+      if (swiperRef.current) {
+        swiperRef.current.destroy();
+        swiperRef.current = null;
+      }
+    };
+  }, [selectedQuarter, swiperLoaded]);
 
   // 비밀번호 입력 화면
   if (step === 'password') {
@@ -418,50 +468,163 @@ export default function PublicSharePage() {
         )}
       </div>
 
-      {/* 분기별 프로젝트 목록 모달 */}
+      {/* Swiper CSS */}
       {selectedQuarter && !imageGalleryOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-[#E0E0E0]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-[#333333] mb-2">
-                    {selectedQuarter.categoryName} - {selectedQuarter.year}년 {selectedQuarter.quarter}
-                  </h2>
-                  <p className="text-gray-600">
-                    프로젝트 {selectedQuarter.projects.length}개
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedQuarter(null)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
+        <>
+          <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+          />
+          <Script
+            src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
+            onLoad={() => setSwiperLoaded(true)}
+          />
+        </>
+      )}
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {selectedQuarter.projects.map((project) => (
+      {/* 분기별 프로젝트 Swiper Coverflow 모달 */}
+      {selectedQuarter && !imageGalleryOpen && (
+        <div className="fixed inset-0 bg-gradient-to-br from-[#0046FF] to-[#003399] z-50 flex flex-col items-center justify-center p-4">
+          <style jsx>{`
+            .quarter-swiper {
+              width: 100%;
+              max-width: 1200px;
+              padding: 50px 0 80px;
+            }
+
+            .quarter-swiper .swiper-slide {
+              width: 280px;
+              height: 500px;
+              border-radius: 24px;
+              overflow: hidden;
+              box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+              transition: all 0.4s ease;
+              background: white;
+              cursor: pointer;
+            }
+
+            .quarter-swiper .swiper-slide img {
+              width: 100%;
+              height: 320px;
+              object-fit: cover;
+              transition: transform 0.5s ease;
+            }
+
+            .quarter-swiper .swiper-slide-active {
+              box-shadow: 0 35px 70px rgba(0,0,0,0.4);
+            }
+
+            .quarter-swiper .swiper-slide-active img {
+              transform: scale(1.02);
+            }
+
+            .quarter-swiper .swiper-pagination {
+              bottom: 20px !important;
+            }
+
+            .quarter-swiper .swiper-pagination-bullet {
+              width: 10px;
+              height: 10px;
+              background: rgba(255,255,255,0.5);
+              opacity: 1;
+              transition: all 0.3s ease;
+            }
+
+            .quarter-swiper .swiper-pagination-bullet-active {
+              background: white;
+              width: 30px;
+              border-radius: 5px;
+            }
+
+            .quarter-swiper .swiper-button-next,
+            .quarter-swiper .swiper-button-prev {
+              color: white;
+              background: rgba(255,255,255,0.2);
+              width: 50px;
+              height: 50px;
+              border-radius: 50%;
+              backdrop-filter: blur(10px);
+              transition: all 0.3s ease;
+            }
+
+            .quarter-swiper .swiper-button-next:hover,
+            .quarter-swiper .swiper-button-prev:hover {
+              background: rgba(255,255,255,0.4);
+              transform: scale(1.1);
+            }
+
+            .quarter-swiper .swiper-button-next::after,
+            .quarter-swiper .swiper-button-prev::after {
+              font-size: 18px;
+              font-weight: bold;
+            }
+
+            @media (max-width: 768px) {
+              .quarter-swiper .swiper-slide {
+                width: 240px;
+                height: 420px;
+              }
+
+              .quarter-swiper .swiper-slide img {
+                height: 260px;
+              }
+
+              .quarter-swiper .swiper-button-next,
+              .quarter-swiper .swiper-button-prev {
+                display: none;
+              }
+
+              .quarter-swiper {
+                padding: 30px 0 60px;
+              }
+            }
+
+            @media (max-width: 480px) {
+              .quarter-swiper .swiper-slide {
+                width: 200px;
+                height: 360px;
+              }
+
+              .quarter-swiper .swiper-slide img {
+                height: 220px;
+              }
+            }
+          `}</style>
+
+          {/* 헤더 */}
+          <div className="text-center mb-8 relative w-full max-w-1200px">
+            <button
+              onClick={() => setSelectedQuarter(null)}
+              className="absolute top-0 right-4 text-white text-4xl hover:text-gray-300 z-10"
+            >
+              ×
+            </button>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+              {selectedQuarter.categoryName}
+            </h1>
+            <p className="text-blue-100 text-lg">
+              {selectedQuarter.year}년 {selectedQuarter.quarter} · 프로젝트 {selectedQuarter.projects.length}개
+            </p>
+          </div>
+
+          {/* Swiper Container */}
+          <div className="w-full max-w-[1200px]">
+            <div className="quarter-swiper">
+              <div className="swiper-wrapper">
+                {selectedQuarter.projects.map((project, idx) => (
                   <div
                     key={project.projectId}
-                    className="bg-white border border-[#E0E0E0] rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                    className="swiper-slide"
+                    onClick={() => openImageGallery(project)}
                   >
                     {project.thumbnailUrl && (
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => openImageGallery(project)}
-                      >
-                        <img
-                          src={project.thumbnailUrl}
-                          alt={project.title}
-                          className="w-full h-48 object-cover hover:opacity-90 transition-opacity"
-                        />
-                      </div>
+                      <img
+                        src={project.thumbnailUrl}
+                        alt={project.title}
+                      />
                     )}
                     <div className="p-4">
-                      <h3 className="font-bold text-[#333333] mb-2 line-clamp-2">
+                      <h3 className="font-bold text-[#333333] text-lg mb-2 line-clamp-2">
                         {project.title}
                       </h3>
                       {project.description && (
@@ -469,24 +632,41 @@ export default function PublicSharePage() {
                           {project.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>파일 {project.fileCount}개</span>
-                        <span>{new Date(project.createdAt).toLocaleDateString('ko-KR')}</span>
+                      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-200">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                          </svg>
+                          {project.fileCount}개
+                        </span>
+                        <span className="text-gray-400">
+                          {new Date(project.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              <div className="swiper-pagination"></div>
+              <div className="swiper-button-prev"></div>
+              <div className="swiper-button-next"></div>
             </div>
+          </div>
 
-            <div className="p-6 border-t border-[#E0E0E0]">
-              <button
-                onClick={() => setSelectedQuarter(null)}
-                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              >
-                닫기
-              </button>
-            </div>
+          {/* 닫기 버튼 */}
+          <button
+            onClick={() => setSelectedQuarter(null)}
+            className="mt-8 px-8 py-3 bg-white text-[#0046FF] rounded-lg font-bold hover:bg-gray-100 transition-colors shadow-lg"
+          >
+            닫기
+          </button>
+
+          {/* 터치 힌트 (모바일) */}
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-white text-sm flex items-center gap-2 opacity-60 md:hidden">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
+            </svg>
+            스와이프하여 탐색
           </div>
         </div>
       )}
