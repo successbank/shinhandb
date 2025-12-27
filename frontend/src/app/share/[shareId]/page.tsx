@@ -1520,12 +1520,12 @@ export default function PublicSharePage() {
           </div>
 
           {/* 이미지 */}
-          <div className="relative w-full h-full flex items-center justify-center p-16">
+          <div className="relative w-full h-full flex items-center justify-center p-0">
             {projectImages.length > 0 ? (
               <img
                 src={projectImages[currentImageIndex]}
                 alt={`${selectedProject.title} - ${currentImageIndex + 1}`}
-                className="max-w-full max-h-full object-contain"
+                className="w-full h-auto object-contain"
               />
             ) : (
               <div className="text-white text-center">
