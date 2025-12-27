@@ -5,12 +5,12 @@ import fs from 'fs/promises';
 /**
  * 썸네일 생성 유틸리티 (Sharp 라이브러리 사용)
  * - 이미지 파일만 썸네일 생성 가능
- * - 기본 크기: 300x300px
+ * - 기본 크기: 800x800px (Retina 디스플레이 최적화)
  */
 
 // 썸네일 크기 설정
-const THUMBNAIL_WIDTH = 300;
-const THUMBNAIL_HEIGHT = 300;
+const THUMBNAIL_WIDTH = 800;
+const THUMBNAIL_HEIGHT = 800;
 
 // 썸네일 생성 가능한 이미지 형식
 const SUPPORTED_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -46,15 +46,18 @@ export const generateThumbnail = async (
     await fs.mkdir(thumbnailDir, { recursive: true });
 
     // Sharp를 사용한 썸네일 생성
-    // fit: 'inside' - 원본 비율 유지하며 긴 쪽을 최대 크기로 제한 (여백 없음)
+    // fit: 'inside' - 원본 비율 유지하며 긴 쪽을 최대 크기로 제한
+    // kernel: 'lanczos3' - 최고 품질 리사이징 알고리즘
     await sharp(originalPath)
       .resize(width, height, {
-        fit: 'inside', // 비율 유지하며 긴 쪽을 제한 (여백 없음)
+        fit: 'inside', // 원본 비율 유지 (크롭 없음)
         withoutEnlargement: true, // 작은 이미지 확대 방지
+        kernel: 'lanczos3', // 최고 품질 리사이징 알고리즘
       })
       .jpeg({
-        quality: 80, // JPEG 품질 (80%)
+        quality: 95, // JPEG 품질 (95% - 고품질)
         progressive: true, // 점진적 로딩
+        mozjpeg: true, // 최적화된 JPEG 인코딩
       })
       .toFile(thumbnailPath);
 
@@ -77,9 +80,9 @@ export const generateResponsiveThumbnails = async (
   baseThumbnailPath: string
 ): Promise<{ size: string; path: string }[]> => {
   const sizes = [
-    { name: 'small', width: 150, height: 150 },
-    { name: 'medium', width: 300, height: 300 },
-    { name: 'large', width: 600, height: 600 },
+    { name: 'small', width: 400, height: 400 },
+    { name: 'medium', width: 800, height: 800 },
+    { name: 'large', width: 1200, height: 1200 },
   ];
 
   const results: { size: string; path: string }[] = [];
