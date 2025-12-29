@@ -316,6 +316,28 @@ export default function PublicSharePage() {
     return () => window.removeEventListener('keydown', handleKeyNav);
   }, [imageGalleryOpen, projectImages]);
 
+  // 모바일 뒤로가기 버튼으로 모달 닫기 (History API 활용)
+  useEffect(() => {
+    // 모달이 열릴 때
+    if (selectedQuarter) {
+      // 히스토리 엔트리 추가 (뒤로가기 감지용)
+      window.history.pushState({ modalOpen: true }, '');
+
+      // popstate 이벤트 리스너 (뒤로가기 감지)
+      const handlePopState = (event: PopStateEvent) => {
+        // 뒤로가기 버튼 클릭 시 모달 닫기
+        setSelectedQuarter(null);
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      // cleanup: 이벤트 리스너 제거
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [selectedQuarter]);
+
   // Swiper 초기화 (갤러리 닫힐 때 재초기화 포함)
   useEffect(() => {
     if (!selectedQuarter || !swiperLoaded) return;
@@ -1414,7 +1436,15 @@ export default function PublicSharePage() {
 
           {/* 닫기 버튼 */}
           <button
-            onClick={() => setSelectedQuarter(null)}
+            onClick={() => {
+              // 히스토리 엔트리가 있으면 뒤로가기로 처리 (popstate에서 모달 닫힘)
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              } else {
+                // 히스토리 엔트리가 없으면 직접 닫기
+                setSelectedQuarter(null);
+              }
+            }}
             className="fixed top-4 left-4 text-white text-base font-medium hover:bg-white/30 z-50 px-5 py-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg"
             style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
           >
