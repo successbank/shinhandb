@@ -1413,7 +1413,12 @@ export default function PublicSharePage() {
             @media (max-width: 768px) {
               .quarter-swiper .swiper-slide {
                 width: 94%;
-                max-width: 400px;
+                max-width: 460px;
+                border-radius: 0;
+              }
+
+              .quarter-swiper .swiper-slide img {
+                border-radius: 0;
               }
 
               .quarter-swiper .swiper-button-next,
@@ -1429,7 +1434,12 @@ export default function PublicSharePage() {
             @media (max-width: 480px) {
               .quarter-swiper .swiper-slide {
                 width: 94%;
-                max-width: 320px;
+                max-width: 368px;
+                border-radius: 0;
+              }
+
+              .quarter-swiper .swiper-slide img {
+                border-radius: 0;
               }
             }
           `}</style>
