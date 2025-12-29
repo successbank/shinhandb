@@ -316,12 +316,12 @@ export default function PublicSharePage() {
     return () => window.removeEventListener('keydown', handleKeyNav);
   }, [imageGalleryOpen, projectImages]);
 
-  // 모바일 뒤로가기 버튼으로 모달 닫기 (History API 활용)
+  // 모바일 뒤로가기 버튼으로 분기 모달 닫기 (History API 활용)
   useEffect(() => {
-    // 모달이 열릴 때
-    if (selectedQuarter) {
+    // 분기 모달이 열려 있고, 이미지 갤러리는 닫혀 있을 때만
+    if (selectedQuarter && !imageGalleryOpen) {
       // 히스토리 엔트리 추가 (뒤로가기 감지용)
-      window.history.pushState({ modalOpen: true }, '');
+      window.history.pushState({ modalOpen: true, type: 'quarter' }, '');
 
       // popstate 이벤트 리스너 (뒤로가기 감지)
       const handlePopState = (event: PopStateEvent) => {
@@ -336,7 +336,29 @@ export default function PublicSharePage() {
         window.removeEventListener('popstate', handlePopState);
       };
     }
-  }, [selectedQuarter]);
+  }, [selectedQuarter, imageGalleryOpen]);
+
+  // 모바일 뒤로가기 버튼으로 이미지 갤러리 모달 닫기 (History API 활용)
+  useEffect(() => {
+    // 이미지 갤러리가 열릴 때
+    if (imageGalleryOpen) {
+      // 히스토리 엔트리 추가 (뒤로가기 감지용)
+      window.history.pushState({ modalOpen: true, type: 'imageGallery' }, '');
+
+      // popstate 이벤트 리스너 (뒤로가기 감지)
+      const handlePopState = (event: PopStateEvent) => {
+        // 뒤로가기 버튼 클릭 시 이미지 갤러리 닫기
+        closeImageGallery();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      // cleanup: 이벤트 리스너 제거
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [imageGalleryOpen]);
 
   // Swiper 초기화 (갤러리 닫힐 때 재초기화 포함)
   useEffect(() => {
@@ -1546,7 +1568,15 @@ export default function PublicSharePage() {
         <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
           {/* X 닫기 버튼 - 모바일: 30% 축소 */}
           <button
-            onClick={closeImageGallery}
+            onClick={() => {
+              // 히스토리 엔트리가 있으면 뒤로가기로 처리 (popstate에서 모달 닫힘)
+              if (window.history.state?.modalOpen) {
+                window.history.back();
+              } else {
+                // 히스토리 엔트리가 없으면 직접 닫기
+                closeImageGallery();
+              }
+            }}
             className="absolute top-4 right-4 text-white text-2xl md:text-4xl hover:text-gray-300 z-10"
           >
             ×
