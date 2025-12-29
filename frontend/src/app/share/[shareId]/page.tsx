@@ -1525,7 +1525,7 @@ export default function PublicSharePage() {
               <img
                 src={projectImages[currentImageIndex]}
                 alt={`${selectedProject.title} - ${currentImageIndex + 1}`}
-                className="w-full h-auto object-contain"
+                className="max-w-full md:max-w-5xl h-auto object-contain mx-auto"
               />
             ) : (
               <div className="text-white text-center">
