@@ -1512,7 +1512,7 @@ export default function PublicSharePage() {
           </button>
 
           {/* 프로젝트 정보 */}
-          <div className="absolute top-4 left-4 text-white z-10">
+          <div className="absolute top-16 left-4 text-white z-10">
             <h3 className="text-xl font-bold mb-1">{selectedProject.title}</h3>
             <p className="text-sm text-gray-300">
               {currentImageIndex + 1} / {projectImages.length}
