@@ -446,7 +446,7 @@ export default function PublicSharePage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
         {/* 신한 블루 그라디언트 배경 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0046FF] via-[#0041E8] to-[#002D9C]"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#335098] via-[#335098] to-[#335098]"></div>
 
         {/* 빛 파티클 효과 (아래에서 위로 올라옴) */}
         {isMounted && (
@@ -715,7 +715,7 @@ export default function PublicSharePage() {
 
   // 타임라인 화면
   return (
-    <div className="min-h-screen bg-[#0046FF] py-8 px-4">
+    <div className="min-h-screen bg-[#335098] py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
         <div className="text-center mb-12">
@@ -1145,7 +1145,7 @@ export default function PublicSharePage() {
 
       {/* 분기별 프로젝트 Swiper Coverflow 모달 */}
       {selectedQuarter && !imageGalleryOpen && (
-        <div className="fixed inset-0 bg-gradient-to-br from-[#0046FF] to-[#003399] z-50 flex flex-col items-center justify-center p-4 overflow-hidden">
+        <div className="fixed inset-0 bg-gradient-to-br from-[#335098] to-[#335098] z-50 flex flex-col items-center justify-center p-4 overflow-hidden">
           <style jsx>{`
             .quarter-swiper {
               width: 100%;
