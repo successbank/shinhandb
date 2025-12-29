@@ -976,59 +976,31 @@ export default function PublicSharePage() {
                                         projects
                                       });
                                     }}
-                                    className={`group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md ${
-                                      isCurrent
-                                        ? 'bg-gradient-to-br from-[#FFF5EB] to-[#FFEFE0] ring-2 ring-[#FF6B00]/30'
-                                        : isPast
-                                          ? 'bg-gray-100/95'
-                                          : 'bg-white/95'
-                                    }`}
+                                    className="group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30"
                                   >
                                     {/* 좌측 액센트 바 */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
-                                      isCurrent
-                                        ? 'bg-gradient-to-b from-[#FF6B00] to-[#FF9500]'
-                                        : isPast
-                                          ? 'bg-gradient-to-b from-gray-400 to-gray-500'
-                                          : 'bg-gradient-to-b from-[#0046FF] to-[#003399]'
-                                    }`}></div>
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-gradient-to-b from-[#0046FF] to-[#003399]"></div>
 
                                     {/* 분기 표시 */}
                                     <div className="flex items-baseline gap-0 mb-2 pl-2">
-                                      <span className={`text-2xl font-black ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>{quarter.replace('Q', '')}</span>
-                                      <span className={`text-2xl font-black ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>Q</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
                                     <div className="pl-2 space-y-1">
-                                      <div className={`flex items-center gap-1.5 ${isPast ? 'text-gray-500' : 'text-gray-700'}`}>
-                                        <svg className={`w-3.5 h-3.5 ${isPast ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <div className="flex items-center gap-1.5 text-gray-700">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                         </svg>
                                         <span className="text-sm font-medium">{projects.length}개</span>
                                       </div>
                                       {/* 상태별 날짜 표시 */}
-                                      <div className={`flex items-center gap-1.5 ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>
-                                        {isCurrent ? (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                          </svg>
-                                        ) : isPast ? (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        ) : (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                          </svg>
-                                        )}
-                                        <span className={`text-xs font-semibold ${isCurrent ? 'animate-pulse' : ''}`}>
+                                      <div className="flex items-center gap-1.5 text-[#0046FF]">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs font-semibold">
                                           {quarterStatus.label}
                                         </span>
                                       </div>
@@ -1036,9 +1008,7 @@ export default function PublicSharePage() {
 
                                     {/* 화살표 아이콘 */}
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <svg className={`w-5 h-5 ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                       </svg>
                                     </div>
@@ -1100,8 +1070,6 @@ export default function PublicSharePage() {
                                   .sort(([a], [b]) => a.localeCompare(b))
                                   .map(([quarter, projects]) => {
                                     const quarterStatus = getQuarterStatus(parseInt(year), quarter);
-                                    const isCurrent = quarterStatus.status === 'current';
-                                    const isPast = quarterStatus.status === 'past';
 
                                     return (
                                   <button
@@ -1116,59 +1084,31 @@ export default function PublicSharePage() {
                                         projects
                                       });
                                     }}
-                                    className={`group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md ${
-                                      isCurrent
-                                        ? 'bg-gradient-to-br from-[#FFF5EB] to-[#FFEFE0] ring-2 ring-[#FF6B00]/30'
-                                        : isPast
-                                          ? 'bg-gray-100/95'
-                                          : 'bg-white/95'
-                                    }`}
+                                    className="group relative backdrop-blur-sm rounded-xl p-4 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] shadow-md bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30"
                                   >
                                     {/* 좌측 액센트 바 */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
-                                      isCurrent
-                                        ? 'bg-gradient-to-b from-[#FF6B00] to-[#FF9500]'
-                                        : isPast
-                                          ? 'bg-gradient-to-b from-gray-400 to-gray-500'
-                                          : 'bg-gradient-to-b from-[#0046FF] to-[#003399]'
-                                    }`}></div>
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-gradient-to-b from-[#0046FF] to-[#003399]"></div>
 
                                     {/* 분기 표시 */}
                                     <div className="flex items-baseline gap-0 mb-2 pl-2">
-                                      <span className={`text-2xl font-black ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>{quarter.replace('Q', '')}</span>
-                                      <span className={`text-2xl font-black ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>Q</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">{quarter.replace('Q', '')}</span>
+                                      <span className="text-2xl font-black text-[#0046FF]">Q</span>
                                     </div>
 
                                     {/* 프로젝트 정보 */}
                                     <div className="pl-2 space-y-1">
-                                      <div className={`flex items-center gap-1.5 ${isPast ? 'text-gray-500' : 'text-gray-700'}`}>
-                                        <svg className={`w-3.5 h-3.5 ${isPast ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <div className="flex items-center gap-1.5 text-gray-700">
+                                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                         </svg>
                                         <span className="text-sm font-medium">{projects.length}개</span>
                                       </div>
                                       {/* 상태별 날짜 표시 */}
-                                      <div className={`flex items-center gap-1.5 ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`}>
-                                        {isCurrent ? (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                          </svg>
-                                        ) : isPast ? (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        ) : (
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                          </svg>
-                                        )}
-                                        <span className={`text-xs font-semibold ${isCurrent ? 'animate-pulse' : ''}`}>
+                                      <div className="flex items-center gap-1.5 text-[#0046FF]">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-xs font-semibold">
                                           {quarterStatus.label}
                                         </span>
                                       </div>
@@ -1176,9 +1116,7 @@ export default function PublicSharePage() {
 
                                     {/* 화살표 아이콘 */}
                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <svg className={`w-5 h-5 ${
-                                        isCurrent ? 'text-[#FF6B00]' : isPast ? 'text-gray-400' : 'text-[#0046FF]'
-                                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-5 h-5 text-[#0046FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                       </svg>
                                     </div>
