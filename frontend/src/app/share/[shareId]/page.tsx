@@ -527,7 +527,7 @@ export default function PublicSharePage() {
                 신한금융그룹
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight leading-tight">
-                광고자료 열람
+                지면광고 모아보기
               </h1>
             </div>
             <p className="text-blue-100 text-sm md:text-base opacity-80">
@@ -618,7 +618,7 @@ export default function PublicSharePage() {
             }`}
           >
             <p className="text-center text-xs text-blue-100 mt-6 opacity-80">
-              신한금융지주 및 신한은행 광고 자료 통합 검색 및 관리 시스템
+              신한금융지주/신한은행 지면광고 통합 열람 플랫폼
             </p>
             <p className="text-center text-xs text-blue-200 mt-2 opacity-60">
               © 2025 Shinhan Financial Group. All rights reserved.
@@ -722,7 +722,7 @@ export default function PublicSharePage() {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
             신한금융그룹
           </h1>
-          <p className="text-blue-100">광고자료 열람 시스템</p>
+          <p className="text-blue-100">지면광고 모아보기</p>
         </div>
 
         {loading && (
@@ -1400,7 +1400,7 @@ export default function PublicSharePage() {
             className="fixed top-4 right-4 md:right-auto md:left-4 text-white text-sm md:text-base font-medium hover:bg-white/30 z-50 px-4 py-2 md:px-5 md:py-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg"
             style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
           >
-            닫기
+            ×
           </button>
 
           {/* 헤더 */}
