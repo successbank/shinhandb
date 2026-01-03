@@ -339,7 +339,11 @@ export default function MyPage() {
                 ) : activityData ? (
                   <>
                     {/* 요약 통계 */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className={`grid grid-cols-2 gap-4 mb-6 ${
+                      user?.role === 'ADMIN' || user?.role === 'CLIENT'
+                        ? 'md:grid-cols-4'
+                        : 'md:grid-cols-3'
+                    }`}>
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">총 접속</p>
                         <p className="text-2xl font-bold text-shinhan-blue">
@@ -358,12 +362,14 @@ export default function MyPage() {
                           {activityData.summary?.totalShares || 0}
                         </p>
                       </div>
-                      <div className="bg-yellow-50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-600">업로드</p>
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {activityData.summary?.totalUploads || 0}
-                        </p>
-                      </div>
+                      {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600">업로드</p>
+                          <p className="text-2xl font-bold text-yellow-600">
+                            {activityData.summary?.totalUploads || 0}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* 서브 탭 */}
@@ -422,20 +428,56 @@ export default function MyPage() {
                           {!activityData.loginHistory || activityData.loginHistory.length === 0 ? (
                             <p className="text-center text-gray-500 py-8">접속 기록이 없습니다</p>
                           ) : (
-                            activityData.loginHistory.map((log: any) => (
-                              <div key={log.id} className="border border-shinhan-border rounded-lg p-4">
-                                <p className="text-sm font-medium text-shinhan-darkGray">
-                                  {new Date(log.timestamp).toLocaleString('ko-KR')}
-                                </p>
-                                <div className="flex gap-4 mt-2 text-xs text-gray-600">
-                                  <span>IP: {log.ipAddress}</span>
-                                  <span>기기: {log.device}</span>
-                                  <span>OS: {log.os}</span>
-                                  <span>브라우저: {log.browser}</span>
-                                  <span>위치: {log.location}</span>
+                            activityData.loginHistory.map((log: any) => {
+                              // 세션 시간 포맷팅 함수
+                              const formatDuration = (seconds: number | null) => {
+                                if (!seconds) return null;
+                                const hours = Math.floor(seconds / 3600);
+                                const minutes = Math.floor((seconds % 3600) / 60);
+                                const secs = seconds % 60;
+
+                                if (hours > 0) {
+                                  return `${hours}시간 ${minutes}분`;
+                                } else if (minutes > 0) {
+                                  return `${minutes}분 ${secs}초`;
+                                } else {
+                                  return `${secs}초`;
+                                }
+                              };
+
+                              return (
+                                <div key={log.id} className="border border-shinhan-border rounded-lg p-4">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <p className="text-sm font-medium text-shinhan-darkGray">
+                                        로그인: {new Date(log.loginTime).toLocaleString('ko-KR')}
+                                      </p>
+                                      {log.logoutTime && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          로그아웃: {new Date(log.logoutTime).toLocaleString('ko-KR')}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {log.durationSeconds !== null ? (
+                                      <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                        머문 시간: {formatDuration(log.durationSeconds)}
+                                      </span>
+                                    ) : (
+                                      <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                                        로그아웃 기록 없음
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-4 mt-2 text-xs text-gray-600">
+                                    <span>IP: {log.ipAddress}</span>
+                                    <span>기기: {log.device}</span>
+                                    <span>OS: {log.os}</span>
+                                    <span>브라우저: {log.browser}</span>
+                                    <span>위치: {log.location}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
                       )}

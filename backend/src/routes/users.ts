@@ -36,15 +36,58 @@ router.get(
 
       const user = userCheck.rows[0];
 
-      // 1. 접속 기록 (최근 100개)
-      const loginLogs = await pool.query(
+      // 1. 접속 기록 (LOGIN과 LOGOUT 매칭하여 세션 계산)
+      const allSessionLogs = await pool.query(
         `SELECT id, action_type, ip_address, created_at, details
          FROM activity_logs
-         WHERE user_id = $1 AND action_type = 'LOGIN'
-         ORDER BY created_at DESC
-         LIMIT 100`,
+         WHERE user_id = $1 AND action_type IN ('LOGIN', 'LOGOUT')
+         ORDER BY created_at ASC`,
         [id]
       );
+
+      // 세션 매칭: 각 LOGIN에 대해 다음 LOGOUT 찾기
+      const sessions: any[] = [];
+      const logs = allSessionLogs.rows;
+
+      for (let i = 0; i < logs.length; i++) {
+        if (logs[i].action_type === 'LOGIN') {
+          const loginLog = logs[i];
+
+          // 다음 LOGOUT 찾기 (같은 사용자의 다음 로그아웃)
+          let logoutLog = null;
+          for (let j = i + 1; j < logs.length; j++) {
+            if (logs[j].action_type === 'LOGOUT') {
+              logoutLog = logs[j];
+              break;
+            }
+            // 다음 LOGIN이 나오면 중단 (로그아웃 없이 재로그인)
+            if (logs[j].action_type === 'LOGIN') {
+              break;
+            }
+          }
+
+          // 세션 시간 계산 (초 단위)
+          let durationSeconds = null;
+          if (logoutLog) {
+            const loginTime = new Date(loginLog.created_at).getTime();
+            const logoutTime = new Date(logoutLog.created_at).getTime();
+            durationSeconds = Math.floor((logoutTime - loginTime) / 1000);
+          }
+
+          sessions.push({
+            loginId: loginLog.id,
+            logoutId: logoutLog?.id || null,
+            loginTime: loginLog.created_at,
+            logoutTime: logoutLog?.created_at || null,
+            durationSeconds,
+            ipAddress: loginLog.ip_address,
+            details: loginLog.details,
+          });
+        }
+      }
+
+      // 최근 100개 세션만 (역순 정렬)
+      const loginLogs = { rows: sessions.reverse().slice(0, 100) };
 
       // 2. 콘텐츠 확인 기록 (최근 100개)
       const viewLogs = await pool.query(
@@ -112,14 +155,16 @@ router.get(
         return { device, os, browser };
       };
 
-      // 접속 기록 포맷팅
+      // 접속 기록 포맷팅 (세션 정보 포함)
       const formattedLoginLogs = loginLogs.rows.map((log) => {
         const userAgent = log.details?.userAgent || '';
         const parsed = parseUserAgent(userAgent);
         return {
-          id: log.id,
-          timestamp: log.created_at,
-          ipAddress: log.ip_address,
+          id: log.loginId,
+          loginTime: log.loginTime,
+          logoutTime: log.logoutTime,
+          durationSeconds: log.durationSeconds,
+          ipAddress: log.ipAddress,
           device: parsed.device,
           os: parsed.os,
           browser: parsed.browser,

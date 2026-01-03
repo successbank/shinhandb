@@ -56,6 +56,27 @@ router.post(
 
       const { password: _, ...userWithoutPassword } = user;
 
+      // 로그인 성공 활동 로그 기록
+      try {
+        await pool.query(
+          `INSERT INTO activity_logs (user_id, action_type, ip_address, details, created_at)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+          [
+            user.id,
+            'LOGIN',
+            req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
+            JSON.stringify({
+              username: user.username,
+              userAgent: req.headers['user-agent'] || 'Unknown',
+              timestamp: new Date().toISOString(),
+            }),
+          ]
+        );
+      } catch (logError) {
+        console.error('[Login] Failed to log activity:', logError);
+        // 활동 로그 실패해도 로그인은 성공 처리
+      }
+
       res.json({
         success: true,
         message: '로그인에 성공했습니다',
