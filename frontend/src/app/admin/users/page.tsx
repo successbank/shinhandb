@@ -519,7 +519,7 @@ export default function UsersPage() {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, role: e.target.value as any })
                   }
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border text-[#333333] rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
                 >
                   <option value="CLIENT">클라이언트</option>
                   <option value="BANK">신한은행</option>
@@ -562,7 +562,7 @@ export default function UsersPage() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border text-[#333333] rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
                 />
               </div>
 
@@ -574,7 +574,7 @@ export default function UsersPage() {
                   type="text"
                   value={editForm.username}
                   onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border text-[#333333] rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   영문, 숫자, 언더스코어(_)를 조합하여 입력해주세요
@@ -590,7 +590,7 @@ export default function UsersPage() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, role: e.target.value as any })
                   }
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border text-[#333333] rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
                 >
                   <option value="CLIENT">클라이언트</option>
                   <option value="BANK">신한은행</option>

@@ -592,7 +592,7 @@ export default function ProjectsPage() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     이전
                   </button>
@@ -607,7 +607,7 @@ export default function ProjectsPage() {
                           className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg ${
                             page === pageNum
                               ? 'bg-[#0046FF] text-white'
-                              : 'border border-[#E0E0E0] hover:bg-gray-50'
+                              : 'border border-[#E0E0E0] text-[#333333] hover:bg-gray-50'
                           }`}
                         >
                           {pageNum}
@@ -619,7 +619,7 @@ export default function ProjectsPage() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     다음
                   </button>
