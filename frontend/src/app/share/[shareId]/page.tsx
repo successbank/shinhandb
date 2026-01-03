@@ -1399,7 +1399,7 @@ export default function PublicSharePage() {
             }
           `}</style>
 
-          {/* 닫기 버튼 - 모바일: 오른쪽, 20% 축소 / PC: 왼쪽 */}
+          {/* 닫기 버튼 - 오른쪽 상단 */}
           <button
             onClick={() => {
               // 히스토리 엔트리가 있으면 뒤로가기로 처리 (popstate에서 모달 닫힘)
@@ -1410,7 +1410,7 @@ export default function PublicSharePage() {
                 setSelectedQuarter(null);
               }
             }}
-            className="fixed top-4 right-4 md:right-auto md:left-4 text-white text-sm md:text-base font-medium hover:bg-white/30 z-50 px-4 py-2 md:px-5 md:py-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg"
+            className="fixed top-4 right-4 text-white text-sm md:text-base font-medium hover:bg-white/30 z-50 px-4 py-2 md:px-5 md:py-2.5 bg-white/20 rounded-lg backdrop-blur-sm shadow-lg"
             style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
           >
             ×
