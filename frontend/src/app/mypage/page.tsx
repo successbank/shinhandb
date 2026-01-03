@@ -163,19 +163,21 @@ export default function MyPage() {
               >
                 북마크 ({bookmarks.length})
               </button>
-              <button
-                onClick={() => {
-                  setActiveTab('uploads');
-                  setPage(1);
-                }}
-                className={`px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'uploads'
-                    ? 'text-shinhan-blue border-b-2 border-shinhan-blue'
-                    : 'text-gray-500 hover:text-shinhan-darkGray'
-                }`}
-              >
-                내 업로드 ({uploads.length})
-              </button>
+              {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
+                <button
+                  onClick={() => {
+                    setActiveTab('uploads');
+                    setPage(1);
+                  }}
+                  className={`px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'uploads'
+                      ? 'text-shinhan-blue border-b-2 border-shinhan-blue'
+                      : 'text-gray-500 hover:text-shinhan-darkGray'
+                  }`}
+                >
+                  내 업로드 ({uploads.length})
+                </button>
+              )}
               <button
                 onClick={() => {
                   setActiveTab('activities');
