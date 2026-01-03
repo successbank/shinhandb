@@ -1169,7 +1169,7 @@ export default function PublicSharePage() {
             .quarter-swiper .swiper-slide {
               width: 94%;
               max-width: 500px;
-              border-radius: 24px;
+              border-radius: 0;
               overflow: hidden;
               box-shadow: 0 25px 50px rgba(0,0,0,0.3);
               transition: all 0.4s ease;
@@ -1182,7 +1182,7 @@ export default function PublicSharePage() {
               height: auto;
               object-fit: contain;
               transition: transform 0.5s ease;
-              border-radius: 24px;
+              border-radius: 0;
             }
 
             .quarter-swiper .swiper-slide-active {
