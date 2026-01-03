@@ -505,6 +505,7 @@ router.get(
  */
 router.get(
   '/:id',
+  logActivity('VIEW_PROJECT'),
   async (req: AuthRequest, res: Response<ApiResponse<ProjectWithFiles>>, next) => {
     try {
       const { id } = req.params;

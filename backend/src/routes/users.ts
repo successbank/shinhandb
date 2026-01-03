@@ -89,13 +89,31 @@ router.get(
       // 최근 100개 세션만 (역순 정렬)
       const loginLogs = { rows: sessions.reverse().slice(0, 100) };
 
-      // 2. 콘텐츠 확인 기록 (최근 100개)
+      // 2. 콘텐츠 확인 기록 (최근 100개) - 프로젝트 기반
       const viewLogs = await pool.query(
-        `SELECT al.id, al.created_at, al.details, c.id as content_id, c.title, c.thumbnail_url, c.file_type
+        `SELECT DISTINCT ON (p.id)
+                al.id,
+                al.created_at,
+                p.id as project_id,
+                p.title,
+                p.description,
+                (SELECT c.thumbnail_url
+                 FROM contents c
+                 WHERE c.project_id = p.id AND c.thumbnail_url IS NOT NULL
+                 ORDER BY c.file_type_flag DESC, c.created_at ASC
+                 LIMIT 1) as thumbnail_url,
+                (SELECT c.file_type
+                 FROM contents c
+                 WHERE c.project_id = p.id
+                 ORDER BY c.file_type_flag DESC, c.created_at ASC
+                 LIMIT 1) as file_type,
+                (SELECT COUNT(*)
+                 FROM contents c
+                 WHERE c.project_id = p.id) as file_count
          FROM activity_logs al
-         LEFT JOIN contents c ON (al.details->>'contentId')::uuid = c.id
-         WHERE al.user_id = $1 AND al.action_type = 'VIEW_CONTENT'
-         ORDER BY al.created_at DESC
+         INNER JOIN projects p ON (substring(al.details->>'path' from 2))::uuid = p.id
+         WHERE al.user_id = $1 AND al.action_type = 'VIEW_PROJECT'
+         ORDER BY p.id, al.created_at DESC
          LIMIT 100`,
         [id]
       );
@@ -172,14 +190,16 @@ router.get(
         };
       });
 
-      // 콘텐츠 확인 기록 포맷팅
+      // 콘텐츠 확인 기록 포맷팅 (프로젝트 기반)
       const formattedViewLogs = viewLogs.rows.map((log) => ({
         id: log.id,
         timestamp: log.created_at,
-        contentId: log.content_id,
+        projectId: log.project_id,
         contentTitle: log.title,
+        contentDescription: log.description,
         contentThumbnail: log.thumbnail_url,
         contentType: log.file_type,
+        fileCount: parseInt(log.file_count) || 0,
       }));
 
       // 공유 콘텐츠 포맷팅

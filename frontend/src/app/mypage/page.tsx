@@ -486,25 +486,52 @@ export default function MyPage() {
                       {activitySubTab === 'view' && (
                         <div className="space-y-3">
                           {!activityData.viewHistory || activityData.viewHistory.length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">확인한 콘텐츠가 없습니다</p>
+                            <p className="text-center text-gray-500 py-8">아직 확인한 프로젝트가 없습니다</p>
                           ) : (
                             activityData.viewHistory.map((log: any) => (
-                              <div key={log.id} className="border border-shinhan-border rounded-lg p-4 flex gap-4">
-                                {log.contentThumbnail && (
+                              <button
+                                key={log.id}
+                                onClick={() => router.push(`/projects/${log.projectId}`)}
+                                className="w-full border border-shinhan-border rounded-lg p-4 flex gap-4 hover:bg-gray-50 transition-colors text-left"
+                              >
+                                {log.contentThumbnail ? (
                                   <img
                                     src={log.contentThumbnail}
                                     alt={log.contentTitle}
-                                    className="w-16 h-16 object-cover rounded"
+                                    className="w-20 h-20 object-cover rounded flex-shrink-0"
                                   />
+                                ) : (
+                                  <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  </div>
                                 )}
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-shinhan-darkGray">{log.contentTitle}</p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    {new Date(log.timestamp).toLocaleString('ko-KR')}
-                                  </p>
-                                  <span className="text-xs text-gray-500">유형: {log.contentType}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-shinhan-darkGray truncate">{log.contentTitle}</p>
+                                  {log.contentDescription && (
+                                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{log.contentDescription}</p>
+                                  )}
+                                  <div className="flex items-center gap-3 mt-2">
+                                    <p className="text-xs text-gray-600">
+                                      {new Date(log.timestamp).toLocaleString('ko-KR')}
+                                    </p>
+                                    {log.fileCount > 0 && (
+                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        {log.fileCount}개 파일
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
+                                <div className="flex-shrink-0 self-center">
+                                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+                              </button>
                             ))
                           )}
                         </div>
