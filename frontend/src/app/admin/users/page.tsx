@@ -9,7 +9,7 @@ import Footer from '@/components/Layout/Footer';
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: 'ADMIN' | 'HOLDING' | 'BANK' | 'CLIENT';
   isActive: boolean;
@@ -18,23 +18,22 @@ interface User {
 }
 
 type CreateUserForm = {
-  email: string;
+  username: string;
   name: string;
   password: string;
   role: 'ADMIN' | 'HOLDING' | 'BANK' | 'CLIENT';
-  sendEmail: boolean;
 };
 
 type EditUserForm = {
   name: string;
-  email: string;
+  username: string;
   role: 'ADMIN' | 'HOLDING' | 'BANK' | 'CLIENT';
 };
 
 type ActivityData = {
   user: {
     id: string;
-    email: string;
+    username: string;
     name: string;
     role: string;
   };
@@ -113,16 +112,15 @@ export default function UsersPage() {
 
   // 폼 상태
   const [createForm, setCreateForm] = useState<CreateUserForm>({
-    email: '',
+    username: '',
     name: '',
     password: '',
     role: 'CLIENT',
-    sendEmail: true,
   });
 
   const [editForm, setEditForm] = useState<EditUserForm>({
     name: '',
-    email: '',
+    username: '',
     role: 'CLIENT',
   });
 
@@ -159,8 +157,8 @@ export default function UsersPage() {
   };
 
   const handleCreateUser = async () => {
-    if (!createForm.email || !createForm.name) {
-      alert('이메일과 이름을 입력해주세요');
+    if (!createForm.username || !createForm.name) {
+      alert('아이디와 이름을 입력해주세요');
       return;
     }
 
@@ -169,11 +167,10 @@ export default function UsersPage() {
       alert('사용자가 생성되었습니다');
       setShowCreateModal(false);
       setCreateForm({
-        email: '',
+        username: '',
         name: '',
         password: '',
         role: 'CLIENT',
-        sendEmail: true,
       });
       loadUsers();
     } catch (error: any) {
@@ -234,7 +231,7 @@ export default function UsersPage() {
     setSelectedUser(user);
     setEditForm({
       name: user.name,
-      email: user.email,
+      username: user.username,
       role: user.role,
     });
     setShowEditModal(true);
@@ -307,7 +304,7 @@ export default function UsersPage() {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="이름 또는 이메일 검색"
+                placeholder="이름 또는 아이디 검색"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -354,7 +351,7 @@ export default function UsersPage() {
                   <thead className="bg-gray-50 border-b border-shinhan-border">
                     <tr>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">이름</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">이메일</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">아이디</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">역할</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">상태</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-shinhan-darkGray">생성일</th>
@@ -365,7 +362,7 @@ export default function UsersPage() {
                     {users.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm text-shinhan-darkGray">{user.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{user.username}</td>
                         <td className="px-6 py-4 text-sm">
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             {getRoleName(user.role)}
@@ -483,15 +480,18 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-shinhan-darkGray mb-2">
-                  이메일 <span className="text-shinhan-error">*</span>
+                  아이디 <span className="text-shinhan-error">*</span>
                 </label>
                 <input
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  type="text"
+                  value={createForm.username}
+                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
                   className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue text-black"
-                  placeholder="user@example.com"
+                  placeholder="admin, user01, client_shinhan 등"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  영문, 숫자, 언더스코어(_)를 조합하여 입력해주세요
+                </p>
               </div>
 
               <div>
@@ -506,7 +506,7 @@ export default function UsersPage() {
                   placeholder="비워두면 자동 생성됩니다"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  비밀번호를 입력하지 않으면 자동으로 생성되어 이메일로 발송됩니다
+                  비밀번호를 입력하지 않으면 자동으로 생성됩니다 (관리자가 직접 전달)
                 </p>
               </div>
 
@@ -526,21 +526,6 @@ export default function UsersPage() {
                   <option value="HOLDING">신한금융지주</option>
                   <option value="ADMIN">최고관리자</option>
                 </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="sendEmail"
-                  checked={createForm.sendEmail}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, sendEmail: e.target.checked })
-                  }
-                  className="w-4 h-4 text-shinhan-blue"
-                />
-                <label htmlFor="sendEmail" className="text-sm text-gray-600">
-                  비밀번호를 이메일로 발송
-                </label>
               </div>
             </div>
 
@@ -583,14 +568,17 @@ export default function UsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-shinhan-darkGray mb-2">
-                  이메일 <span className="text-shinhan-error">*</span>
+                  아이디 <span className="text-shinhan-error">*</span>
                 </label>
                 <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  type="text"
+                  value={editForm.username}
+                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
                   className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  영문, 숫자, 언더스코어(_)를 조합하여 입력해주세요
+                </p>
               </div>
 
               <div>
@@ -643,7 +631,7 @@ export default function UsersPage() {
                   {selectedUser.name}님의 활동 내역
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {selectedUser.email} ({getRoleName(selectedUser.role)})
+                  {selectedUser.username} ({getRoleName(selectedUser.role)})
                 </p>
               </div>
               <button
