@@ -123,18 +123,30 @@ export default function PublicSharePage() {
     }
   }, [shareId]);
 
-  // 화면 크기 감지 (768px 기준: PC/태블릿 vs 모바일)
+  // 디바이스 타입 감지 (터치 디바이스는 모바일 UI, 1024px 이상만 PC UI)
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsDesktop(window.innerWidth >= 768);
+    const checkDeviceType = () => {
+      // 터치 디바이스 감지
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+      // PC UI 조건: 터치 불가능 디바이스 + 1024px 이상
+      // 태블릿(터치 가능)은 가로 모드(1024px 이상)에서도 모바일 UI 유지
+      const isDesktopUI = !isTouchDevice && window.innerWidth >= 1024;
+
+      setIsDesktop(isDesktopUI);
     };
 
     // 초기 체크
-    checkScreenSize();
+    checkDeviceType();
 
-    // 리사이즈 이벤트 리스너
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    // 리사이즈 및 화면 회전 이벤트 리스너
+    window.addEventListener('resize', checkDeviceType);
+    window.addEventListener('orientationchange', checkDeviceType);
+
+    return () => {
+      window.removeEventListener('resize', checkDeviceType);
+      window.removeEventListener('orientationchange', checkDeviceType);
+    };
   }, []);
 
   // 파티클 애니메이션 초기화 (로그인 페이지와 동일)
@@ -1151,6 +1163,7 @@ export default function PublicSharePage() {
               width: 100%;
               max-width: 1200px;
               padding: 50px 0 80px;
+              margin: 0 auto;
             }
 
             .quarter-swiper .swiper-slide {
