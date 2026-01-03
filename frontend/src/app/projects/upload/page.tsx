@@ -59,7 +59,12 @@ export default function ProjectUploadPage() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [authLoading, isAuthenticated, router]);
+    // HOLDING, BANK 회원은 프로젝트 업로드 불가
+    if (!authLoading && isAuthenticated && (user?.role === 'HOLDING' || user?.role === 'BANK')) {
+      alert('프로젝트 업로드 권한이 없습니다.');
+      router.push('/projects');
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (isAuthenticated) {

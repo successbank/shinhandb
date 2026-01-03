@@ -40,12 +40,14 @@ export default function Header() {
             >
               프로젝트 목록
             </Link>
-            <Link
-              href="/projects/upload"
-              className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
-            >
-              프로젝트 업로드
-            </Link>
+            {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
+              <Link
+                href="/projects/upload"
+                className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+              >
+                프로젝트 업로드
+              </Link>
+            )}
             <Link
               href="/mypage"
               className="text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
@@ -146,13 +148,15 @@ export default function Header() {
             >
               프로젝트 목록
             </Link>
-            <Link
-              href="/projects/upload"
-              className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              프로젝트 업로드
-            </Link>
+            {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
+              <Link
+                href="/projects/upload"
+                className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                프로젝트 업로드
+              </Link>
+            )}
             <Link
               href="/mypage"
               className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
