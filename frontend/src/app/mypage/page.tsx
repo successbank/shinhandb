@@ -8,14 +8,13 @@ import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 import ContentCard from '@/components/Content/ContentCard';
 
-type TabType = 'bookmarks' | 'uploads' | 'activities';
+type TabType = 'uploads' | 'activities';
 type ActivitySubTab = 'login' | 'view' | 'share' | 'upload';
 
 export default function MyPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('bookmarks');
-  const [bookmarks, setBookmarks] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('activities');
   const [uploads, setUploads] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -34,28 +33,13 @@ export default function MyPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (activeTab === 'bookmarks') {
-        loadBookmarks();
-      } else if (activeTab === 'uploads') {
+      if (activeTab === 'uploads') {
         loadUploads();
       } else if (activeTab === 'activities') {
         loadActivities();
       }
     }
   }, [activeTab, page, isAuthenticated]);
-
-  const loadBookmarks = async () => {
-    setLoading(true);
-    try {
-      const response = await mypageApi.getBookmarks({ page, pageSize: 20 });
-      setBookmarks(response.data?.items || []);
-      setTotalPages(response.data?.totalPages || 1);
-    } catch (error) {
-      console.error('북마크 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadUploads = async () => {
     setLoading(true);
@@ -85,17 +69,6 @@ export default function MyPage() {
     }
   };
 
-  const handleDeleteBookmark = async (id: string) => {
-    if (!confirm('북마크를 삭제하시겠습니까?')) return;
-
-    try {
-      await mypageApi.deleteBookmark(id);
-      loadBookmarks();
-    } catch (error: any) {
-      alert(error.message || '북마크 삭제 실패');
-    }
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -112,7 +85,7 @@ export default function MyPage() {
     return null;
   }
 
-  const items = activeTab === 'bookmarks' ? bookmarks : uploads;
+  const items = uploads;
 
   return (
     <div className="min-h-screen flex flex-col bg-shinhan-lightGray">
@@ -121,27 +94,58 @@ export default function MyPage() {
       <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8">
         {/* 사용자 정보 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-2xl font-bold text-shinhan-darkGray mb-4">마이페이지</h1>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">이름</p>
-              <p className="font-medium text-shinhan-darkGray">{user?.name}</p>
+          <div className="flex items-center gap-6">
+            {/* 사용자 아바타 */}
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 ${
+              user?.role === 'ADMIN'
+                ? 'bg-red-100'
+                : user?.role === 'HOLDING'
+                ? 'bg-blue-100'
+                : user?.role === 'BANK'
+                ? 'bg-green-100'
+                : 'bg-purple-100'
+            }`}>
+              <svg
+                className={`w-10 h-10 ${
+                  user?.role === 'ADMIN'
+                    ? 'text-red-600'
+                    : user?.role === 'HOLDING'
+                    ? 'text-blue-600'
+                    : user?.role === 'BANK'
+                    ? 'text-green-600'
+                    : 'text-purple-600'
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">이메일</p>
-              <p className="font-medium text-shinhan-darkGray">{user?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">역할</p>
-              <p className="font-medium text-shinhan-darkGray">
-                {user?.role === 'ADMIN'
-                  ? '최고관리자'
-                  : user?.role === 'HOLDING'
-                  ? '신한금융지주'
-                  : user?.role === 'BANK'
-                  ? '신한은행'
-                  : '클라이언트'}
-              </p>
+
+            {/* 사용자 정보 */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-bold text-[#333333]">{user?.name}</h1>
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                  user?.role === 'ADMIN'
+                    ? 'bg-red-100 text-red-700'
+                    : user?.role === 'HOLDING'
+                    ? 'bg-blue-100 text-blue-700'
+                    : user?.role === 'BANK'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {user?.role === 'ADMIN'
+                    ? '최고관리자'
+                    : user?.role === 'HOLDING'
+                    ? '신한금융지주'
+                    : user?.role === 'BANK'
+                    ? '신한은행'
+                    : '클라이언트'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500">@{user?.username || 'user'}</p>
             </div>
           </div>
         </div>
@@ -150,19 +154,6 @@ export default function MyPage() {
         <div className="bg-white rounded-lg shadow-md mb-6">
           <div className="border-b border-shinhan-border">
             <div className="flex">
-              <button
-                onClick={() => {
-                  setActiveTab('bookmarks');
-                  setPage(1);
-                }}
-                className={`px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'bookmarks'
-                    ? 'text-shinhan-blue border-b-2 border-shinhan-blue'
-                    : 'text-gray-500 hover:text-shinhan-darkGray'
-                }`}
-              >
-                북마크 ({bookmarks.length})
-              </button>
               {(user?.role === 'ADMIN' || user?.role === 'CLIENT') && (
                 <button
                   onClick={() => {
@@ -195,85 +186,6 @@ export default function MyPage() {
           </div>
 
           <div className="p-6">
-            {/* 북마크 탭 */}
-            {activeTab === 'bookmarks' && (
-              <>
-                {loading ? (
-                  <div className="text-center py-12">
-                    <p className="text-shinhan-darkGray">로딩 중...</p>
-                  </div>
-                ) : items.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">북마크한 콘텐츠가 없습니다</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {items.map((item) => (
-                        <div key={item.id} className="relative">
-                          <ContentCard
-                            id={item.content_id}
-                            title={item.title}
-                            thumbnailUrl={item.thumbnail_url}
-                            tags={item.tags || []}
-                            fileType={item.file_type}
-                            createdAt={item.created_at}
-                          />
-                          <button
-                            onClick={() => handleDeleteBookmark(item.id)}
-                            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 text-shinhan-error"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                          {item.memo && (
-                            <div className="mt-2 p-2 bg-yellow-50 rounded text-sm text-gray-700">
-                              <p className="font-medium text-xs text-gray-500 mb-1">메모</p>
-                              <p>{item.memo}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* 페이지네이션 */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-center gap-2 mt-8">
-                        <button
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page === 1}
-                          className="px-4 py-2 border border-shinhan-border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          이전
-                        </button>
-                        <span className="px-4 py-2 text-shinhan-darkGray">
-                          {page} / {totalPages}
-                        </span>
-                        <button
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page === totalPages}
-                          className="px-4 py-2 border border-shinhan-border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          다음
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-
             {/* 업로드 탭 */}
             {activeTab === 'uploads' && (
               <>
