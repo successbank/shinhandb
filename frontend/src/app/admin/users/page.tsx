@@ -476,7 +476,7 @@ export default function UsersPage() {
                   type="text"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue text-black"
                   placeholder="홍길동"
                 />
               </div>
@@ -489,7 +489,7 @@ export default function UsersPage() {
                   type="email"
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue text-black"
                   placeholder="user@example.com"
                 />
               </div>
@@ -502,7 +502,7 @@ export default function UsersPage() {
                   type="password"
                   value={createForm.password}
                   onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue"
+                  className="w-full px-4 py-2 border border-shinhan-border rounded-lg focus:outline-none focus:ring-2 focus:ring-shinhan-blue text-black"
                   placeholder="비워두면 자동 생성됩니다"
                 />
                 <p className="mt-1 text-xs text-gray-500">

@@ -12,12 +12,29 @@ const router = Router();
 router.use(authenticate);
 
 // GET /api/categories - 카테고리 목록 조회 (캐싱 적용)
+// 사용자 역할에 따른 자동 필터링:
+// - BANK: 신한은행 카테고리만
+// - HOLDING: 신한금융지주 카테고리만
+// - CLIENT, ADMIN: 전체 카테고리
 router.get(
   '/',
   logActivity('VIEW_CATEGORIES'),
   async (req: AuthRequest, res: Response<ApiResponse>, next) => {
     try {
-      const memberType = req.query.memberType as string | undefined;
+      // 명시적 파라미터 확인
+      let memberType = req.query.memberType as string | undefined;
+
+      // 명시적 파라미터가 없으면 사용자 역할에 따라 자동 설정
+      if (!memberType && req.user) {
+        const userRole = req.user.role;
+        if (userRole === 'BANK') {
+          memberType = 'BANK';  // 신한은행 → 은행 카테고리만
+        } else if (userRole === 'HOLDING') {
+          memberType = 'HOLDING';  // 신한금융지주 → 지주 카테고리만
+        }
+        // CLIENT, ADMIN → memberType 없음 → 전체 반환
+      }
+
       const cacheKey = memberType
         ? CacheKeys.categories(memberType)
         : CacheKeys.categories('all');
