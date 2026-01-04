@@ -374,6 +374,24 @@ router.get(
       let queryParams: any[] = [];
       let paramIndex = 1;
 
+      // 사용자 역할 기반 필터링 (HOLDING, BANK만 적용)
+      if (req.user!.role === 'HOLDING') {
+        // 신한금융지주 회원 → HOLDING 카테고리의 프로젝트만 조회
+        whereConditions.push(`EXISTS (
+          SELECT 1 FROM project_categories pc
+          INNER JOIN categories c ON pc.category_id = c.id
+          WHERE pc.project_id = p.id AND c.user_role = 'HOLDING'
+        )`);
+      } else if (req.user!.role === 'BANK') {
+        // 신한은행 회원 → BANK 카테고리의 프로젝트만 조회
+        whereConditions.push(`EXISTS (
+          SELECT 1 FROM project_categories pc
+          INNER JOIN categories c ON pc.category_id = c.id
+          WHERE pc.project_id = p.id AND c.user_role = 'BANK'
+        )`);
+      }
+      // ADMIN, CLIENT는 필터링 없음 (모든 프로젝트 조회 가능)
+
       // 카테고리 필터 (EXISTS 사용하여 JOIN 제거)
       if (categoryId) {
         whereConditions.push(`EXISTS (

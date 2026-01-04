@@ -303,7 +303,7 @@ export default function ProjectUploadPage() {
               categories={categories}
               selectedCategoryIds={categoryIds}
               onCategorySelect={setCategoryIds}
-              userRole={user?.role === 'ADMIN' ? undefined : user?.role}
+              userRole={user?.role === 'ADMIN' || user?.role === 'CLIENT' ? undefined : user?.role}
               maxSelection={3}
             />
           )}
