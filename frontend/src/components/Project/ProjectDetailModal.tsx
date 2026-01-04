@@ -289,7 +289,8 @@ export default function ProjectDetailModal({
   const canEdit = userRole === 'ADMIN' ||
     (userRole === 'CLIENT' && projectDetail?.uploaderId === userId);
 
-  const canDelete = userRole === 'ADMIN';
+  const canDelete = userRole === 'ADMIN' ||
+    (userRole === 'CLIENT' && projectDetail?.uploaderId === userId);
 
   // 보기 모드: 파일 즉시 삭제
   const handleDeleteFile = async (fileId: string, fileName: string) => {
