@@ -1,0 +1,64 @@
+# ===================================
+# Stage 1: Dependencies
+# ===================================
+FROM node:18-alpine AS deps
+
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+COPY backend/package*.json ./
+
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# ===================================
+# Stage 2: Builder
+# ===================================
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+COPY backend/package*.json ./
+
+RUN npm ci
+
+COPY backend ./
+
+ENV NODE_ENV=production
+
+RUN npm run build && \
+    rm -rf node_modules && \
+    npm ci --only=production
+
+# ===================================
+# Stage 3: Runner (Production)
+# ===================================
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+    dumb-init \
+    && addgroup -g 1001 -S nodejs \
+    && adduser -S appuser -u 1001
+
+ENV NODE_ENV=production
+
+COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
+COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
+
+# uploads 디렉토리 생성
+RUN mkdir -p /app/uploads && \
+    chown -R appuser:nodejs /app/uploads
+
+USER appuser
+
+EXPOSE 3001
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
+CMD ["node", "dist/index.js"]

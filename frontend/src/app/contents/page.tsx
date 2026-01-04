@@ -680,7 +680,7 @@ export default function ContentsPage() {
               공유 링크 생성 완료
             </h2>
             <p className="text-sm text-gray-600 mb-4">
-              "{selectedContent.title}" 콘텐츠의 공유 링크가 생성되었습니다.
+              &ldquo;{selectedContent.title}&rdquo; 콘텐츠의 공유 링크가 생성되었습니다.
             </p>
             <div className="bg-gray-50 p-3 rounded-lg mb-4">
               <p className="text-xs text-gray-500 mb-1">공유 링크 (7일간 유효)</p>

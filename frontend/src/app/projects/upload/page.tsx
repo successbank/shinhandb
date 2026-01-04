@@ -167,7 +167,7 @@ export default function ProjectUploadPage() {
             }
           });
 
-          const uniqueTags = [...new Set(allTags)];
+          const uniqueTags = Array.from(new Set(allTags));
           setGeneratedTags(uniqueTags);
           setTags(uniqueTags.join(', '));
         }

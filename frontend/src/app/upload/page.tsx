@@ -104,12 +104,12 @@ export default function UploadPage() {
           });
 
           // 중복 제거
-          const uniqueTags = [...new Set(allTags)];
+          const uniqueTags = Array.from(new Set(allTags));
           setGeneratedTags(uniqueTags);
 
           // 태그 입력창에 자동으로 추가 (기존 태그와 합침)
           const existingTags = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-          const combinedTags = [...new Set([...existingTags, ...uniqueTags])];
+          const combinedTags = Array.from(new Set([...existingTags, ...uniqueTags]));
           setTags(combinedTags.join(', '));
 
           // OCR 텍스트를 설명 필드에 자동으로 채우기

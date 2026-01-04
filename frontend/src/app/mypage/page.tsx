@@ -209,6 +209,7 @@ export default function MyPage() {
                             tags={item.tags || []}
                             fileType={item.file_type}
                             createdAt={item.created_at}
+                            uploaderName={item.uploader_name || user?.name || '알 수 없음'}
                           />
                         </div>
                       ))}
