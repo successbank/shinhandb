@@ -1236,6 +1236,47 @@ export default function PublicSharePage() {
                 border-radius: 0;
               }
             }
+
+            /* iPad Air 10.9" 가로 모드 최적화 */
+            @media (orientation: landscape)
+               and (min-width: 768px)
+               and (max-width: 1366px)
+               and (max-height: 900px) {
+
+              /* Swiper 슬라이드 크기 축소 (500px → 400px) */
+              .quarter-swiper .swiper-slide {
+                max-width: 400px !important;
+              }
+
+              /* 상하 패딩 축소 */
+              .quarter-swiper {
+                padding: 30px 0 50px !important;
+              }
+
+              /* 썸네일 크기 축소 (60px → 50px) */
+              .thumb-swiper .swiper-slide {
+                width: 50px !important;
+                height: 50px !important;
+                min-width: 50px !important;
+                max-width: 50px !important;
+                border-radius: 10px;
+              }
+
+              /* 썸네일 패딩 축소 */
+              .thumb-bg-box {
+                padding: 8px 35px !important;
+              }
+
+              /* 썸네일 네비게이션 버튼 */
+              .thumb-nav-btn {
+                width: 28px;
+              }
+
+              .thumb-nav-btn svg {
+                width: 16px;
+                height: 16px;
+              }
+            }
           `}</style>
 
           {/* 닫기 버튼 - 오른쪽 상단 */}
@@ -1255,12 +1296,12 @@ export default function PublicSharePage() {
             ×
           </button>
 
-          {/* 헤더 */}
-          <div className="text-center mb-8 relative w-full max-w-1200px">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+          {/* 헤더 - iPad Air 가로 모드 최적화 */}
+          <div className="text-center mb-6 md:mb-8 relative w-full max-w-1200px">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow-lg">
               {selectedQuarter.categoryName}
             </h1>
-            <p className="text-blue-100 text-lg">
+            <p className="text-blue-100 text-base md:text-lg">
               {selectedQuarter.year}년 {selectedQuarter.quarter} · 프로젝트 {selectedQuarter.projects.length}개
             </p>
           </div>
