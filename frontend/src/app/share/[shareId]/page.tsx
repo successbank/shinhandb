@@ -1243,28 +1243,36 @@ export default function PublicSharePage() {
                and (max-width: 1366px)
                and (max-height: 900px) {
 
-              /* Swiper 슬라이드 크기 축소 (500px → 400px) */
+              /* Swiper 슬라이드 크기 - 너비 및 높이 제한 (vh 기반) */
               .quarter-swiper .swiper-slide {
                 max-width: 400px !important;
+                max-height: 55vh !important;
+              }
+
+              /* 슬라이드 이미지 높이 제한 */
+              .quarter-swiper .swiper-slide img {
+                max-height: 55vh !important;
+                width: auto !important;
+                object-fit: contain !important;
               }
 
               /* 상하 패딩 축소 */
               .quarter-swiper {
-                padding: 30px 0 50px !important;
+                padding: 10px 0 20px !important;
               }
 
-              /* 썸네일 크기 축소 (60px → 50px) */
+              /* 썸네일 크기 축소 (50px → 45px) */
               .thumb-swiper .swiper-slide {
-                width: 50px !important;
-                height: 50px !important;
-                min-width: 50px !important;
-                max-width: 50px !important;
+                width: 45px !important;
+                height: 45px !important;
+                min-width: 45px !important;
+                max-width: 45px !important;
                 border-radius: 10px;
               }
 
               /* 썸네일 패딩 축소 */
               .thumb-bg-box {
-                padding: 8px 35px !important;
+                padding: 6px 30px !important;
               }
 
               /* 썸네일 네비게이션 버튼 */
@@ -1297,7 +1305,7 @@ export default function PublicSharePage() {
           </button>
 
           {/* 헤더 - iPad Air 가로 모드 최적화 */}
-          <div className="text-center mb-6 md:mb-8 relative w-full max-w-1200px">
+          <div className="text-center mb-4 md:mb-6 relative w-full max-w-1200px">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow-lg">
               {selectedQuarter.categoryName}
             </h1>
@@ -1330,7 +1338,7 @@ export default function PublicSharePage() {
             </div>
 
             {/* 썸네일 네비게이션 */}
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-4">
               <div className="thumb-outer-container">
                 <div className="thumb-bg-box">
                   {/* 왼쪽 화살표 버튼 */}
