@@ -422,7 +422,7 @@ export default function PublicSharePage() {
             stretch: 0,
             depth: 200,
             modifier: 1.5,
-            slideShadows: true,
+            slideShadows: false,
           },
           navigation: {
             nextEl: '.swiper-button-next',
@@ -1006,20 +1006,23 @@ export default function PublicSharePage() {
             }
 
             .quarter-swiper .swiper-slide {
-              width: 94%;
+              width: auto !important;
+              height: auto !important;
               max-width: 500px;
               border-radius: 0;
-              overflow: hidden;
+              overflow: visible;
               box-shadow: 0 25px 50px rgba(0,0,0,0.3);
               transition: all 0.4s ease;
-              background: transparent;
+              background: transparent !important;
               cursor: pointer;
             }
 
             .quarter-swiper .swiper-slide img {
-              width: 100%;
-              height: auto;
-              object-fit: contain;
+              width: auto !important;
+              height: auto !important;
+              max-height: 65vh;
+              max-width: 500px;
+              display: block;
               transition: transform 0.5s ease;
               border-radius: 0;
             }
@@ -1030,6 +1033,13 @@ export default function PublicSharePage() {
 
             .quarter-swiper .swiper-slide-active img {
               transform: scale(1.02);
+            }
+
+            /* Swiper Coverflow 그림자 오버레이 숨기기 */
+            .quarter-swiper .swiper-slide-shadow-left,
+            .quarter-swiper .swiper-slide-shadow-right,
+            .quarter-swiper .swiper-slide-shadow-coverflow {
+              display: none !important;
             }
 
             /* 썸네일 외부 컨테이너 - overflow 강제 제어 */
