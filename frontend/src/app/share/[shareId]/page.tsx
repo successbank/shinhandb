@@ -1296,6 +1296,36 @@ export default function PublicSharePage() {
               }
             }
 
+            /* 모바일 가로 모드 (480px 높이 이하) - iPad Air 제외 */
+            @media (orientation: landscape)
+               and (max-width: 1000px)
+               and (max-height: 550px) {
+
+              /* 이미지 높이 축소 */
+              .quarter-swiper .swiper-slide img {
+                max-height: 45vh !important;
+              }
+
+              .quarter-swiper .swiper-slide {
+                max-height: 45vh !important;
+              }
+
+              /* padding 축소 */
+              .quarter-swiper {
+                padding: 5px 0 10px !important;
+              }
+
+              /* 헤더 하단 여백 축소 */
+              .quarter-header {
+                margin-bottom: 8px !important;
+              }
+
+              /* 썸네일 상단 여백 축소 */
+              .thumb-container {
+                margin-top: 6px !important;
+              }
+            }
+
             /* 1920x1080 FHD 모니터 최적화 */
             @media (min-width: 1800px) and (min-height: 850px) and (max-height: 1100px) {
               /* 헤더 영역 상단 여백 확보 */
