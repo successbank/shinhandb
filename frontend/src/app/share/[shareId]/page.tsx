@@ -328,36 +328,6 @@ export default function PublicSharePage() {
     return () => window.removeEventListener('keydown', handleKeyNav);
   }, [imageGalleryOpen, projectImages]);
 
-  // 이미지 갤러리 마우스 휠 네비게이션
-  useEffect(() => {
-    if (!imageGalleryOpen) return;
-
-    let wheelTimeout: NodeJS.Timeout;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-
-      // 디바운싱: 50ms 내 중복 이벤트 무시
-      clearTimeout(wheelTimeout);
-
-      wheelTimeout = setTimeout(() => {
-        if (e.deltaY < 0) {
-          // 위로 스크롤 → 이전 이미지
-          goToPrevImage();
-        } else if (e.deltaY > 0) {
-          // 아래로 스크롤 → 다음 이미지
-          goToNextImage();
-        }
-      }, 50);
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      clearTimeout(wheelTimeout);
-    };
-  }, [imageGalleryOpen, projectImages]);
-
   // 모바일 뒤로가기 버튼으로 분기 모달 닫기 (History API 활용)
   useEffect(() => {
     // 분기 모달이 열려 있고, 이미지 갤러리는 닫혀 있을 때만
@@ -462,11 +432,8 @@ export default function PublicSharePage() {
             enabled: true,
           },
           mousewheel: {
-            enabled: true,
             forceToAxis: true,
-            sensitivity: 0.5,
-            invert: false,
-            releaseOnEdges: true,
+            sensitivity: 1,
           },
           thumbs: {
             swiper: thumbSwiperRef.current,
@@ -1039,20 +1006,23 @@ export default function PublicSharePage() {
             }
 
             .quarter-swiper .swiper-slide {
-              width: 94%;
+              width: auto !important;
+              height: auto !important;
               max-width: 500px;
               border-radius: 0;
-              overflow: hidden;
+              overflow: visible;
               box-shadow: 0 25px 50px rgba(0,0,0,0.3);
               transition: all 0.4s ease;
-              background: transparent;
+              background: transparent !important;
               cursor: pointer;
             }
 
             .quarter-swiper .swiper-slide img {
-              width: 100%;
-              height: auto;
-              object-fit: contain;
+              width: auto !important;
+              height: auto !important;
+              max-height: 65vh;
+              max-width: 500px;
+              display: block;
               transition: transform 0.5s ease;
               border-radius: 0;
             }
@@ -1257,14 +1227,7 @@ export default function PublicSharePage() {
 
               .quarter-swiper .swiper-button-next,
               .quarter-swiper .swiper-button-prev {
-                width: 40px;
-                height: 40px;
-                background: rgba(255,255,255,0.3);
-              }
-
-              .quarter-swiper .swiper-button-next::after,
-              .quarter-swiper .swiper-button-prev::after {
-                font-size: 14px;
+                display: none;
               }
 
               .quarter-swiper {
@@ -1281,18 +1244,6 @@ export default function PublicSharePage() {
 
               .quarter-swiper .swiper-slide img {
                 border-radius: 0;
-              }
-
-              .quarter-swiper .swiper-button-next,
-              .quarter-swiper .swiper-button-prev {
-                width: 36px;
-                height: 36px;
-                background: rgba(255,255,255,0.3);
-              }
-
-              .quarter-swiper .swiper-button-next::after,
-              .quarter-swiper .swiper-button-prev::after {
-                font-size: 12px;
               }
             }
 
