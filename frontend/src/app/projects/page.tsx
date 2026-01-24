@@ -43,6 +43,8 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [totalProjectCount, setTotalProjectCount] = useState<number>(0);
+  const [holdingProjectCount, setHoldingProjectCount] = useState<number | undefined>();
+  const [bankProjectCount, setBankProjectCount] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -87,6 +89,12 @@ export default function ProjectsPage() {
         // meta에서 전체 프로젝트 수 추출
         if (response.meta && response.meta.totalProjectCount !== undefined) {
           setTotalProjectCount(response.meta.totalProjectCount);
+        }
+        if (response.meta?.holdingProjectCount !== undefined) {
+          setHoldingProjectCount(response.meta.holdingProjectCount);
+        }
+        if (response.meta?.bankProjectCount !== undefined) {
+          setBankProjectCount(response.meta.bankProjectCount);
         }
       }
     } catch (error) {
@@ -249,6 +257,8 @@ export default function ProjectsPage() {
               totalProjectCount={totalProjectCount}
               showProjectCount={true}
               selectedGroup={selectedGroup}
+              holdingProjectCount={holdingProjectCount}
+              bankProjectCount={bankProjectCount}
               onGroupSelect={(group) => {
                 handleGroupSelect(group);
                 setIsCategoryDrawerOpen(false); // 선택 후 닫기
@@ -327,6 +337,8 @@ export default function ProjectsPage() {
                 totalProjectCount={totalProjectCount}
                 showProjectCount={true}
                 selectedGroup={selectedGroup}
+                holdingProjectCount={holdingProjectCount}
+                bankProjectCount={bankProjectCount}
                 onGroupSelect={handleGroupSelect}
               />
             </div>

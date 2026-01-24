@@ -93,12 +93,24 @@ router.get(
       );
       const totalProjectCount = parseInt(totalProjectCountResult.rows[0].total) || 0;
 
+      // 그룹별 유니크 프로젝트 수 (중복 제거)
+      const groupCountResult = await pool.query(`
+        SELECT c.user_role, COUNT(DISTINCT pc.project_id) as project_count
+        FROM project_categories pc
+        INNER JOIN categories c ON pc.category_id = c.id
+        GROUP BY c.user_role
+      `);
+      const holdingProjectCount = parseInt(groupCountResult.rows.find((r: any) => r.user_role === 'HOLDING')?.project_count || '0');
+      const bankProjectCount = parseInt(groupCountResult.rows.find((r: any) => r.user_role === 'BANK')?.project_count || '0');
+
       const response = {
         success: true,
         data: categories, // flat 배열로 반환
         meta: {
           totalContentCount,
           totalProjectCount,
+          holdingProjectCount,
+          bankProjectCount,
         },
       };
 

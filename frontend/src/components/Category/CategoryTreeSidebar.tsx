@@ -27,6 +27,8 @@ interface CategoryTreeSidebarProps {
   showProjectCount?: boolean; // 프로젝트 수 표시 여부 (기본값: false, 프로젝트 페이지에서는 true)
   selectedGroup?: string; // 선택된 그룹 ('HOLDING' | 'BANK' | '')
   onGroupSelect?: (group: string) => void; // 그룹 선택 콜백
+  holdingProjectCount?: number; // 그룹별 유니크 프로젝트 수 (중복 제거)
+  bankProjectCount?: number; // 그룹별 유니크 프로젝트 수 (중복 제거)
 }
 
 export default function CategoryTreeSidebar({
@@ -42,6 +44,8 @@ export default function CategoryTreeSidebar({
   showProjectCount = false,
   selectedGroup = '',
   onGroupSelect,
+  holdingProjectCount,
+  bankProjectCount,
 }: CategoryTreeSidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -340,9 +344,11 @@ export default function CategoryTreeSidebar({
                   </div>
                   <span className="text-sm font-medium flex-1">신한금융지주</span>
                   {(() => {
-                    const holdingCount = categoryTree
-                      .filter((cat) => cat.user_role === 'HOLDING')
-                      .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
+                    const holdingCount = showProjectCount && holdingProjectCount !== undefined
+                      ? holdingProjectCount
+                      : categoryTree
+                          .filter((cat) => cat.user_role === 'HOLDING')
+                          .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
                     return holdingCount > 0 ? (
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         selectedGroup === 'HOLDING'
@@ -380,9 +386,11 @@ export default function CategoryTreeSidebar({
                   </div>
                   <span className="text-sm font-medium flex-1">신한은행</span>
                   {(() => {
-                    const bankCount = categoryTree
-                      .filter((cat) => cat.user_role === 'BANK')
-                      .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
+                    const bankCount = showProjectCount && bankProjectCount !== undefined
+                      ? bankProjectCount
+                      : categoryTree
+                          .filter((cat) => cat.user_role === 'BANK')
+                          .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
                     return bankCount > 0 ? (
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         selectedGroup === 'BANK'

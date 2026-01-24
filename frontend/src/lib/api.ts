@@ -461,6 +461,7 @@ export const projectsApi = {
     page?: number;
     pageSize?: number;
     categoryId?: string;
+    groupFilter?: string;
     search?: string;
     startDate?: string;
     endDate?: string;
@@ -469,6 +470,7 @@ export const projectsApi = {
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
     if (params?.categoryId) searchParams.append('categoryId', params.categoryId);
+    if (params?.groupFilter) searchParams.append('groupFilter', params.groupFilter);
     if (params?.search) searchParams.append('search', params.search);
     if (params?.startDate) searchParams.append('startDate', params.startDate);
     if (params?.endDate) searchParams.append('endDate', params.endDate);
