@@ -26,10 +26,10 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-sm">
       <div className="max-w-content mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* 로고 - 모바일에서 숨김, 태블릿/PC에서만 표시 */}
-          <button onClick={() => router.push('/projects')} className="hidden md:flex items-center space-x-2 cursor-pointer">
-            <div className="text-2xl font-bold text-[#0046FF]" style={{ fontFamily: 'OneShinhan' }}>신한금융그룹</div>
-            <span className="text-sm text-gray-600" style={{ fontFamily: 'OneShinhan' }}>광고관리 플랫폼</span>
+          {/* 로고 */}
+          <button onClick={() => router.push('/projects?page=1')} className="flex items-center space-x-2 cursor-pointer">
+            <div className="text-lg md:text-2xl font-bold text-[#0046FF]" style={{ fontFamily: 'OneShinhan' }}>신한금융그룹</div>
+            <span className="hidden md:inline text-sm text-gray-600" style={{ fontFamily: 'OneShinhan' }}>광고관리 플랫폼</span>
           </button>
 
           {/* 네비게이션 */}

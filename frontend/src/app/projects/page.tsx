@@ -74,6 +74,35 @@ export default function ProjectsPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // 초기 로딩 시 URL 파라미터에서 카테고리 상태 복원
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const categoryId = url.searchParams.get('categoryId');
+    const group = url.searchParams.get('group');
+    const pageNum = url.searchParams.get('page');
+
+    if (categoryId) setSelectedCategoryId(categoryId);
+    if (group) setSelectedGroup(group);
+    if (pageNum) setPage(parseInt(pageNum));
+  }, []);
+
+  // 브라우저 뒤로/앞으로 버튼 처리
+  useEffect(() => {
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const categoryId = url.searchParams.get('categoryId') || '';
+      const group = url.searchParams.get('group') || '';
+      const pageNum = parseInt(url.searchParams.get('page') || '1');
+
+      setSelectedCategoryId(categoryId);
+      setSelectedGroup(group);
+      setPage(pageNum);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       loadCategories();
@@ -152,12 +181,35 @@ export default function ProjectsPage() {
     setSelectedCategoryId(categoryId);
     setSelectedGroup('');
     setPage(1);
+
+    // 브라우저 히스토리에 카테고리 상태 추가
+    const url = new URL(window.location.href);
+    if (categoryId) {
+      url.searchParams.set('categoryId', categoryId);
+      url.searchParams.delete('group');
+    } else {
+      url.searchParams.delete('categoryId');
+      url.searchParams.delete('group');
+    }
+    url.searchParams.set('page', '1');
+    window.history.pushState(window.history.state, '', url.toString());
   };
 
   const handleGroupSelect = (group: string) => {
     setSelectedGroup(group);
     setSelectedCategoryId('');
     setPage(1);
+
+    const url = new URL(window.location.href);
+    if (group) {
+      url.searchParams.set('group', group);
+      url.searchParams.delete('categoryId');
+    } else {
+      url.searchParams.delete('group');
+      url.searchParams.delete('categoryId');
+    }
+    url.searchParams.set('page', '1');
+    window.history.pushState(window.history.state, '', url.toString());
   };
 
   const handleProjectClick = async (projectId: string) => {
