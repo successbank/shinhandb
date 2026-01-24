@@ -27,10 +27,10 @@ export default function Header() {
       <div className="max-w-content mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* 로고 - 모바일에서 숨김, 태블릿/PC에서만 표시 */}
-          <Link href="/" className="hidden md:flex items-center space-x-2">
+          <button onClick={() => router.push('/projects')} className="hidden md:flex items-center space-x-2 cursor-pointer">
             <div className="text-2xl font-bold text-[#0046FF]">신한금융그룹</div>
             <span className="text-sm text-gray-600">광고관리 플랫폼</span>
-          </Link>
+          </button>
 
           {/* 네비게이션 */}
           <nav className="hidden md:flex items-center space-x-8">

@@ -30,6 +30,14 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
+  // 이미 인증된 사용자가 /login에 접근하면 /projects로 리다이렉트
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.replace('/projects');
+    }
+  }, [router]);
+
   useEffect(() => {
     // 클라이언트 사이드에서만 파티클 생성 (SSR 불일치 방지)
     setIsMounted(true);
