@@ -28,8 +28,8 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* 로고 - 모바일에서 숨김, 태블릿/PC에서만 표시 */}
           <button onClick={() => router.push('/projects')} className="hidden md:flex items-center space-x-2 cursor-pointer">
-            <div className="text-2xl font-bold text-[#0046FF]">신한금융그룹</div>
-            <span className="text-sm text-gray-600">광고관리 플랫폼</span>
+            <div className="text-2xl font-bold text-[#0046FF]" style={{ fontFamily: 'OneShinhan' }}>신한금융그룹</div>
+            <span className="text-sm text-gray-600" style={{ fontFamily: 'OneShinhan' }}>광고관리 플랫폼</span>
           </button>
 
           {/* 네비게이션 */}
