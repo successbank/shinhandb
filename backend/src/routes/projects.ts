@@ -361,6 +361,7 @@ router.get(
         page = '1',
         pageSize = '20',
         categoryId,
+        groupFilter,
         search,
         startDate,
         endDate,
@@ -399,6 +400,16 @@ router.get(
           WHERE pc.project_id = p.id AND pc.category_id = $${paramIndex++}
         )`);
         queryParams.push(categoryId);
+      }
+
+      // 그룹 필터 (HOLDING/BANK 전체 프로젝트 조회)
+      if (groupFilter && (groupFilter === 'HOLDING' || groupFilter === 'BANK')) {
+        whereConditions.push(`EXISTS (
+          SELECT 1 FROM project_categories pc
+          INNER JOIN categories c ON pc.category_id = c.id
+          WHERE pc.project_id = p.id AND c.user_role = $${paramIndex++}
+        )`);
+        queryParams.push(groupFilter);
       }
 
       // 검색어 필터 (프로젝트 제목 또는 태그 검색)

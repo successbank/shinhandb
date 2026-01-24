@@ -48,9 +48,11 @@ export default function ProjectsPage() {
 
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // View mode
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -75,7 +77,7 @@ export default function ProjectsPage() {
       loadCategories();
       loadProjects();
     }
-  }, [isAuthenticated, selectedCategoryId, page]);
+  }, [isAuthenticated, selectedCategoryId, selectedGroup, page]);
 
   const loadCategories = async () => {
     try {
@@ -106,6 +108,10 @@ export default function ProjectsPage() {
         params.categoryId = selectedCategoryId;
       }
 
+      if (selectedGroup) {
+        params.groupFilter = selectedGroup;
+      }
+
       // overrideSearch가 제공되면 그 값을 사용, 아니면 현재 searchQuery 사용
       const searchValue = overrideSearch !== undefined ? overrideSearch : searchQuery;
       if (searchValue.trim()) {
@@ -118,6 +124,7 @@ export default function ProjectsPage() {
         setProjects(response.data.projects || []);
         if (response.data.pagination) {
           setTotalPages(response.data.pagination.totalPages || 1);
+          setTotalCount(response.data.pagination.total || 0);
         }
       }
     } catch (error: any) {
@@ -135,6 +142,13 @@ export default function ProjectsPage() {
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
+    setSelectedGroup('');
+    setPage(1);
+  };
+
+  const handleGroupSelect = (group: string) => {
+    setSelectedGroup(group);
+    setSelectedCategoryId('');
     setPage(1);
   };
 
@@ -234,6 +248,11 @@ export default function ProjectsPage() {
               userRole={user?.role === 'HOLDING' ? 'HOLDING' : user?.role === 'BANK' ? 'BANK' : undefined}
               totalProjectCount={totalProjectCount}
               showProjectCount={true}
+              selectedGroup={selectedGroup}
+              onGroupSelect={(group) => {
+                handleGroupSelect(group);
+                setIsCategoryDrawerOpen(false); // 선택 후 닫기
+              }}
             />
           </div>
         )}
@@ -307,6 +326,8 @@ export default function ProjectsPage() {
                 userRole={user?.role === 'HOLDING' ? 'HOLDING' : user?.role === 'BANK' ? 'BANK' : undefined}
                 totalProjectCount={totalProjectCount}
                 showProjectCount={true}
+                selectedGroup={selectedGroup}
+                onGroupSelect={handleGroupSelect}
               />
             </div>
 
@@ -317,7 +338,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-xs lg:text-sm text-gray-600">
-                      전체 {projects.length}개
+                      전체 {totalCount}개
                     </span>
                   </div>
 

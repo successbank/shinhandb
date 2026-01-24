@@ -25,6 +25,8 @@ interface CategoryTreeSidebarProps {
   totalContentCount?: number; // 전체 콘텐츠 수 (중복 제거된 값)
   totalProjectCount?: number; // 전체 프로젝트 수 (중복 제거된 값)
   showProjectCount?: boolean; // 프로젝트 수 표시 여부 (기본값: false, 프로젝트 페이지에서는 true)
+  selectedGroup?: string; // 선택된 그룹 ('HOLDING' | 'BANK' | '')
+  onGroupSelect?: (group: string) => void; // 그룹 선택 콜백
 }
 
 export default function CategoryTreeSidebar({
@@ -38,6 +40,8 @@ export default function CategoryTreeSidebar({
   totalContentCount,
   totalProjectCount,
   showProjectCount = false,
+  selectedGroup = '',
+  onGroupSelect,
 }: CategoryTreeSidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -259,11 +263,14 @@ export default function CategoryTreeSidebar({
         {!isMultiSelect && (
           <div
             className={`flex items-center px-3 py-2 mb-2 cursor-pointer transition-colors rounded-md ${
-              currentSelectedIds.length === 0
+              currentSelectedIds.length === 0 && !selectedGroup
                 ? 'bg-shinhan-blue text-white'
                 : 'hover:bg-gray-100 text-shinhan-darkGray'
             }`}
-            onClick={() => onCategorySingleSelect!('')}
+            onClick={() => {
+              onCategorySingleSelect!('');
+              if (onGroupSelect) onGroupSelect('');
+            }}
           >
             <div className="w-5 h-5 mr-2 flex items-center justify-center">
               <svg
@@ -283,7 +290,7 @@ export default function CategoryTreeSidebar({
             <span className="text-sm font-medium flex-1">전체 보기</span>
             {displayTotalCount > 0 && (
               <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
-                currentSelectedIds.length === 0
+                currentSelectedIds.length === 0 && !selectedGroup
                   ? 'bg-white/20 text-white'
                   : 'bg-gray-200 text-gray-600'
               }`}>
@@ -313,8 +320,39 @@ export default function CategoryTreeSidebar({
           {!userRole && (
             <>
               <div className="mb-4">
-                <div className="text-xs font-semibold text-gray-500 mb-2 px-3">
-                  신한금융지주
+                {/* 신한금융지주 그룹 버튼 */}
+                <div
+                  className={`flex items-center px-3 py-2 mb-2 cursor-pointer transition-colors rounded-md ${
+                    selectedGroup === 'HOLDING'
+                      ? 'bg-shinhan-blue text-white'
+                      : 'hover:bg-gray-100 text-shinhan-darkGray'
+                  }`}
+                  onClick={() => {
+                    if (onGroupSelect) {
+                      onGroupSelect(selectedGroup === 'HOLDING' ? '' : 'HOLDING');
+                    }
+                  }}
+                >
+                  <div className="w-5 h-5 mr-2 flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium flex-1">신한금융지주</span>
+                  {(() => {
+                    const holdingCount = categoryTree
+                      .filter((cat) => cat.user_role === 'HOLDING')
+                      .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
+                    return holdingCount > 0 ? (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
+                        selectedGroup === 'HOLDING'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {holdingCount}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
                 {categoryTree
                   .filter((cat) => cat.user_role === 'HOLDING')
@@ -322,8 +360,39 @@ export default function CategoryTreeSidebar({
                   .map((category) => renderCategoryItem(category))}
               </div>
               <div className="mb-4">
-                <div className="text-xs font-semibold text-gray-500 mb-2 px-3">
-                  신한은행
+                {/* 신한은행 그룹 버튼 */}
+                <div
+                  className={`flex items-center px-3 py-2 mb-2 cursor-pointer transition-colors rounded-md ${
+                    selectedGroup === 'BANK'
+                      ? 'bg-shinhan-blue text-white'
+                      : 'hover:bg-gray-100 text-shinhan-darkGray'
+                  }`}
+                  onClick={() => {
+                    if (onGroupSelect) {
+                      onGroupSelect(selectedGroup === 'BANK' ? '' : 'BANK');
+                    }
+                  }}
+                >
+                  <div className="w-5 h-5 mr-2 flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium flex-1">신한은행</span>
+                  {(() => {
+                    const bankCount = categoryTree
+                      .filter((cat) => cat.user_role === 'BANK')
+                      .reduce((sum, cat) => sum + (showProjectCount ? (cat.project_count || 0) : (cat.content_count || 0)), 0);
+                    return bankCount > 0 ? (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
+                        selectedGroup === 'BANK'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {bankCount}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
                 {categoryTree
                   .filter((cat) => cat.user_role === 'BANK')
