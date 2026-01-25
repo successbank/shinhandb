@@ -105,6 +105,7 @@ export default function PublicSharePage() {
   const [isMounted, setIsMounted] = useState(false);
   const swiperRef = useRef<any>(null);
   const thumbSwiperRef = useRef<any>(null);
+  const prevQuarterKeyRef = useRef<string | null>(null);  // 이전 분기 키 저장
 
   // sessionStorage에서 토큰 복원
   useEffect(() => {
@@ -372,6 +373,13 @@ export default function PublicSharePage() {
     }
   }, [imageGalleryOpen]);
 
+  // 분기 모달이 닫히면 이전 분기 키 리셋 (다시 열 때 첫 슬라이드부터 시작)
+  useEffect(() => {
+    if (!selectedQuarter) {
+      prevQuarterKeyRef.current = null;
+    }
+  }, [selectedQuarter]);
+
   // Swiper 초기화 (갤러리 닫힐 때 재초기화 포함)
   useEffect(() => {
     if (!selectedQuarter || !swiperLoaded) return;
@@ -381,6 +389,18 @@ export default function PublicSharePage() {
     const initSwiper = () => {
       if (typeof window !== 'undefined' && (window as any).Swiper) {
         const Swiper = (window as any).Swiper;
+
+        // 현재 분기의 고유 키 생성
+        const currentQuarterKey = `${selectedQuarter.category}-${selectedQuarter.year}-${selectedQuarter.quarter}`;
+
+        // 새 분기인지 확인 (이전 분기 키와 비교)
+        const isNewQuarter = prevQuarterKeyRef.current !== currentQuarterKey;
+
+        // 새 분기면 첫 슬라이드, 같은 분기(갤러리 복귀)면 이전 위치 유지
+        const initialSlide = isNewQuarter ? 0 : currentSlideIndex;
+
+        // 현재 분기 키 저장
+        prevQuarterKeyRef.current = currentQuarterKey;
 
         // 기존 Swiper 인스턴스 정리
         if (thumbSwiperRef.current) {
@@ -400,7 +420,7 @@ export default function PublicSharePage() {
           watchSlidesProgress: true,
           centeredSlides: true,
           slideToClickedSlide: true,
-          initialSlide: currentSlideIndex,
+          initialSlide: initialSlide,
           navigation: {
             nextEl: '#thumb-next-btn',
             prevEl: '#thumb-prev-btn',
@@ -416,7 +436,7 @@ export default function PublicSharePage() {
           loop: false,
           rewind: selectedQuarter.projects.length > 1,
           speed: 800,
-          initialSlide: currentSlideIndex,
+          initialSlide: initialSlide,
           coverflowEffect: {
             rotate: 0,
             stretch: 0,
@@ -819,7 +839,6 @@ export default function PublicSharePage() {
                                 <button
                                   key={quarter}
                                   onClick={() => {
-                                    setCurrentSlideIndex(0);
                                     setSelectedQuarter({
                                       year,
                                       quarter,
@@ -918,7 +937,6 @@ export default function PublicSharePage() {
                                 <button
                                   key={quarter}
                                   onClick={() => {
-                                    setCurrentSlideIndex(0);
                                     setSelectedQuarter({
                                       year,
                                       quarter,
