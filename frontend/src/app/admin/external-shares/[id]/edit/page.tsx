@@ -20,6 +20,7 @@ interface ProjectSelection {
   category: 'holding' | 'bank';
   year: number;
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
+  displayOrder: number;
 }
 
 interface ShareProject {
@@ -121,6 +122,7 @@ export default function EditExternalSharePage() {
             category: project.category,
             year: project.year,
             quarter: project.quarter,
+            displayOrder: project.displayOrder,
           }));
           setSelectedProjects(selections);
         }
@@ -159,6 +161,11 @@ export default function EditExternalSharePage() {
 
   // 프로젝트 추가
   const handleAddProject = (project: Project) => {
+    // 기본 분기(holding, currentYear, 1Q)의 최대 displayOrder 찾기
+    const sameQuarterMax = selectedProjects
+      .filter(p => p.category === 'holding' && p.year === currentYear && p.quarter === '1Q')
+      .reduce((max, p) => Math.max(max, p.displayOrder), -1);
+
     setSelectedProjects([
       ...selectedProjects,
       {
@@ -167,6 +174,7 @@ export default function EditExternalSharePage() {
         category: 'holding',
         year: currentYear,
         quarter: '1Q',
+        displayOrder: sameQuarterMax + 1,
       },
     ]);
     setShowProjectList(false);
@@ -180,8 +188,92 @@ export default function EditExternalSharePage() {
   // 선택 항목 업데이트
   const handleUpdateSelection = (index: number, field: string, value: any) => {
     const updated = [...selectedProjects];
-    updated[index] = { ...updated[index], [field]: value };
+    const current = updated[index];
+
+    // 분기 관련 필드 변경 시 displayOrder 재계산
+    if (field === 'category' || field === 'year' || field === 'quarter') {
+      const newCategory = field === 'category' ? value : current.category;
+      const newYear = field === 'year' ? value : current.year;
+      const newQuarter = field === 'quarter' ? value : current.quarter;
+
+      // 새로운 분기의 최대 displayOrder
+      const newQuarterMax = selectedProjects
+        .filter(p =>
+          p.projectId !== current.projectId &&
+          p.category === newCategory &&
+          p.year === newYear &&
+          p.quarter === newQuarter
+        )
+        .reduce((max, p) => Math.max(max, p.displayOrder), -1);
+
+      updated[index] = {
+        ...current,
+        [field]: value,
+        displayOrder: newQuarterMax + 1
+      };
+    } else {
+      updated[index] = { ...current, [field]: value };
+    }
+
     setSelectedProjects(updated);
+  };
+
+  // 위로 이동
+  const handleMoveUp = (index: number) => {
+    const current = selectedProjects[index];
+    const sameQuarter = selectedProjects.filter(
+      p => p.category === current.category &&
+           p.year === current.year &&
+           p.quarter === current.quarter
+    );
+
+    // 같은 분기에서 현재보다 작은 displayOrder 중 가장 큰 값 찾기
+    const prevProject = sameQuarter
+      .filter(p => p.displayOrder < current.displayOrder)
+      .sort((a, b) => b.displayOrder - a.displayOrder)[0];
+
+    if (prevProject) {
+      // 순서 교환
+      const updated = selectedProjects.map(p => {
+        if (p.projectId === current.projectId) {
+          return { ...p, displayOrder: prevProject.displayOrder };
+        }
+        if (p.projectId === prevProject.projectId) {
+          return { ...p, displayOrder: current.displayOrder };
+        }
+        return p;
+      });
+      setSelectedProjects(updated);
+    }
+  };
+
+  // 아래로 이동
+  const handleMoveDown = (index: number) => {
+    const current = selectedProjects[index];
+    const sameQuarter = selectedProjects.filter(
+      p => p.category === current.category &&
+           p.year === current.year &&
+           p.quarter === current.quarter
+    );
+
+    // 같은 분기에서 현재보다 큰 displayOrder 중 가장 작은 값 찾기
+    const nextProject = sameQuarter
+      .filter(p => p.displayOrder > current.displayOrder)
+      .sort((a, b) => a.displayOrder - b.displayOrder)[0];
+
+    if (nextProject) {
+      // 순서 교환
+      const updated = selectedProjects.map(p => {
+        if (p.projectId === current.projectId) {
+          return { ...p, displayOrder: nextProject.displayOrder };
+        }
+        if (p.projectId === nextProject.projectId) {
+          return { ...p, displayOrder: current.displayOrder };
+        }
+        return p;
+      });
+      setSelectedProjects(updated);
+    }
   };
 
   // 수정
@@ -216,6 +308,7 @@ export default function EditExternalSharePage() {
           category: s.category,
           year: s.year,
           quarter: s.quarter,
+          displayOrder: s.displayOrder,
         })),
       };
 
@@ -409,21 +502,57 @@ export default function EditExternalSharePage() {
             ) : (
               <>
                 <div className="space-y-4 mb-4">
-                  {selectedProjects.map((selection, index) => (
+                  {selectedProjects.map((selection, index) => {
+                    // 같은 분기 프로젝트 필터링
+                    const sameQuarterProjects = selectedProjects.filter(
+                      p => p.category === selection.category &&
+                           p.year === selection.year &&
+                           p.quarter === selection.quarter
+                    );
+                    const sortedSameQuarter = [...sameQuarterProjects].sort((a, b) => a.displayOrder - b.displayOrder);
+                    const positionInQuarter = sortedSameQuarter.findIndex(p => p.projectId === selection.projectId);
+
+                    return (
                     <div
                       key={index}
                       className="border border-[#E0E0E0] rounded-lg p-4"
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-medium text-[#333333]">
-                          {selection.projectTitle}
-                        </h3>
-                        <button
-                          onClick={() => handleRemoveProject(index)}
-                          className="text-red-600 hover:text-red-700 text-sm"
-                        >
-                          제거
-                        </button>
+                        {/* 순서 번호 배지 + 제목 */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-[#0046FF] rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {positionInQuarter + 1}
+                          </div>
+                          <h3 className="font-medium text-[#333333]">
+                            {selection.projectTitle}
+                          </h3>
+                        </div>
+
+                        {/* 순서 변경 버튼 + 제거 버튼 */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleMoveUp(index)}
+                            disabled={positionInQuarter === 0}
+                            className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-[#0046FF] hover:bg-blue-50 rounded disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-colors"
+                            title="위로 이동"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(index)}
+                            disabled={positionInQuarter === sameQuarterProjects.length - 1}
+                            className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-[#0046FF] hover:bg-blue-50 rounded disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-colors"
+                            title="아래로 이동"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            onClick={() => handleRemoveProject(index)}
+                            className="text-red-600 hover:text-red-700 text-sm ml-2"
+                          >
+                            제거
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-3 gap-3">
@@ -496,7 +625,8 @@ export default function EditExternalSharePage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <button

@@ -12,6 +12,7 @@ interface QuarterData {
   thumbnailUrl: string | null;
   fileCount: number;
   createdAt: string;
+  displayOrder?: number;  // 프로젝트 노출 순서
 }
 
 interface Timeline {
@@ -221,7 +222,12 @@ export default function PublicSharePage() {
         await fetchTimeline(response.data.token);
       }
     } catch (err: any) {
-      setError(err.message || '인증에 실패했습니다');
+      // 404 오류 (존재하지 않는 링크) 특별 처리
+      if (err.message?.includes('존재하지 않는') || err.status === 404) {
+        setError('이 링크는 더 이상 유효하지 않습니다. 새 링크를 요청해 주세요.');
+      } else {
+        setError(err.message || '인증에 실패했습니다');
+      }
       setPassword(['', '', '', '']);
       document.getElementById('pin-0')?.focus();
     } finally {
@@ -412,6 +418,32 @@ export default function PublicSharePage() {
           swiperRef.current = null;
         }
 
+        // ★ DOM 순서 강제 정렬 (loop: false에서는 data-swiper-slide-index 무시됨)
+        // Swiper 초기화 전에 DOM 순서를 data-swiper-slide-index 기준으로 정렬
+        const mainWrapper = document.querySelector('.quarter-swiper .swiper-wrapper');
+        const thumbWrapper = document.querySelector('.thumb-swiper .swiper-wrapper');
+
+        if (mainWrapper) {
+          const mainSlides = Array.from(mainWrapper.querySelectorAll('.swiper-slide'));
+          mainSlides.sort((a, b) => {
+            const aIdx = parseInt((a as HTMLElement).dataset.swiperSlideIndex || '0');
+            const bIdx = parseInt((b as HTMLElement).dataset.swiperSlideIndex || '0');
+            return aIdx - bIdx;
+          });
+          // appendChild는 기존 위치에서 제거 후 맨 뒤에 추가하므로 정렬됨
+          mainSlides.forEach(slide => mainWrapper.appendChild(slide));
+        }
+
+        if (thumbWrapper) {
+          const thumbSlides = Array.from(thumbWrapper.querySelectorAll('.swiper-slide'));
+          thumbSlides.sort((a, b) => {
+            const aIdx = parseInt((a as HTMLElement).dataset.swiperSlideIndex || '0');
+            const bIdx = parseInt((b as HTMLElement).dataset.swiperSlideIndex || '0');
+            return aIdx - bIdx;
+          });
+          thumbSlides.forEach(slide => thumbWrapper.appendChild(slide));
+        }
+
         // 썸네일 Swiper 먼저 초기화
         thumbSwiperRef.current = new Swiper('.thumb-swiper', {
           spaceBetween: 8,
@@ -467,7 +499,8 @@ export default function PublicSharePage() {
       }
     };
 
-    const timer = setTimeout(initSwiper, 100);
+    // DOM이 실제로 렌더링된 후 Swiper 초기화 (모바일 타이밍 문제 해결)
+    const timer = setTimeout(initSwiper, 150);
     return () => {
       clearTimeout(timer);
     };
@@ -844,7 +877,7 @@ export default function PublicSharePage() {
                                       quarter,
                                       category: 'holding',
                                       categoryName: '신한금융지주',
-                                      projects
+                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
                                     });
                                   }}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
@@ -942,7 +975,7 @@ export default function PublicSharePage() {
                                       quarter,
                                       category: 'bank',
                                       categoryName: '신한은행',
-                                      projects
+                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
                                     });
                                   }}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
@@ -1420,6 +1453,7 @@ export default function PublicSharePage() {
                   <div
                     key={project.projectId}
                     className="swiper-slide"
+                    data-swiper-slide-index={idx}
                     onClick={() => openImageGallery(project)}
                   >
                     {project.thumbnailUrl && (
@@ -1449,8 +1483,8 @@ export default function PublicSharePage() {
                   {/* 썸네일 Swiper */}
                   <div className="thumb-swiper">
                     <div className="swiper-wrapper">
-                      {selectedQuarter.projects.map((project) => (
-                        <div key={`thumb-${project.projectId}`} className="swiper-slide">
+                      {selectedQuarter.projects.map((project, idx) => (
+                        <div key={`thumb-${project.projectId}`} className="swiper-slide" data-swiper-slide-index={idx}>
                           {project.thumbnailUrl ? (
                             <img
                               src={project.thumbnailUrl}

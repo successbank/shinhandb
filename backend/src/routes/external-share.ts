@@ -440,7 +440,7 @@ router.patch(
                 selection.category,
                 selection.year,
                 selection.quarter,
-                i // display_order
+                selection.displayOrder ?? i // 명시적 값 우선, 없으면 인덱스
               );
             }
 
@@ -514,14 +514,36 @@ router.delete(
     try {
       const { id } = req.params;
 
-      const result = await pool.query(
-        'DELETE FROM external_shares WHERE id = $1 AND created_by = $2 RETURNING id',
-        [id, req.user!.id]
+      // 삭제 전 share_id 조회 (캐시 삭제용)
+      const shareInfo = await pool.query(
+        'SELECT share_id FROM external_shares WHERE id = $1',
+        [id]
       );
+      const shareIdToDelete = shareInfo.rows[0]?.share_id;
 
-      if (result.rows.length === 0) {
+      if (!shareIdToDelete) {
         throw new AppError(404, '외부공유를 찾을 수 없습니다');
       }
+
+      // ADMIN은 모든 공유 삭제 가능, 일반 사용자는 자신이 만든 것만
+      let deleteQuery = 'DELETE FROM external_shares WHERE id = $1';
+      const deleteParams: any[] = [id];
+
+      if (req.user!.role !== 'ADMIN') {
+        deleteQuery += ' AND created_by = $2';
+        deleteParams.push(req.user!.id);
+      }
+
+      deleteQuery += ' RETURNING id';
+
+      const result = await pool.query(deleteQuery, deleteParams);
+
+      if (result.rows.length === 0) {
+        throw new AppError(404, '외부공유를 찾을 수 없거나 삭제 권한이 없습니다');
+      }
+
+      // Redis 캐시 삭제
+      await redis.del(`share_contents:${shareIdToDelete}`);
 
       res.json({
         success: true,
@@ -586,6 +608,15 @@ router.post(
         [id, projectId, category, year, quarter]
       );
 
+      // share_id 조회 후 Redis 캐시 삭제
+      const shareResult = await pool.query(
+        'SELECT share_id FROM external_shares WHERE id = $1',
+        [id]
+      );
+      if (shareResult.rows[0]) {
+        await redis.del(`share_contents:${shareResult.rows[0].share_id}`);
+      }
+
       res.status(201).json({
         success: true,
         data: result.rows[0],
@@ -630,6 +661,15 @@ router.delete(
 
       if (result.rows.length === 0) {
         throw new AppError(404, '콘텐츠를 찾을 수 없습니다');
+      }
+
+      // share_id 조회 후 Redis 캐시 삭제
+      const shareResult = await pool.query(
+        'SELECT share_id FROM external_shares WHERE id = $1',
+        [id]
+      );
+      if (shareResult.rows[0]) {
+        await redis.del(`share_contents:${shareResult.rows[0].share_id}`);
       }
 
       res.json({

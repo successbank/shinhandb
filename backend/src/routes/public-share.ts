@@ -298,6 +298,7 @@ router.get(
           thumbnailUrl: row.thumbnailUrl,
           fileCount: parseInt(row.fileCount, 10),
           createdAt: row.projectCreatedAt,
+          displayOrder: row.display_order,
         });
       }
 

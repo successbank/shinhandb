@@ -642,6 +642,7 @@ export const externalShareAPI = {
       category: 'holding' | 'bank';
       year: number;
       quarter: '1Q' | '2Q' | '3Q' | '4Q';
+      displayOrder?: number;  // 노출 순서
     }>;
   }) =>
     apiRequest(`/admin/external-shares/${id}`, {
