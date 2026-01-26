@@ -320,7 +320,7 @@ router.get(
 
 /**
  * PATCH /api/admin/external-shares/:id
- * 외부공유 수정 (비밀번호, 활성화 상태, 만료일)
+ * 외부공유 수정 (비밀번호, 활성화 상태, 만료일, URL)
  */
 router.patch(
   '/:id',
@@ -328,7 +328,7 @@ router.patch(
   async (req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { password, isActive, expiresAt, projectSelections } = req.body;
+      const { password, isActive, expiresAt, projectSelections, shareId: newShareId } = req.body;
 
       // 권한 확인 (ADMIN은 모든 공유 수정 가능)
       const checkResult = await pool.query(
@@ -340,9 +340,36 @@ router.patch(
         throw new AppError(404, '외부공유를 찾을 수 없습니다');
       }
 
+      // 기존 shareId 조회 (Redis 캐시 삭제용)
+      const oldShareResult = await pool.query(
+        'SELECT share_id FROM external_shares WHERE id = $1',
+        [id]
+      );
+      const oldShareId = oldShareResult.rows[0]?.share_id;
+
       const updates: string[] = [];
       const params: any[] = [];
       let paramIndex = 1;
+
+      // shareId (URL) 변경
+      if (newShareId !== undefined && newShareId !== '' && newShareId !== oldShareId) {
+        // 형식 검증 (영문+숫자만, 4-20자)
+        if (!/^[A-Za-z0-9]{4,20}$/.test(newShareId)) {
+          throw new AppError(400, 'URL은 4-20자의 영문과 숫자만 가능합니다');
+        }
+
+        // 중복 검사 (자기 자신 제외)
+        const duplicateCheck = await pool.query(
+          'SELECT id FROM external_shares WHERE share_id = $1 AND id != $2',
+          [newShareId, id]
+        );
+        if (duplicateCheck.rows.length > 0) {
+          throw new AppError(409, '이미 사용 중인 URL입니다');
+        }
+
+        updates.push(`share_id = $${paramIndex++}`);
+        params.push(newShareId);
+      }
 
       // 비밀번호 변경
       if (password !== undefined) {
@@ -456,9 +483,13 @@ router.patch(
 
       // Redis 캐시 삭제 (공유 페이지에 즉시 반영)
       if (finalResult.rows[0]) {
-        const shareId = finalResult.rows[0].shareId;
-        const cacheKey = `share_contents:${shareId}`;
-        await redis.del(cacheKey);
+        const currentShareId = finalResult.rows[0].shareId;
+        // 새 shareId 캐시 삭제
+        await redis.del(`share_contents:${currentShareId}`);
+        // 기존 shareId가 다른 경우 (URL 변경됨) 기존 캐시도 삭제
+        if (oldShareId && oldShareId !== currentShareId) {
+          await redis.del(`share_contents:${oldShareId}`);
+        }
       }
 
       res.json({

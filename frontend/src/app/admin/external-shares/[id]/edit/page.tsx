@@ -58,10 +58,42 @@ export default function EditExternalSharePage() {
   const [expiresAt, setExpiresAt] = useState('');
   const [showProjectList, setShowProjectList] = useState(false);
   const [shareData, setShareData] = useState<ShareDetail | null>(null);
+  const [newShareId, setNewShareId] = useState('');
+  const [shareIdError, setShareIdError] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1];
   const quarters: Array<'1Q' | '2Q' | '3Q' | '4Q'> = ['1Q', '2Q', '3Q', '4Q'];
+
+  // shareId 검증 함수 (영문+숫자만)
+  const validateShareId = (value: string): string => {
+    if (value.length === 0) return ''; // 빈 값은 허용 (변경하지 않음)
+    if (value.length < 4) {
+      return '최소 4자 이상 입력하세요';
+    }
+    if (value.length > 20) {
+      return '최대 20자까지 입력 가능합니다';
+    }
+    if (!/^[A-Za-z0-9]*$/.test(value)) {
+      return '영문과 숫자만 입력 가능합니다';
+    }
+    return '';
+  };
+
+  // 비밀번호 검증 함수 (4자리 숫자)
+  const validatePassword = (password: string, confirm: string): string => {
+    if (password.length === 0) return ''; // 빈 값은 허용 (변경하지 않음)
+    if (!/^\d{4}$/.test(password)) {
+      return '비밀번호는 4자리 숫자만 가능합니다';
+    }
+    if (password !== confirm) {
+      return '비밀번호가 일치하지 않습니다';
+    }
+    return '';
+  };
 
   // 기존 데이터 조회
   const fetchShareData = async () => {
@@ -160,6 +192,21 @@ export default function EditExternalSharePage() {
       return;
     }
 
+    // shareId 검증
+    if (newShareId && shareIdError) {
+      alert(shareIdError);
+      return;
+    }
+
+    // 비밀번호 검증
+    if (newPassword) {
+      const pwError = validatePassword(newPassword, confirmPassword);
+      if (pwError) {
+        alert(pwError);
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -176,6 +223,16 @@ export default function EditExternalSharePage() {
         data.expiresAt = new Date(expiresAt).toISOString();
       } else {
         data.expiresAt = null;
+      }
+
+      // shareId가 입력되었고 기존과 다른 경우에만 전송
+      if (newShareId && newShareId !== shareData?.shareId) {
+        data.shareId = newShareId;
+      }
+
+      // 비밀번호가 입력된 경우에만 전송
+      if (newPassword) {
+        data.password = newPassword;
       }
 
       const response = await externalShareAPI.update(shareId, data);
@@ -230,23 +287,113 @@ export default function EditExternalSharePage() {
           {shareData && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-gray-700">
-                <span className="font-medium">공유 ID:</span> {shareData.shareId}
-              </p>
-              <p className="text-sm text-gray-700 mt-1">
                 <span className="font-medium">조회수:</span> {shareData.viewCount}회
-              </p>
-              <p className="text-sm text-gray-700 mt-1">
-                <span className="font-medium">비밀번호:</span> 비밀번호는 보안상 수정할 수 없습니다
               </p>
             </div>
           )}
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          {/* URL 변경 */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-[#333333] mb-4">
+              1. 공유 URL 설정
+            </h2>
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                공유 링크 URL
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 text-sm whitespace-nowrap">/share/</span>
+                <input
+                  type="text"
+                  value={newShareId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewShareId(value);
+                    setShareIdError(validateShareId(value));
+                  }}
+                  placeholder={shareData?.shareId || ''}
+                  className={`flex-1 px-4 py-2 border rounded-lg text-[#333333] bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF] ${
+                    shareIdError ? 'border-red-500' : 'border-[#E0E0E0]'
+                  }`}
+                />
+              </div>
+              {shareIdError && (
+                <p className="text-red-500 text-sm mt-1">{shareIdError}</p>
+              )}
+              <p className="text-amber-600 text-sm mt-2">
+                ⚠️ URL 변경 시 기존 공유 링크가 작동하지 않습니다
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                변경하지 않으려면 비워두세요 (현재: {shareData?.shareId})
+              </p>
+              <p className="text-gray-400 text-sm">
+                영문, 숫자만 사용 가능 (4-20자)
+              </p>
+            </div>
+          </div>
+
+          {/* 비밀번호 변경 */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-[#333333] mb-4">
+              2. 비밀번호 변경 (선택)
+            </h2>
+            <div className="max-w-md space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  새 비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setNewPassword(value);
+                    setPasswordError(validatePassword(value, confirmPassword));
+                  }}
+                  placeholder="4자리 숫자"
+                  maxLength={4}
+                  className={`w-full px-4 py-2 border rounded-lg text-[#333333] bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF] ${
+                    passwordError ? 'border-red-500' : 'border-[#E0E0E0]'
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  비밀번호 확인
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setConfirmPassword(value);
+                    setPasswordError(validatePassword(newPassword, value));
+                  }}
+                  placeholder="비밀번호 재입력"
+                  maxLength={4}
+                  className={`w-full px-4 py-2 border rounded-lg text-[#333333] bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF] ${
+                    passwordError ? 'border-red-500' : 'border-[#E0E0E0]'
+                  }`}
+                />
+              </div>
+              {passwordError && (
+                <p className="text-red-500 text-sm">{passwordError}</p>
+              )}
+              <p className="text-amber-600 text-sm">
+                ⚠️ 비밀번호 변경 시 기존 비밀번호는 더 이상 사용할 수 없습니다
+              </p>
+              <p className="text-gray-400 text-sm">
+                변경하지 않으려면 비워두세요
+              </p>
+            </div>
+          </div>
+
           {/* 프로젝트 선택 */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-[#333333] mb-4">
-              1. 프로젝트 선택 ({selectedProjects.length}개)
+              3. 프로젝트 선택 ({selectedProjects.length}개)
             </h2>
 
             {selectedProjects.length === 0 ? (
@@ -365,7 +512,7 @@ export default function EditExternalSharePage() {
           {/* 만료일 설정 (선택) */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-[#333333] mb-4">
-              2. 만료일 설정 (선택)
+              4. 만료일 설정 (선택)
             </h2>
             <div className="max-w-xs">
               <input

@@ -636,6 +636,13 @@ export const externalShareAPI = {
     password?: string;
     isActive?: boolean;
     expiresAt?: string | null;
+    shareId?: string;  // URL 변경용
+    projectSelections?: Array<{
+      projectId: string;
+      category: 'holding' | 'bank';
+      year: number;
+      quarter: '1Q' | '2Q' | '3Q' | '4Q';
+    }>;
   }) =>
     apiRequest(`/admin/external-shares/${id}`, {
       method: 'PATCH',

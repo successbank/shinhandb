@@ -22,7 +22,7 @@ export function generateShareId(): string {
 
 /**
  * share_id 검증
- * - 길이: 12자
+ * - 길이: 4-20자 (관리자 URL 변경 규칙과 동일)
  * - 문자: 영문 대소문자 + 숫자만
  */
 export function validateShareId(shareId: string): boolean {
@@ -30,10 +30,7 @@ export function validateShareId(shareId: string): boolean {
     return false;
   }
 
-  if (shareId.length !== 12) {
-    return false;
-  }
-
-  const validPattern = /^[A-Za-z0-9]{12}$/;
+  // 4-20자 영문+숫자만 (관리자 URL 변경 규칙과 동일)
+  const validPattern = /^[A-Za-z0-9]{4,20}$/;
   return validPattern.test(shareId);
 }
