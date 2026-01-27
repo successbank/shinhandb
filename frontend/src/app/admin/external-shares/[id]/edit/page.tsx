@@ -69,6 +69,26 @@ export default function EditExternalSharePage() {
   const years = [currentYear - 1, currentYear, currentYear + 1];
   const quarters: Array<'1Q' | '2Q' | '3Q' | '4Q'> = ['1Q', '2Q', '3Q', '4Q'];
 
+  // 프로젝트 선택 항목 정렬 함수
+  const sortProjects = (projects: ProjectSelection[]): ProjectSelection[] => {
+    return [...projects].sort((a, b) => {
+      // 1. 카테고리 (holding < bank)
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      // 2. 연도 (내림차순 - 최신 먼저)
+      if (a.year !== b.year) {
+        return b.year - a.year;
+      }
+      // 3. 분기 (1Q → 4Q)
+      if (a.quarter !== b.quarter) {
+        return a.quarter.localeCompare(b.quarter);
+      }
+      // 4. displayOrder (오름차순)
+      return a.displayOrder - b.displayOrder;
+    });
+  };
+
   // shareId 검증 함수 (영문+숫자만)
   const validateShareId = (value: string): string => {
     if (value.length === 0) return ''; // 빈 값은 허용 (변경하지 않음)
@@ -124,7 +144,7 @@ export default function EditExternalSharePage() {
             quarter: project.quarter,
             displayOrder: project.displayOrder,
           }));
-          setSelectedProjects(selections);
+          setSelectedProjects(sortProjects(selections));
         }
       }
     } catch (err: any) {
@@ -166,17 +186,15 @@ export default function EditExternalSharePage() {
       .filter(p => p.category === 'holding' && p.year === currentYear && p.quarter === '1Q')
       .reduce((max, p) => Math.max(max, p.displayOrder), -1);
 
-    setSelectedProjects([
-      ...selectedProjects,
-      {
-        projectId: project.id,
-        projectTitle: project.title,
-        category: 'holding',
-        year: currentYear,
-        quarter: '1Q',
-        displayOrder: sameQuarterMax + 1,
-      },
-    ]);
+    const newProject: ProjectSelection = {
+      projectId: project.id,
+      projectTitle: project.title,
+      category: 'holding',
+      year: currentYear,
+      quarter: '1Q',
+      displayOrder: sameQuarterMax + 1,
+    };
+    setSelectedProjects(sortProjects([...selectedProjects, newProject]));
     setShowProjectList(false);
   };
 
@@ -215,7 +233,7 @@ export default function EditExternalSharePage() {
       updated[index] = { ...current, [field]: value };
     }
 
-    setSelectedProjects(updated);
+    setSelectedProjects(sortProjects(updated));
   };
 
   // 위로 이동
@@ -243,7 +261,7 @@ export default function EditExternalSharePage() {
         }
         return p;
       });
-      setSelectedProjects(updated);
+      setSelectedProjects(sortProjects(updated));
     }
   };
 
@@ -272,7 +290,7 @@ export default function EditExternalSharePage() {
         }
         return p;
       });
-      setSelectedProjects(updated);
+      setSelectedProjects(sortProjects(updated));
     }
   };
 

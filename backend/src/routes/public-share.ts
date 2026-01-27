@@ -270,7 +270,7 @@ router.get(
          FROM share_contents sc
          JOIN projects p ON sc.project_id = p.id
          WHERE sc.share_id = $1
-         ORDER BY sc.year DESC, sc.quarter, sc.display_order`,
+         ORDER BY sc.year DESC, sc.quarter, sc.display_order, sc.id ASC`,
         [shareUUID]
       );
 
@@ -384,7 +384,7 @@ router.get(
            created_at AS "createdAt"
          FROM contents
          WHERE project_id = $1
-         ORDER BY file_type_flag NULLS LAST, created_at`,
+         ORDER BY file_type_flag DESC NULLS LAST, created_at ASC, id ASC`,
         [projectId]
       );
 

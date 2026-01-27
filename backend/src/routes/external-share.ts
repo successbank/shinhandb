@@ -300,7 +300,7 @@ router.get(
          FROM share_contents sc
          JOIN projects p ON sc.project_id = p.id
          WHERE sc.share_id = $1
-         ORDER BY sc.year DESC, sc.quarter, sc.display_order`,
+         ORDER BY sc.year DESC, sc.quarter, sc.display_order, sc.id ASC`,
         [share.id]
       );
 

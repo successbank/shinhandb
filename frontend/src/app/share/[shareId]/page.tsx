@@ -877,7 +877,12 @@ export default function PublicSharePage() {
                                       quarter,
                                       category: 'holding',
                                       categoryName: '신한금융지주',
-                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+                                      projects: [...projects].sort((a, b) => {
+                                        const orderDiff = (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+                                        if (orderDiff !== 0) return orderDiff;
+                                        // 타이 브레이커: projectId 문자열 비교 (결정적)
+                                        return a.projectId.localeCompare(b.projectId);
+                                      })
                                     });
                                   }}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
@@ -975,7 +980,12 @@ export default function PublicSharePage() {
                                       quarter,
                                       category: 'bank',
                                       categoryName: '신한은행',
-                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+                                      projects: [...projects].sort((a, b) => {
+                                        const orderDiff = (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+                                        if (orderDiff !== 0) return orderDiff;
+                                        // 타이 브레이커: projectId 문자열 비교 (결정적)
+                                        return a.projectId.localeCompare(b.projectId);
+                                      })
                                     });
                                   }}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
