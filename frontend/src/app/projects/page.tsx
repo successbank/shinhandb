@@ -672,44 +672,62 @@ export default function ProjectsPage() {
               )}
 
               {/* 페이지네이션 */}
-              {totalPages > 1 && (
-                <div className="mt-6 flex justify-center gap-1 lg:gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    이전
-                  </button>
+              {totalPages > 1 && (() => {
+                const groupStart = Math.floor((page - 1) / 5) * 5 + 1;
+                const groupEnd = Math.min(groupStart + 4, totalPages);
+                return (
+                  <div className="mt-6 flex justify-center gap-1 lg:gap-2">
+                    <button
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                      className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      맨 앞으로
+                    </button>
+                    <button
+                      onClick={() => setPage(page === groupStart ? groupStart - 1 : page - 1)}
+                      disabled={page === 1}
+                      className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      이전
+                    </button>
 
-                  <div className="flex gap-1 lg:gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNum = i + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg ${
-                            page === pageNum
-                              ? 'bg-[#0046FF] text-white'
-                              : 'border border-[#E0E0E0] text-[#333333] hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                    <div className="flex gap-1 lg:gap-2">
+                      {Array.from({ length: groupEnd - groupStart + 1 }, (_, i) => {
+                        const pageNum = groupStart + i;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPage(pageNum)}
+                            className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg ${
+                              page === pageNum
+                                ? 'bg-[#0046FF] text-white'
+                                : 'border border-[#E0E0E0] text-[#333333] hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setPage(page === groupEnd ? groupEnd + 1 : page + 1)}
+                      disabled={page === totalPages}
+                      className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      다음
+                    </button>
+                    <button
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                      className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      맨 끝으로
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    다음
-                  </button>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
