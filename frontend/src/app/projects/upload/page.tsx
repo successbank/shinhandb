@@ -37,7 +37,6 @@ export default function ProjectUploadPage() {
   const [projectId, setProjectId] = useState<string>('');
 
   // 두 줄 제목 입력
-  const [titleLine1Enabled, setTitleLine1Enabled] = useState(false);
   const [titleLine1, setTitleLine1] = useState('');
   const [titleLine2, setTitleLine2] = useState('');
 
@@ -86,7 +85,7 @@ export default function ProjectUploadPage() {
    */
   const handleCreateProject = async () => {
     // 두 줄 제목 통합
-    const fullTitle = titleLine1Enabled && titleLine1.trim()
+    const fullTitle = titleLine1.trim()
       ? `${titleLine1.trim()}\n${titleLine2.trim()}`
       : titleLine2.trim();
 
@@ -364,40 +363,31 @@ export default function ProjectUploadPage() {
                       프로젝트 제목 <span className="text-[#E53935]">*</span>
                     </label>
 
-                    {/* 첫 번째 줄 (체크박스로 활성화) */}
+                    {/* 게시일자 입력 */}
                     <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          id="enableTitleLine1"
-                          checked={titleLine1Enabled}
-                          onChange={(e) => setTitleLine1Enabled(e.target.checked)}
-                          className="w-4 h-4 text-[#0046FF] border-gray-300 rounded focus:ring-[#0046FF]"
-                        />
-                        <label htmlFor="enableTitleLine1" className="text-sm text-gray-600 cursor-pointer">
-                          첫 번째 줄 제목 사용
-                        </label>
-                      </div>
+                      <label className="block text-sm font-medium text-[#333333] mb-1">
+                        게시일자
+                      </label>
                       <input
                         type="text"
                         value={titleLine1}
                         onChange={(e) => setTitleLine1(e.target.value)}
-                        placeholder="첫 번째 줄 제목 (선택)"
-                        disabled={!titleLine1Enabled}
-                        className={`w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900 ${
-                          !titleLine1Enabled ? 'bg-gray-100 cursor-not-allowed' : ''
-                        }`}
+                        placeholder="광고 최초 게시일 (YYMMDD) / 예시 : 260101"
+                        className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                         maxLength={127}
                       />
                     </div>
 
                     {/* 두 번째 줄 (항상 활성화) + 공유 버튼 */}
+                    <label className="block text-sm font-medium text-[#333333] mb-1">
+                      프로젝트명
+                    </label>
                     <div className="flex items-start gap-2">
                       <input
                         type="text"
                         value={titleLine2}
                         onChange={(e) => setTitleLine2(e.target.value)}
-                        placeholder="예: 2026 위기가정지원사업"
+                        placeholder="예시 : 위기가정 지원사업"
                         className="flex-1 px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF] text-gray-900"
                         maxLength={127}
                       />
@@ -405,7 +395,7 @@ export default function ProjectUploadPage() {
 
                     {/* 글자 수 표시 */}
                     <p className="mt-1 text-xs text-gray-500 text-right">
-                      {titleLine1Enabled && titleLine1.trim()
+                      {titleLine1.trim()
                         ? `${titleLine1.length + titleLine2.length + 1}/255자`
                         : `${titleLine2.length}/255자`}
                     </p>

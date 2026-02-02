@@ -197,7 +197,7 @@ export default function CategoriesManagementPage() {
                   : 'text-gray-500 hover:text-shinhan-darkGray'
               }`}
             >
-              신한금융지주
+              신한지주
             </button>
             <button
               onClick={() => setSelectedMemberType('BANK')}

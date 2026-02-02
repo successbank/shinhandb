@@ -211,16 +211,16 @@ router.get(
       const { shareId } = req.params;
       const shareUUID = res.locals.shareUUID;
 
-      // Redis 캐싱 (30분)
-      const cacheKey = `share_contents:${shareId}`;
-      const cached = await redis.get(cacheKey);
-
-      if (cached) {
-        return res.json({
-          success: true,
-          data: JSON.parse(cached),
-        });
-      }
+      // Redis 캐싱 비활성화 - 순서 일관성을 위해 항상 DB에서 조회
+      // const cacheKey = `share_contents:${shareId}`;
+      // const cached = await redis.get(cacheKey);
+      //
+      // if (cached) {
+      //   return res.json({
+      //     success: true,
+      //     data: JSON.parse(cached),
+      //   });
+      // }
 
       // 공유 활성화 및 만료 확인
       const shareCheck = await pool.query(
@@ -270,7 +270,7 @@ router.get(
          FROM share_contents sc
          JOIN projects p ON sc.project_id = p.id
          WHERE sc.share_id = $1
-         ORDER BY sc.year DESC, sc.quarter, sc.display_order, sc.id ASC`,
+         ORDER BY sc.year DESC, sc.quarter ASC, sc.category ASC, sc.display_order ASC, sc.created_at ASC`,
         [shareUUID]
       );
 
@@ -302,6 +302,20 @@ router.get(
         });
       }
 
+      // ★ 각 분기별 배열을 display_order로 명시적 정렬 (순서 일관성 보장)
+      for (const category of ['holding', 'bank']) {
+        if (!timeline[category]) continue;
+        for (const year of Object.keys(timeline[category])) {
+          for (const quarter of Object.keys(timeline[category][year])) {
+            timeline[category][year][quarter].sort((a: any, b: any) => {
+              const orderDiff = (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+              if (orderDiff !== 0) return orderDiff;
+              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            });
+          }
+        }
+      }
+
       // 빈 카테고리 제거
       if (Object.keys(timeline.holding).length === 0) {
         delete timeline.holding;
@@ -315,8 +329,8 @@ router.get(
         timeline,
       };
 
-      // 캐싱 (30분)
-      await redis.setex(cacheKey, 1800, JSON.stringify(responseData));
+      // 캐싱 비활성화 - 순서 일관성을 위해
+      // await redis.setex(cacheKey, 1800, JSON.stringify(responseData));
 
       res.json({
         success: true,
