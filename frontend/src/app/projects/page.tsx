@@ -682,14 +682,14 @@ export default function ProjectsPage() {
                       disabled={page === 1}
                       className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
-                      맨 앞으로
+                      &lt;&lt;
                     </button>
                     <button
                       onClick={() => setPage(page === groupStart ? groupStart - 1 : page - 1)}
                       disabled={page === 1}
                       className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
-                      이전
+                      &lt;
                     </button>
 
                     <div className="flex gap-1 lg:gap-2">
@@ -716,14 +716,14 @@ export default function ProjectsPage() {
                       disabled={page === totalPages}
                       className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
-                      다음
+                      &gt;
                     </button>
                     <button
                       onClick={() => setPage(totalPages)}
                       disabled={page === totalPages}
                       className="px-3 lg:px-4 py-2 text-sm lg:text-base border border-[#E0E0E0] text-[#333333] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
-                      맨 끝으로
+                      &gt;&gt;
                     </button>
                   </div>
                 );
