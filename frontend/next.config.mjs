@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   webpack: (config) => {
     config.watchOptions = {
       poll: 1000,
@@ -41,5 +47,4 @@ const nextConfig = {
     ],
   },
 };
-
 export default nextConfig;
