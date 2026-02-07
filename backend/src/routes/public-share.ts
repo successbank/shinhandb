@@ -31,7 +31,7 @@ router.post(
     try {
       const { shareId } = req.params;
       const { password } = req.body;
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const ip = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '0.0.0.0';
       const userAgent = req.get('user-agent') || '';
 
       // shareId 검증

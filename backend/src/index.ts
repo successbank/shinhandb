@@ -11,6 +11,7 @@ import { checkConnection, initializeContentIndex } from './services/elasticsearc
 dotenv.config();
 
 const app: Application = express();
+app.set('trust proxy', true); // Traefik 리버스 프록시 뒤에서 실제 클라이언트 IP 추출
 const PORT = process.env.PORT || 3001;
 
 // 업로드 디렉토리 생성 (서버 시작 시)

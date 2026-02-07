@@ -10,8 +10,8 @@ import { Redis } from 'ioredis';
 // Redis 클라이언트 초기화
 // REDIS_URL 파싱 또는 개별 환경 변수 사용
 let redisConfig: any = {
-  host: 'shinhandb_redis',
-  port: 6379,
+  host: process.env.REDIS_HOST || 'redis',
+  port: parseInt(process.env.REDIS_PORT || '6379'),
   db: 0,
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
@@ -21,23 +21,23 @@ let redisConfig: any = {
   lazyConnect: false,
 };
 
-// REDIS_URL 환경 변수가 있으면 사용
-if (process.env.REDIS_URL) {
+// 개별 환경변수 우선 사용 (db/index.ts 패턴과 동일)
+if (process.env.REDIS_PASSWORD) {
+  redisConfig.password = process.env.REDIS_PASSWORD;
+  console.log('[Redis] Using individual env vars for connection');
+} else if (process.env.REDIS_URL) {
+  // REDIS_URL은 폴백으로만 사용
   const redisUrl = process.env.REDIS_URL;
   console.log('[Redis] Using REDIS_URL for connection');
 
-  // URL에서 비밀번호 추출: redis://:password@host:port
   const match = redisUrl.match(/redis:\/\/:([^@]+)@([^:]+):(\d+)/);
   if (match) {
     redisConfig.password = match[1];
     redisConfig.host = match[2];
     redisConfig.port = parseInt(match[3]);
+  } else {
+    console.warn('[Redis] Failed to parse REDIS_URL, using defaults:', redisUrl);
   }
-} else if (process.env.REDIS_PASSWORD) {
-  // 개별 환경 변수 사용
-  redisConfig.password = process.env.REDIS_PASSWORD;
-  if (process.env.REDIS_HOST) redisConfig.host = process.env.REDIS_HOST;
-  if (process.env.REDIS_PORT) redisConfig.port = parseInt(process.env.REDIS_PORT);
 }
 
 console.log(`[Redis] Connecting to ${redisConfig.host}:${redisConfig.port} (auth: ${redisConfig.password ? 'yes' : 'no'})`);

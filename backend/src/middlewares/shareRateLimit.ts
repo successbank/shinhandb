@@ -7,6 +7,7 @@ import { AppError } from './errorHandler';
  * - IP 기반 제한
  * - 5회 실패 시 30분 차단
  * - Redis에 실패 카운트 저장
+ * - Redis 장애 시 graceful degradation (요청 통과)
  */
 
 const MAX_ATTEMPTS = 5;
@@ -20,15 +21,19 @@ export async function incrementFailedAttempts(
   ip: string,
   shareId: string
 ): Promise<number> {
-  const key = `share_auth_fail:${shareId}:${ip}`;
-  const current = await redis.incr(key);
+  try {
+    const key = `share_auth_fail:${shareId}:${ip}`;
+    const current = await redis.incr(key);
 
-  // 첫 번째 실패일 경우 TTL 설정
-  if (current === 1) {
-    await redis.expire(key, ATTEMPT_WINDOW);
+    if (current === 1) {
+      await redis.expire(key, ATTEMPT_WINDOW);
+    }
+
+    return current;
+  } catch (error: any) {
+    console.warn('[RateLimit] incrementFailedAttempts Redis error:', error.message);
+    return 0;
   }
-
-  return current;
 }
 
 /**
@@ -38,25 +43,38 @@ export async function resetFailedAttempts(
   ip: string,
   shareId: string
 ): Promise<void> {
-  const key = `share_auth_fail:${shareId}:${ip}`;
-  await redis.del(key);
+  try {
+    const key = `share_auth_fail:${shareId}:${ip}`;
+    await redis.del(key);
+  } catch (error: any) {
+    console.warn('[RateLimit] resetFailedAttempts Redis error:', error.message);
+  }
 }
 
 /**
  * 차단 상태 확인
  */
 export async function isBlocked(ip: string, shareId: string): Promise<boolean> {
-  const blockKey = `share_auth_block:${shareId}:${ip}`;
-  const blocked = await redis.get(blockKey);
-  return blocked === '1';
+  try {
+    const blockKey = `share_auth_block:${shareId}:${ip}`;
+    const blocked = await redis.get(blockKey);
+    return blocked === '1';
+  } catch (error: any) {
+    console.warn('[RateLimit] isBlocked Redis error:', error.message);
+    return false;
+  }
 }
 
 /**
  * IP 차단
  */
 export async function blockIP(ip: string, shareId: string): Promise<void> {
-  const blockKey = `share_auth_block:${shareId}:${ip}`;
-  await redis.setex(blockKey, BLOCK_DURATION, '1');
+  try {
+    const blockKey = `share_auth_block:${shareId}:${ip}`;
+    await redis.setex(blockKey, BLOCK_DURATION, '1');
+  } catch (error: any) {
+    console.warn('[RateLimit] blockIP Redis error:', error.message);
+  }
 }
 
 /**
@@ -66,9 +84,14 @@ export async function getFailedAttempts(
   ip: string,
   shareId: string
 ): Promise<number> {
-  const key = `share_auth_fail:${shareId}:${ip}`;
-  const count = await redis.get(key);
-  return count ? parseInt(count, 10) : 0;
+  try {
+    const key = `share_auth_fail:${shareId}:${ip}`;
+    const count = await redis.get(key);
+    return count ? parseInt(count, 10) : 0;
+  } catch (error: any) {
+    console.warn('[RateLimit] getFailedAttempts Redis error:', error.message);
+    return 0;
+  }
 }
 
 /**
@@ -80,7 +103,7 @@ export async function shareAuthRateLimit(
   next: NextFunction
 ): Promise<void> {
   try {
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const ip = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '0.0.0.0';
     const shareId = req.params.shareId;
 
     if (!shareId) {
@@ -112,6 +135,11 @@ export async function shareAuthRateLimit(
 
     next();
   } catch (error) {
-    next(error);
+    // AppError(429 등)는 그대로 전달, Redis 에러는 경고 로그 후 통과
+    if (error instanceof AppError) {
+      return next(error);
+    }
+    console.warn('[RateLimit] Middleware Redis error, allowing request through:', (error as Error).message);
+    next();
   }
 }
