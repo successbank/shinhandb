@@ -31,6 +31,7 @@ services:
       - "${FRONTEND_PORT}:3000"
     networks:
       - app-network
+      - coolify
     depends_on:
       backend:
         condition: service_healthy
@@ -71,6 +72,7 @@ services:
       - "${BACKEND_PORT}:3001"
     networks:
       - app-network
+      - coolify
     depends_on:
       database:
         condition: service_healthy
@@ -194,6 +196,9 @@ networks:
   app-network:
     driver: bridge
     name: ${PROJECT_NAME}_network_prod
+  coolify:
+    external: true
+    name: coolify
 
 # ===================================
 # Volumes (Persistent Data)
