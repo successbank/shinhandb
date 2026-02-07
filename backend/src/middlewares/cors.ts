@@ -5,6 +5,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.1.45:5647',
   'http://211.248.112.67:5647',
+  'https://shdb.co.kr',
   process.env.FRONTEND_URL || '',
 ];
 

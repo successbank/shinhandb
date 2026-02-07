@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const backendInternalUrl = process.env.BACKEND_INTERNAL_URL || 'http://shinhandb_backend:3001';
+const backendInternalUrl = process.env.BACKEND_INTERNAL_URL || 'http://backend:3001';
 const backendUrlObj = new URL(backendInternalUrl);
 const backendHost = backendUrlObj.hostname;
 const backendPort = backendUrlObj.port || '3001';
