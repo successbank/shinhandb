@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const backendInternalUrl = process.env.BACKEND_INTERNAL_URL || 'http://shinhandb_backend:3001';
+const backendUrlObj = new URL(backendInternalUrl);
+const backendHost = backendUrlObj.hostname;
+const backendPort = backendUrlObj.port || '3001';
+
 const nextConfig = {
   output: 'standalone',
   typescript: {
@@ -18,11 +23,11 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://backend:3001/api/:path*',
+        destination: `${backendInternalUrl}/api/:path*`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://backend:3001/uploads/:path*',
+        destination: `${backendInternalUrl}/uploads/:path*`,
       },
       {
         source: '/mo',
@@ -35,13 +40,13 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5648',
+        port: backendPort,
         pathname: '/uploads/**',
       },
       {
         protocol: 'http',
-        hostname: 'backend',
-        port: '3001',
+        hostname: backendHost,
+        port: backendPort,
         pathname: '/uploads/**',
       },
     ],
