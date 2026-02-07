@@ -26,6 +26,7 @@ services:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
       - NEXT_PUBLIC_API_URL=http://backend:3001
+      - BACKEND_INTERNAL_URL=http://backend:3001
     ports:
       - "${FRONTEND_PORT}:3000"
     networks:
