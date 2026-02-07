@@ -74,6 +74,7 @@ export default function Header() {
                   <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-[#E0E0E0] rounded-lg shadow-lg py-2">
                     <Link
                       href="/admin/users"
+                      prefetch={false}
                       className="block px-4 py-2 text-sm text-[#333333] hover:bg-gray-50 hover:text-[#0046FF] transition-colors"
                       onClick={() => setShowAdminMenu(false)}
                     >
@@ -81,6 +82,7 @@ export default function Header() {
                     </Link>
                     <Link
                       href="/admin/categories"
+                      prefetch={false}
                       className="block px-4 py-2 text-sm text-[#333333] hover:bg-gray-50 hover:text-[#0046FF] transition-colors"
                       onClick={() => setShowAdminMenu(false)}
                     >
@@ -88,6 +90,7 @@ export default function Header() {
                     </Link>
                     <Link
                       href="/admin/logs"
+                      prefetch={false}
                       className="block px-4 py-2 text-sm text-[#333333] hover:bg-gray-50 hover:text-[#0046FF] transition-colors"
                       onClick={() => setShowAdminMenu(false)}
                     >
@@ -95,6 +98,7 @@ export default function Header() {
                     </Link>
                     <Link
                       href="/admin/external-shares"
+                      prefetch={false}
                       className="block px-4 py-2 text-sm text-[#333333] hover:bg-gray-50 hover:text-[#0046FF] transition-colors"
                       onClick={() => setShowAdminMenu(false)}
                     >
@@ -171,6 +175,7 @@ export default function Header() {
                 </div>
                 <Link
                   href="/admin/users"
+                  prefetch={false}
                   className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
@@ -178,6 +183,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/admin/categories"
+                  prefetch={false}
                   className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
@@ -185,6 +191,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/admin/logs"
+                  prefetch={false}
                   className="block px-6 text-sm font-medium text-[#333333] hover:text-[#0046FF] transition-colors"
                   onClick={() => setShowMobileMenu(false)}
                 >
