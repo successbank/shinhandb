@@ -221,7 +221,7 @@ export default function ProjectDetailModal({
       }
 
       // 3. 파일 삭제 처리
-      for (const fileId of filesToDelete) {
+      for (const fileId of Array.from(filesToDelete)) {
         await projectsApi.deleteFile(projectId, fileId);
       }
 
