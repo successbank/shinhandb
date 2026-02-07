@@ -174,7 +174,9 @@ export default function MoveCategoryModal({
               <CategoryTreeSidebar
                 categories={categories}
                 selectedCategoryIds={selectedCategoryIds}
-                onCategorySelect={handleCategorySelect}
+                onCategorySelect={(categoryIds: string[]) => {
+                  setSelectedCategoryIds(categoryIds.slice(0, 3));
+                }}
                 maxSelection={3}
                 totalContentCount={0}
               />
