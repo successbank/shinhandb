@@ -1223,3 +1223,87 @@ git commit -m "feat: 외부공유 시스템 완성 및 Swiper Coverflow 적용
 ```
 
 ---
+
+### 2026-02-07: Coolify 배포 환경 수정
+
+#### 해결된 문제
+
+**1. DATABASE_URL 파싱 에러**
+
+**문제:** 데이터베이스 비밀번호에 `!@#` 특수문자가 포함되어 PostgreSQL 연결 실패
+- 에러: `TypeError: Cannot read properties of undefined (reading 'searchParams')`
+- 원인: `pg-connection-string` 라이브러리가 URL의 특수문자를 파싱하지 못함
+
+**해결:**
+- Coolify docker-compose.yaml에서 DATABASE_URL의 비밀번호를 URL 인코딩
+- `manpass!@#4` → `manpass%21%40%234`
+
+```yaml
+# 수정 전
+DATABASE_URL: 'postgresql://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}'
+
+# 수정 후 (Coolify 배포 환경)
+DATABASE_URL: 'postgresql://shinhandb_user:manpass%21%40%234@database:5432/shinhandb_db'
+```
+
+**2. Next.js rewrites 호스트명 오류**
+
+**문제:** `next.config.mjs`에서 `shinhandb_backend` 호스트명이 Coolify 환경에서 DNS 해석 불가
+- 에러: `getaddrinfo EAI_AGAIN shinhandb_backend`
+- 원인: Coolify에서 컨테이너 이름이 `backend`로 설정됨
+
+**해결:**
+- `frontend/next.config.mjs`에서 `shinhandb_backend` → `backend`로 변경
+- Traefik에서 `/api` 경로를 백엔드로 직접 라우팅하도록 설정
+
+**3. Traefik API 라우팅 설정**
+
+**문제:** API 요청이 프론트엔드로 라우팅되어 502 Bad Gateway 발생
+
+**해결:** Coolify docker-compose.yaml의 backend 서비스에 Traefik 라벨 추가
+
+```yaml
+# 백엔드 서비스 labels 섹션에 추가
+- traefik.enable=true
+- traefik.docker.network=lgsk4wkgo8s0g00w0cgook44
+- traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.entryPoints=https
+- 'traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.rule=Host(`shdb.co.kr`) && PathPrefix(`/api`)'
+- traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.tls=true
+- traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.tls.certresolver=letsencrypt
+- traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.priority=200
+- traefik.http.routers.https-api-lgsk4wkgo8s0g00w0cgook44-backend.service=backend-lgsk4wkgo8s0g00w0cgook44
+- traefik.http.services.backend-lgsk4wkgo8s0g00w0cgook44.loadbalancer.server.port=3001
+```
+
+#### Coolify 배포 시 주의사항
+
+1. **DATABASE_URL 특수문자 처리**
+   - DB 비밀번호에 `!@#$%^&*` 등의 특수문자가 있으면 URL 인코딩 필요
+   - 인코딩 표: `!`→`%21`, `@`→`%40`, `#`→`%23`, `$`→`%24`
+
+2. **컨테이너 호스트명**
+   - Coolify 환경에서 서비스 이름은 `docker-compose.yml`의 서비스 키 이름 사용
+   - 예: `backend`, `database`, `redis`, `elasticsearch`
+
+3. **Traefik 라우팅**
+   - `/api` 경로는 백엔드로 직접 라우팅 (priority 200)
+   - 프론트엔드는 기본 경로 `/` 처리
+
+#### 현재 서비스 URL
+
+- **Frontend:** https://shdb.co.kr
+- **Backend API:** https://shdb.co.kr/api
+- **Coolify Dashboard:** http://103.124.103.232:8000
+
+#### 테스트 결과
+
+| 항목 | 결과 |
+|------|------|
+| 로그인 페이지 로드 | ✅ |
+| 로그인 폼 입력 | ✅ |
+| 로그인 처리 | ✅ |
+| 프로젝트 목록 표시 (80개) | ✅ |
+| 이미지 썸네일 로딩 | ✅ |
+| 콘솔 에러 없음 | ✅ |
+
+---
