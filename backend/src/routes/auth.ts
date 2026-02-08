@@ -64,7 +64,7 @@ router.post(
           [
             user.id,
             'LOGIN',
-            req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
+            req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '0.0.0.0',
             JSON.stringify({
               username: user.username,
               userAgent: req.headers['user-agent'] || 'Unknown',

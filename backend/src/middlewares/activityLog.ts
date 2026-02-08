@@ -6,7 +6,7 @@ export const logActivity = (actionType: string) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.user?.id || null;
-      const ipAddress = req.ip || req.socket.remoteAddress;
+      const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || '0.0.0.0';
       const details = {
         method: req.method,
         path: req.path,
