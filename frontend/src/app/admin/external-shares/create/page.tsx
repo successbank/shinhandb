@@ -243,7 +243,7 @@ function CreateExternalShareContent() {
                                 e.target.value
                               )
                             }
-                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
                           >
                             <option value="holding">신한금융지주</option>
                             <option value="bank">신한은행</option>
@@ -264,7 +264,7 @@ function CreateExternalShareContent() {
                                 parseInt(e.target.value)
                               )
                             }
-                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
                           >
                             {years.map((year) => (
                               <option key={year} value={year}>
@@ -284,7 +284,7 @@ function CreateExternalShareContent() {
                             onChange={(e) =>
                               handleUpdateSelection(index, 'quarter', e.target.value)
                             }
-                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                            className="w-full px-3 py-2 border border-[#E0E0E0] rounded-lg text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
                           >
                             {quarters.map((q) => (
                               <option key={q} value={q}>
@@ -323,7 +323,7 @@ function CreateExternalShareContent() {
                 }}
                 placeholder="4자리 숫자"
                 maxLength={4}
-                className="w-full px-4 py-3 border border-[#E0E0E0] rounded-lg text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                className="w-full px-4 py-3 border border-[#E0E0E0] rounded-lg text-center text-2xl font-bold text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
               />
               <p className="mt-2 text-sm text-gray-500">
                 외부 사용자가 입력할 4자리 숫자 비밀번호
@@ -341,7 +341,7 @@ function CreateExternalShareContent() {
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
+                className="w-full px-4 py-2 border border-[#E0E0E0] rounded-lg text-black bg-white focus:outline-none focus:ring-2 focus:ring-[#0046FF]"
               />
               <p className="mt-2 text-sm text-gray-500">
                 설정하지 않으면 무제한으로 공유됩니다
