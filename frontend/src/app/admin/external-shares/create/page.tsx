@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { externalShareAPI, projectsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,7 +22,7 @@ interface ProjectSelection {
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
 }
 
-export default function CreateExternalSharePage() {
+function CreateExternalShareContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -446,5 +446,13 @@ export default function CreateExternalSharePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CreateExternalSharePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+      <CreateExternalShareContent />
+    </Suspense>
   );
 }
