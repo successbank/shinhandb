@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { externalShareAPI, projectsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 
@@ -25,6 +25,7 @@ interface ProjectSelection {
 export default function CreateExternalSharePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<ProjectSelection[]>([]);
@@ -55,6 +56,30 @@ export default function CreateExternalSharePage() {
   useEffect(() => {
     if (user && user.role === 'ADMIN') {
       fetchProjects();
+
+      // 복제 데이터 로드
+      if (searchParams.get('duplicate') === 'true') {
+        const raw = sessionStorage.getItem('duplicateShareData');
+        if (raw) {
+          try {
+            const data = JSON.parse(raw);
+            if (data.projectSelections?.length > 0) {
+              setSelectedProjects(data.projectSelections);
+            }
+            if (data.expiresAt) {
+              const date = new Date(data.expiresAt);
+              const localISOTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
+              setExpiresAt(localISOTime);
+            }
+          } catch (err) {
+            console.error('복제 데이터 파싱 실패:', err);
+          } finally {
+            sessionStorage.removeItem('duplicateShareData');
+          }
+        }
+      }
     } else if (user && user.role !== 'ADMIN') {
       router.push('/');
     }
@@ -158,7 +183,9 @@ export default function CreateExternalSharePage() {
           >
             ← 목록으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-shinhan-darkGray">외부공유 생성</h1>
+          <h1 className="text-3xl font-bold text-shinhan-darkGray">
+            {searchParams.get('duplicate') === 'true' ? '외부공유 복제' : '외부공유 생성'}
+          </h1>
           <p className="text-gray-600">
             프로젝트를 선택하고 분기를 지정한 후 비밀번호를 설정하세요
           </p>

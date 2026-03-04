@@ -80,6 +80,40 @@ export default function ExternalSharesPage() {
     }
   };
 
+  // 복제
+  const handleDuplicateShare = async (shareId: string, shareUuid: string) => {
+    if (!confirm(`/share/${shareId} 공유를 복제하시겠습니까?\n새 비밀번호를 설정하여 동일한 프로젝트 구성의 공유가 생성됩니다.`)) {
+      return;
+    }
+
+    try {
+      const response = await externalShareAPI.get(shareUuid);
+      if (!response.success || !response.data) {
+        throw new Error('공유 정보를 조회할 수 없습니다');
+      }
+
+      const { projects, expiresAt } = response.data;
+
+      const projectSelections = projects.map((p: any) => ({
+        projectId: p.projectId,
+        projectTitle: p.projectTitle,
+        category: p.category,
+        year: p.year,
+        quarter: p.quarter,
+      }));
+
+      sessionStorage.setItem('duplicateShareData', JSON.stringify({
+        projectSelections,
+        expiresAt,
+        sourceShareId: shareId,
+      }));
+
+      router.push('/admin/external-shares/create?duplicate=true');
+    } catch (err: any) {
+      alert(err.message || '복제 데이터 로드에 실패했습니다');
+    }
+  };
+
   // 삭제
   const handleDelete = async (id: string, shareId: string) => {
     if (!confirm(`공유 URL (${shareId})을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
@@ -328,6 +362,12 @@ export default function ExternalSharesPage() {
                           className="px-4 py-2 bg-[#0046FF] text-white text-sm rounded-lg hover:bg-[#003ACC] transition-colors"
                         >
                           URL 복사
+                        </button>
+                        <button
+                          onClick={() => handleDuplicateShare(share.shareId, share.id)}
+                          className="px-4 py-2 bg-emerald-500 text-white text-sm rounded-lg hover:bg-emerald-600 transition-colors"
+                        >
+                          복제
                         </button>
                         <button
                           onClick={() => router.push(`/admin/external-shares/${share.id}`)}
