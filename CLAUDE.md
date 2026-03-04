@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# 개발팀 페르소나
+- .claude/CLAUDE.md
+
 ## Project Overview
 
 **신한금융 광고관리 플랫폼** - 신한금융지주 및 신한은행의 광고 자료 통합 검색 및 관리 시스템

@@ -253,19 +253,27 @@ router.get(
            p.title AS "projectTitle",
            p.description AS "projectDescription",
            p.created_at AS "projectCreatedAt",
-           -- 프로젝트의 첫 번째 파일 썸네일 (대표 이미지)
+           -- 프로젝트의 최종원고 첫 번째 썸네일 (대표 이미지)
            (
              SELECT thumbnail_url
              FROM contents
-             WHERE project_id = p.id
+             WHERE project_id = p.id AND file_type_flag = 'FINAL_MANUSCRIPT'
              ORDER BY created_at
              LIMIT 1
            ) AS "thumbnailUrl",
-           -- 프로젝트의 파일 개수
+           -- 프로젝트의 최종원고 첫 번째 원본 이미지
+           (
+             SELECT file_url
+             FROM contents
+             WHERE project_id = p.id AND file_type_flag = 'FINAL_MANUSCRIPT'
+             ORDER BY created_at
+             LIMIT 1
+           ) AS "fileUrl",
+           -- 프로젝트의 최종원고 파일 개수
            (
              SELECT COUNT(*)
              FROM contents
-             WHERE project_id = p.id
+             WHERE project_id = p.id AND file_type_flag = 'FINAL_MANUSCRIPT'
            ) AS "fileCount"
          FROM share_contents sc
          JOIN projects p ON sc.project_id = p.id
@@ -296,6 +304,7 @@ router.get(
           title: row.projectTitle,
           description: row.projectDescription,
           thumbnailUrl: row.thumbnailUrl,
+          fileUrl: row.fileUrl,
           fileCount: parseInt(row.fileCount, 10),
           createdAt: row.projectCreatedAt,
           displayOrder: row.display_order,
@@ -310,7 +319,9 @@ router.get(
             timeline[category][year][quarter].sort((a: any, b: any) => {
               const orderDiff = (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
               if (orderDiff !== 0) return orderDiff;
-              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              const dateDiff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              if (dateDiff !== 0) return dateDiff;
+              return (a.projectId || '').localeCompare(b.projectId || '');
             });
           }
         }

@@ -296,7 +296,8 @@ router.get(
            sc.quarter,
            sc.display_order AS "displayOrder",
            p.title AS "projectTitle",
-           p.description AS "projectDescription"
+           p.description AS "projectDescription",
+           (SELECT COUNT(*) FROM contents WHERE project_id = p.id AND file_type_flag = 'FINAL_MANUSCRIPT') AS "finalManuscriptCount"
          FROM share_contents sc
          JOIN projects p ON sc.project_id = p.id
          WHERE sc.share_id = $1

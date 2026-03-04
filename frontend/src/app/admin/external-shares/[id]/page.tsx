@@ -16,6 +16,7 @@ interface ShareProject {
   year: number;
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
   displayOrder: number;
+  finalManuscriptCount?: number;
 }
 
 interface ShareDetail {
@@ -281,6 +282,11 @@ export default function ExternalShareDetailPage() {
                       <h3 className="font-bold text-[#333333] mb-1">
                         {project.projectTitle}
                       </h3>
+                      {parseInt(String(project.finalManuscriptCount ?? 0)) === 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full mb-1">
+                          ⚠️ 최종원고 없음
+                        </span>
+                      )}
                       {project.projectDescription && (
                         <p className="text-sm text-gray-600">
                           {project.projectDescription}

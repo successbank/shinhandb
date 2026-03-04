@@ -21,6 +21,7 @@ interface ProjectSelection {
   year: number;
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
   displayOrder: number;
+  finalManuscriptCount?: number;
 }
 
 interface ShareProject {
@@ -32,6 +33,7 @@ interface ShareProject {
   year: number;
   quarter: '1Q' | '2Q' | '3Q' | '4Q';
   displayOrder: number;
+  finalManuscriptCount?: number;
 }
 
 interface ShareDetail {
@@ -72,9 +74,10 @@ export default function EditExternalSharePage() {
   // 프로젝트 선택 항목 정렬 함수
   const sortProjects = (projects: ProjectSelection[]): ProjectSelection[] => {
     return [...projects].sort((a, b) => {
-      // 1. 카테고리 (holding < bank)
+      // 1. 카테고리 (holding 먼저 - 공개 페이지와 동일)
       if (a.category !== b.category) {
-        return a.category.localeCompare(b.category);
+        const categoryOrder: Record<string, number> = { holding: 0, bank: 1 };
+        return (categoryOrder[a.category] ?? 0) - (categoryOrder[b.category] ?? 0);
       }
       // 2. 연도 (내림차순 - 최신 먼저)
       if (a.year !== b.year) {
@@ -143,6 +146,7 @@ export default function EditExternalSharePage() {
             year: project.year,
             quarter: project.quarter,
             displayOrder: project.displayOrder,
+            finalManuscriptCount: parseInt(String(project.finalManuscriptCount ?? 0)),
           }));
           setSelectedProjects(sortProjects(selections));
         }
@@ -544,6 +548,11 @@ export default function EditExternalSharePage() {
                           <h3 className="font-medium text-[#333333]">
                             {selection.projectTitle}
                           </h3>
+                          {(selection.finalManuscriptCount ?? 0) === 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full ml-2">
+                              ⚠️ 최종원고 없음
+                            </span>
+                          )}
                         </div>
 
                         {/* 순서 변경 버튼 + 제거 버튼 */}

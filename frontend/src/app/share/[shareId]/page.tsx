@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { publicShareAPI } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Script from 'next/script';
@@ -10,6 +10,7 @@ interface QuarterData {
   title: string;
   description: string;
   thumbnailUrl: string | null;
+  fileUrl?: string | null;
   fileCount: number;
   createdAt: string;
   displayOrder?: number;  // 프로젝트 노출 순서
@@ -99,14 +100,55 @@ export default function PublicSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [projectImages, setProjectImages] = useState<string[]>([]);
   const [swiperLoaded, setSwiperLoaded] = useState(false);
+  const [swiperCssLoaded, setSwiperCssLoaded] = useState(false);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [preloadingQuarter, setPreloadingQuarter] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const swiperRef = useRef<any>(null);
   const thumbSwiperRef = useRef<any>(null);
   const prevQuarterKeyRef = useRef<string | null>(null);  // 이전 분기 키 저장
+
+  // 이미지 로딩 완료 콜백 (스켈레톤 → 페이드인 전환)
+  const handleImageLoaded = useCallback((projectId: string) => {
+    setLoadedImages(prev => {
+      const next = new Set(prev);
+      next.add(projectId);
+      return next;
+    });
+  }, []);
+
+  // 즉시 분기 모달 열기 (비차단 - 로딩 대기 없음)
+  const preloadAndOpenQuarter = (
+    year: string,
+    quarter: string,
+    category: 'holding' | 'bank',
+    categoryName: string,
+    projects: QuarterData[]
+  ) => {
+    // 1. display_order 기준 정렬 (순서 보장)
+    const sortedProjects = [...projects].sort((a, b) => {
+      const orderDiff = (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+      if (orderDiff !== 0) return orderDiff;
+      const dateDiff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (a.projectId || '').localeCompare(b.projectId || '');
+    });
+
+    // 2. 즉시 Swiper 모달 열기 (로딩 대기 없음)
+    setCurrentSlideIndex(0);
+    prevQuarterKeyRef.current = null;
+    setSelectedQuarter({ year, quarter, category, categoryName, projects: sortedProjects });
+
+    // 3. 백그라운드 이미지 프리로드 (브라우저 캐시 워밍)
+    sortedProjects.forEach(p => {
+      const url = p.thumbnailUrl || p.fileUrl;
+      if (url) { const img = new Image(); img.src = url; }
+    });
+  };
 
   // sessionStorage에서 토큰 복원
   useEffect(() => {
@@ -268,7 +310,6 @@ export default function PublicSharePage() {
         // 백엔드 응답: proposalDrafts (제안 시안), finalManuscripts (최종 원고)
         const allFiles = [
           ...(response.data.finalManuscripts || []),
-          ...(response.data.proposalDrafts || []),
         ];
         // fileUrl 또는 thumbnailUrl 사용
         const imageUrls = allFiles.map((file: any) => file.fileUrl || file.thumbnailUrl).filter(Boolean);
@@ -383,128 +424,164 @@ export default function PublicSharePage() {
   useEffect(() => {
     if (!selectedQuarter) {
       prevQuarterKeyRef.current = null;
+      setCurrentSlideIndex(0);
+      setLoadedImages(new Set());
     }
   }, [selectedQuarter]);
 
-  // Swiper 초기화 (갤러리 닫힐 때 재초기화 포함)
+  // Swiper 초기화 (이미지 로딩 완료 후 초기화 - 브라우저별 순서 불일치 방지)
   useEffect(() => {
-    if (!selectedQuarter || !swiperLoaded) return;
+    if (!selectedQuarter || !swiperLoaded || !swiperCssLoaded) return;
     // 이미지 갤러리가 열려있으면 Swiper 초기화 건너뛰기
     if (imageGalleryOpen) return;
 
-    const initSwiper = () => {
-      if (typeof window !== 'undefined' && (window as any).Swiper) {
-        const Swiper = (window as any).Swiper;
+    let cancelled = false;
 
-        // 현재 분기의 고유 키 생성
-        const currentQuarterKey = `${selectedQuarter.category}-${selectedQuarter.year}-${selectedQuarter.quarter}`;
+    const createSwiperInstance = () => {
+      if (cancelled) return;
+      if (typeof window === 'undefined' || !(window as any).Swiper) return;
 
-        // 새 분기인지 확인 (이전 분기 키와 비교)
-        const isNewQuarter = prevQuarterKeyRef.current !== currentQuarterKey;
+      const Swiper = (window as any).Swiper;
 
-        // 새 분기면 첫 슬라이드, 같은 분기(갤러리 복귀)면 이전 위치 유지
-        const initialSlide = isNewQuarter ? 0 : currentSlideIndex;
+      // 현재 분기의 고유 키 생성
+      const currentQuarterKey = `${selectedQuarter.category}-${selectedQuarter.year}-${selectedQuarter.quarter}`;
 
-        // 현재 분기 키 저장
-        prevQuarterKeyRef.current = currentQuarterKey;
+      // 새 분기인지 확인 (이전 분기 키와 비교)
+      const isNewQuarter = prevQuarterKeyRef.current !== currentQuarterKey;
 
-        // 기존 Swiper 인스턴스 정리
-        if (thumbSwiperRef.current) {
-          thumbSwiperRef.current.destroy(true, true);
-          thumbSwiperRef.current = null;
-        }
-        if (swiperRef.current) {
+      // 새 분기면 첫 슬라이드, 같은 분기(갤러리 복귀)면 이전 위치 유지
+      const initialSlide = isNewQuarter ? 0 : currentSlideIndex;
+
+      // 현재 분기 키 저장
+      prevQuarterKeyRef.current = currentQuarterKey;
+
+      // 기존 Swiper 인스턴스 정리 (slideChange 이벤트 먼저 해제하여 오염 방지)
+      if (thumbSwiperRef.current) {
+        try { thumbSwiperRef.current.destroy(true, true); } catch (e) {}
+        thumbSwiperRef.current = null;
+      }
+      if (swiperRef.current) {
+        try {
+          swiperRef.current.off('slideChange');
           swiperRef.current.destroy(true, true);
-          swiperRef.current = null;
-        }
+        } catch (e) {}
+        swiperRef.current = null;
+      }
 
-        // ★ DOM 순서 강제 정렬 (loop: false에서는 data-swiper-slide-index 무시됨)
-        // Swiper 초기화 전에 DOM 순서를 data-swiper-slide-index 기준으로 정렬
-        const mainWrapper = document.querySelector('.quarter-swiper .swiper-wrapper');
-        const thumbWrapper = document.querySelector('.thumb-swiper .swiper-wrapper');
+      // 썸네일 Swiper 먼저 초기화
+      thumbSwiperRef.current = new Swiper('.thumb-swiper', {
+        spaceBetween: 8,
+        slidesPerView: 'auto',
+        freeMode: true,
+        watchSlidesProgress: true,
+        centeredSlides: true,
+        slideToClickedSlide: true,
+        initialSlide: initialSlide,
+        navigation: {
+          nextEl: '#thumb-next-btn',
+          prevEl: '#thumb-prev-btn',
+        },
+      });
 
-        if (mainWrapper) {
-          const mainSlides = Array.from(mainWrapper.querySelectorAll('.swiper-slide'));
-          mainSlides.sort((a, b) => {
-            const aIdx = parseInt((a as HTMLElement).dataset.swiperSlideIndex || '0');
-            const bIdx = parseInt((b as HTMLElement).dataset.swiperSlideIndex || '0');
-            return aIdx - bIdx;
-          });
-          // appendChild는 기존 위치에서 제거 후 맨 뒤에 추가하므로 정렬됨
-          mainSlides.forEach(slide => mainWrapper.appendChild(slide));
-        }
+      // 메인 Swiper 초기화 (thumbs 연결)
+      swiperRef.current = new Swiper('.quarter-swiper', {
+        effect: 'coverflow',
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: 'auto',
+        loop: false,
+        rewind: false,
+        speed: 800,
+        initialSlide: initialSlide,
+        coverflowEffect: {
+          rotate: 0,
+          stretch: 0,
+          depth: 200,
+          modifier: 1.5,
+          slideShadows: false,
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        keyboard: {
+          enabled: true,
+        },
+        mousewheel: {
+          forceToAxis: true,
+          sensitivity: 1,
+        },
+        thumbs: {
+          swiper: thumbSwiperRef.current,
+        },
+        on: {
+          init: function(swiper: any) {
+            // 안전장치 2: Swiper 내부 init 완료 후 위치 강제 보정
+            if (isNewQuarter && swiper.activeIndex !== initialSlide) {
+              swiper.slideTo(initialSlide, 0);
+            }
+          },
+          slideChange: function(swiper: any) {
+            setCurrentSlideIndex(swiper.activeIndex);
+          },
+        },
+      });
 
-        if (thumbWrapper) {
-          const thumbSlides = Array.from(thumbWrapper.querySelectorAll('.swiper-slide'));
-          thumbSlides.sort((a, b) => {
-            const aIdx = parseInt((a as HTMLElement).dataset.swiperSlideIndex || '0');
-            const bIdx = parseInt((b as HTMLElement).dataset.swiperSlideIndex || '0');
-            return aIdx - bIdx;
-          });
-          thumbSlides.forEach(slide => thumbWrapper.appendChild(slide));
-        }
-
-        // 썸네일 Swiper 먼저 초기화
-        thumbSwiperRef.current = new Swiper('.thumb-swiper', {
-          spaceBetween: 8,
-          slidesPerView: 'auto',
-          freeMode: true,
-          watchSlidesProgress: true,
-          centeredSlides: true,
-          slideToClickedSlide: true,
-          initialSlide: initialSlide,
-          navigation: {
-            nextEl: '#thumb-next-btn',
-            prevEl: '#thumb-prev-btn',
-          },
-        });
-
-        // 메인 Swiper 초기화 (thumbs 연결)
-        swiperRef.current = new Swiper('.quarter-swiper', {
-          effect: 'coverflow',
-          grabCursor: true,
-          centeredSlides: true,
-          slidesPerView: 'auto',
-          loop: false,
-          rewind: selectedQuarter.projects.length > 1,
-          speed: 800,
-          initialSlide: initialSlide,
-          coverflowEffect: {
-            rotate: 0,
-            stretch: 0,
-            depth: 200,
-            modifier: 1.5,
-            slideShadows: false,
-          },
-          navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-          },
-          keyboard: {
-            enabled: true,
-          },
-          mousewheel: {
-            forceToAxis: true,
-            sensitivity: 1,
-          },
-          thumbs: {
-            swiper: thumbSwiperRef.current,
-          },
-          on: {
-            slideChange: function(swiper: any) {
-              setCurrentSlideIndex(swiper.activeIndex);
-            },
-          },
+      // 안전장치 3: CSS 완전 적용 후 최종 강제 보정
+      if (isNewQuarter) {
+        requestAnimationFrame(() => {
+          if (swiperRef.current && !swiperRef.current.destroyed) {
+            swiperRef.current.slideTo(initialSlide, 0);
+          }
         });
       }
     };
 
-    // DOM이 실제로 렌더링된 후 Swiper 초기화 (모바일 타이밍 문제 해결)
-    const timer = setTimeout(initSwiper, 150);
-    return () => {
-      clearTimeout(timer);
+    const waitForDomAndInit = async () => {
+      // double rAF로 DOM 렌더링 대기
+      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      if (cancelled) return;
+
+      // 컨테이너 존재 확인 (최대 10회 재시도)
+      let container: Element | null = null;
+      for (let i = 0; i < 10; i++) {
+        container = document.querySelector('.quarter-swiper');
+        if (container && (container as HTMLElement).clientWidth > 0) break;
+        await new Promise<void>(r => requestAnimationFrame(r));
+        if (cancelled) return;
+      }
+      if (!container || cancelled) return;
+
+      // 안전장치 1: 슬라이드 CSS width 적용 대기 (모바일 media query 반영 보장)
+      const firstSlide = container.querySelector('.swiper-slide') as HTMLElement | null;
+      if (firstSlide) {
+        for (let i = 0; i < 10; i++) {
+          if (firstSlide.offsetWidth > 0) break;
+          await new Promise<void>(r => requestAnimationFrame(r));
+          if (cancelled) return;
+        }
+      }
+
+      // 이미지는 preloadAndOpenQuarter에서 이미 캐시됨 → Swiper 즉시 생성
+      createSwiperInstance();
     };
-  }, [selectedQuarter, swiperLoaded, imageGalleryOpen]);
+
+    waitForDomAndInit();
+    return () => {
+      cancelled = true;
+      if (thumbSwiperRef.current) {
+        try { thumbSwiperRef.current.destroy(true, true); } catch (e) {}
+        thumbSwiperRef.current = null;
+      }
+      if (swiperRef.current) {
+        try {
+          swiperRef.current.off('slideChange');
+          swiperRef.current.destroy(true, true);
+        } catch (e) {}
+        swiperRef.current = null;
+      }
+    };
+  }, [selectedQuarter, swiperLoaded, swiperCssLoaded, imageGalleryOpen]);
 
   // 비밀번호 입력 화면
   if (step === 'password') {
@@ -745,6 +822,11 @@ export default function PublicSharePage() {
             }
           }
 
+          @keyframes skeleton-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
           .animate-float {
             animation: float 25s ease-in-out infinite;
           }
@@ -780,6 +862,18 @@ export default function PublicSharePage() {
 
   // 타임라인 화면
   return (
+    <>
+      {/* Swiper CSS/JS - 타임라인 진입 시 즉시 로딩 (분기 클릭 전 완료 보장) */}
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.css"
+        onLoad={() => setSwiperCssLoaded(true)}
+      />
+      <Script
+        src="https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js"
+        strategy="afterInteractive"
+        onLoad={() => setSwiperLoaded(true)}
+      />
     <div className="min-h-screen bg-[#335098] py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
@@ -871,15 +965,7 @@ export default function PublicSharePage() {
                                   return (
                                 <button
                                   key={quarter}
-                                  onClick={() => {
-                                    setSelectedQuarter({
-                                      year,
-                                      quarter,
-                                      category: 'holding',
-                                      categoryName: '신한금융지주',
-                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-                                    });
-                                  }}
+                                  onClick={() => preloadAndOpenQuarter(year, quarter, 'holding', '신한금융지주', projects)}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
                                 >
                                   {/* 좌측 액센트 바 - PC 최적화 */}
@@ -969,15 +1055,7 @@ export default function PublicSharePage() {
                                   return (
                                 <button
                                   key={quarter}
-                                  onClick={() => {
-                                    setSelectedQuarter({
-                                      year,
-                                      quarter,
-                                      category: 'bank',
-                                      categoryName: '신한은행',
-                                      projects: [...projects].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-                                    });
-                                  }}
+                                  onClick={() => preloadAndOpenQuarter(year, quarter, 'bank', '신한은행', projects)}
                                   className="group relative backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8 text-left overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98] shadow-md md:shadow-lg bg-gradient-to-br from-[#EBF0FF] to-[#E0E8FF] ring-2 ring-[#0046FF]/30 hover:ring-[#0046FF]/50"
                                 >
                                   {/* 좌측 액센트 바 - PC 최적화 */}
@@ -1031,20 +1109,6 @@ export default function PublicSharePage() {
         )}
       </div>
 
-      {/* Swiper CSS */}
-      {selectedQuarter && !imageGalleryOpen && (
-        <>
-          <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
-          />
-          <Script
-            src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
-            onLoad={() => setSwiperLoaded(true)}
-          />
-        </>
-      )}
-
       {/* 분기별 프로젝트 Swiper Coverflow 모달 */}
       {selectedQuarter && !imageGalleryOpen && (
         <div className="fixed inset-0 bg-gradient-to-br from-[#335098] to-[#335098] z-50 flex flex-col items-center justify-center p-4 overflow-hidden">
@@ -1057,25 +1121,31 @@ export default function PublicSharePage() {
             }
 
             .quarter-swiper .swiper-slide {
-              width: auto !important;
-              height: auto !important;
-              max-width: 500px;
+              position: relative;
               border-radius: 0;
-              overflow: visible;
+              overflow: hidden;
               box-shadow: 0 25px 50px rgba(0,0,0,0.3);
               transition: all 0.4s ease;
               background: transparent !important;
               cursor: pointer;
+              min-height: 300px;
+            }
+
+            @media (min-width: 769px) {
+              .quarter-swiper .swiper-slide {
+                width: 380px !important;
+              }
             }
 
             .quarter-swiper .swiper-slide img {
-              width: auto !important;
-              height: auto !important;
+              width: 100%;
+              height: auto;
               max-height: 65vh;
-              max-width: 500px;
               display: block;
+              object-fit: contain;
               transition: transform 0.5s ease;
               border-radius: 0;
+              background: rgba(255,255,255,0.05);
             }
 
             .quarter-swiper .swiper-slide-active {
@@ -1267,9 +1337,10 @@ export default function PublicSharePage() {
 
             @media (max-width: 768px) {
               .quarter-swiper .swiper-slide {
-                width: 94%;
+                width: 85vw !important;
                 max-width: 460px;
                 border-radius: 0;
+                min-height: 250px;
               }
 
               .quarter-swiper .swiper-slide img {
@@ -1288,9 +1359,10 @@ export default function PublicSharePage() {
 
             @media (max-width: 480px) {
               .quarter-swiper .swiper-slide {
-                width: 94%;
+                width: 90vw !important;
                 max-width: 368px;
                 border-radius: 0;
+                min-height: 200px;
               }
 
               .quarter-swiper .swiper-slide img {
@@ -1300,20 +1372,20 @@ export default function PublicSharePage() {
 
             /* iPad Air 10.9" 가로 모드 최적화 */
             @media (orientation: landscape)
-               and (min-width: 768px)
+               and (min-width: 769px)
                and (max-width: 1366px)
                and (max-height: 900px) {
 
-              /* Swiper 슬라이드 크기 - 너비 및 높이 제한 (vh 기반) */
+              /* Swiper 슬라이드 크기 - 고정폭 + 높이 제한 (vh 기반) */
               .quarter-swiper .swiper-slide {
-                max-width: 400px !important;
+                width: 380px !important;
                 max-height: 55vh !important;
               }
 
               /* 슬라이드 이미지 높이 제한 */
               .quarter-swiper .swiper-slide img {
                 max-height: 55vh !important;
-                width: auto !important;
+                width: 100% !important;
                 object-fit: contain !important;
               }
 
@@ -1453,14 +1525,51 @@ export default function PublicSharePage() {
                   <div
                     key={project.projectId}
                     className="swiper-slide"
-                    data-swiper-slide-index={idx}
                     onClick={() => openImageGallery(project)}
                   >
-                    {project.thumbnailUrl && (
-                      <img
-                        src={project.thumbnailUrl}
-                        alt={project.title}
-                      />
+                    {(project.fileUrl || project.thumbnailUrl) ? (
+                      <>
+                        {/* 스켈레톤 플레이스홀더 */}
+                        {!loadedImages.has(project.projectId) && (
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+                            zIndex: 1,
+                          }}>
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{
+                                width: 36, height: 36,
+                                border: '3px solid rgba(255,255,255,0.2)',
+                                borderTopColor: 'rgba(255,255,255,0.8)',
+                                borderRadius: '50%',
+                                animation: 'skeleton-spin 0.8s linear infinite',
+                                margin: '0 auto 10px',
+                              }} />
+                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>로딩 중...</p>
+                            </div>
+                          </div>
+                        )}
+                        <img
+                          src={project.thumbnailUrl || project.fileUrl || ''}
+                          alt={project.title}
+                          onLoad={() => handleImageLoaded(project.projectId)}
+                          onError={() => handleImageLoaded(project.projectId)}
+                          style={{
+                            opacity: loadedImages.has(project.projectId) ? 1 : 0,
+                            transition: 'opacity 0.3s ease',
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div style={{
+                        width: '100%', height: '300px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)',
+                        fontSize: '14px',
+                      }}>
+                        이미지 없음
+                      </div>
                     )}
                   </div>
                 ))}
@@ -1484,11 +1593,15 @@ export default function PublicSharePage() {
                   <div className="thumb-swiper">
                     <div className="swiper-wrapper">
                       {selectedQuarter.projects.map((project, idx) => (
-                        <div key={`thumb-${project.projectId}`} className="swiper-slide" data-swiper-slide-index={idx}>
-                          {project.thumbnailUrl ? (
+                        <div key={`thumb-${project.projectId}`} className="swiper-slide">
+                          {(project.thumbnailUrl || project.fileUrl) ? (
                             <img
-                              src={project.thumbnailUrl}
+                              src={project.thumbnailUrl || project.fileUrl || ''}
                               alt={`${project.title} 썸네일`}
+                              style={{
+                                opacity: loadedImages.has(project.projectId) ? 1 : 0.3,
+                                transition: 'opacity 0.3s ease',
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full bg-gray-600 flex items-center justify-center">
@@ -1607,5 +1720,6 @@ export default function PublicSharePage() {
         </div>
       )}
     </div>
+    </>
   );
 }
