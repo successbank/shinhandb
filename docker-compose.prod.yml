@@ -163,7 +163,7 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     ports:
-      - "${ELASTICSEARCH_PORT}:9200"
+      - "127.0.0.1:${ELASTICSEARCH_PORT}:9200"
     networks:
       - app-network
     healthcheck:
