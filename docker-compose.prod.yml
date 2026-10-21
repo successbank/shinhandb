@@ -32,6 +32,9 @@ services:
     networks:
       - app-network
       - coolify
+    labels:
+      # 네트워크가 여럿이라 Traefik 이 도달 불가 IP 를 고르면 502 — coolify 로 고정
+      - traefik.docker.network=coolify
     depends_on:
       backend:
         condition: service_healthy
